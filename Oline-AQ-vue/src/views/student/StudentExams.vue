@@ -53,54 +53,71 @@ onMounted(async () => {
 
 <template>
   <StudentLayout title="考试列表" subtitle="查看考试开放时间、是否允许重考，以及你自己的历史提交记录。">
-    <section class="stat-grid">
-      <div class="stat-card"><span>当前可参加</span><strong>{{ availableCount }}</strong></div>
-      <div class="stat-card"><span>已发布考试</span><strong>{{ store.publishedExams.length }}</strong></div>
-      <div class="stat-card"><span>历史提交</span><strong>{{ historyCount }}</strong></div>
-      <div class="stat-card"><span>当前身份</span><strong>{{ store.currentUser?.realName || '学生' }}</strong></div>
-    </section>
+    <el-row :gutter="14">
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" style="margin-bottom: 14px">
+          <el-statistic title="当前可参加" :value="availableCount">
+            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
+          </el-statistic>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" style="margin-bottom: 14px">
+          <el-statistic title="已发布考试" :value="store.publishedExams.length">
+            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
+          </el-statistic>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" style="margin-bottom: 14px">
+          <el-statistic title="历史提交" :value="historyCount">
+            <template #suffix><span style="font-size: 14px; color: var(--muted)">次</span></template>
+          </el-statistic>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" style="margin-bottom: 14px">
+          <el-statistic title="当前身份" :value="store.currentUser?.realName || '学生'" />
+        </el-card>
+      </el-col>
+    </el-row>
 
-    <section class="exam-grid">
-      <article v-for="exam in store.publishedExams" :key="exam.examId" class="exam-tile">
-        <div class="toolbar" style="margin-bottom: 0">
-          <div>
-            <h3>{{ exam.examName }}</h3>
-            <p class="muted">{{ exam.description || '暂无考试说明' }}</p>
+    <el-row :gutter="14" v-if="store.publishedExams.length > 0">
+      <el-col v-for="exam in store.publishedExams" :key="exam.examId" :xs="24" :md="12" style="margin-bottom: 14px">
+        <el-card shadow="hover">
+          <template #header>
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <strong>{{ exam.examName }}</strong>
+              <el-tag :type="getAvailability(exam).type">{{ getAvailability(exam).label }}</el-tag>
+            </div>
+          </template>
+          <p style="color: var(--muted); font-size: 13px; margin: 0 0 12px">{{ exam.description || '暂无考试说明' }}</p>
+          <el-descriptions :column="3" border size="small">
+            <el-descriptions-item label="考试时长">{{ exam.duration }} 分钟</el-descriptions-item>
+            <el-descriptions-item label="总分">{{ exam.totalScore }} 分</el-descriptions-item>
+            <el-descriptions-item label="重考策略">{{ exam.allowRetake ? '允许重考' : '仅限一次' }}</el-descriptions-item>
+            <el-descriptions-item label="开始时间">{{ toTimeLabel(exam.startTime) }}</el-descriptions-item>
+            <el-descriptions-item label="结束时间">{{ toTimeLabel(exam.endTime) }}</el-descriptions-item>
+            <el-descriptions-item label="历史记录">{{ getExamHistory(exam.examId).length }} 次</el-descriptions-item>
+          </el-descriptions>
+
+          <div v-if="getExamHistory(exam.examId).length > 0" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px">
+            <el-tag v-for="item in getExamHistory(exam.examId).slice(0, 3)" :key="item.resultId" type="info">
+              {{ item.submitTime }} / {{ item.totalScore }} 分
+            </el-tag>
           </div>
-          <el-tag :type="getAvailability(exam).type">{{ getAvailability(exam).label }}</el-tag>
-        </div>
 
-        <div class="status-line">
-          <div class="status-box"><span class="muted">考试时长</span><b>{{ exam.duration }} 分钟</b></div>
-          <div class="status-box"><span class="muted">总分</span><b>{{ exam.totalScore }} 分</b></div>
-          <div class="status-box"><span class="muted">重考策略</span><b>{{ exam.allowRetake ? '允许重考' : '仅限一次' }}</b></div>
-        </div>
-
-        <div class="status-line">
-          <div class="status-box"><span class="muted">开始时间</span><b>{{ toTimeLabel(exam.startTime) }}</b></div>
-          <div class="status-box"><span class="muted">结束时间</span><b>{{ toTimeLabel(exam.endTime) }}</b></div>
-          <div class="status-box">
-            <span class="muted">历史记录</span>
-            <b>{{ getExamHistory(exam.examId).length }} 次</b>
+          <div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between">
+            <span style="color: var(--muted); font-size: 13px">
+              {{ !exam.allowRetake && store.hasSubmittedExam(exam.examId) ? '该考试已提交过，当前不可再次作答。' : '请在开放时间内完成作答。' }}
+            </span>
+            <el-button type="primary" :disabled="!canStartExam(exam)" @click="$router.push(`/student/exams/${exam.examId}`)">
+              开始答题
+            </el-button>
           </div>
-        </div>
-
-        <div v-if="getExamHistory(exam.examId).length > 0" class="tag-row">
-          <el-tag v-for="item in getExamHistory(exam.examId).slice(0, 3)" :key="item.resultId" type="info">
-            {{ item.submitTime }} / {{ item.totalScore }} 分
-          </el-tag>
-        </div>
-
-        <div class="toolbar" style="margin-bottom: 0">
-          <span class="muted">
-            {{ !exam.allowRetake && store.hasSubmittedExam(exam.examId) ? '该考试已提交过，当前不可再次作答。' : '请在开放时间内完成作答。' }}
-          </span>
-          <el-button type="primary" :disabled="!canStartExam(exam)" @click="$router.push(`/student/exams/${exam.examId}`)">
-            开始答题
-          </el-button>
-        </div>
-      </article>
-      <el-empty v-if="store.publishedExams.length === 0" description="暂无已发布考试" />
-    </section>
+        </el-card>
+      </el-col>
+    </el-row>
+    <el-empty v-if="store.publishedExams.length === 0" description="暂无已发布考试" />
   </StudentLayout>
 </template>

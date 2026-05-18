@@ -40,7 +40,7 @@ async function parse() {
 
 <template>
   <AdminLayout title="上传试题" subtitle="上传 TXT 或 DOCX 文件，后端读取文本并解析保存到题库。">
-    <section class="panel">
+    <el-card>
       <el-upload
         drag
         :auto-upload="false"
@@ -59,6 +59,6 @@ async function parse() {
         <el-button type="primary" :loading="uploading" @click="parse">上传并解析</el-button>
         <span class="muted" style="margin-left: 12px">最近解析：{{ store.latestParsedCount }} 道题</span>
       </div>
-    </section>
+    </el-card>
   </AdminLayout>
 </template>

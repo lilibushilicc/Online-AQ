@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import StudentLayout from './StudentLayout.vue'
@@ -9,7 +9,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useExamStore()
 const examId = Number(route.params.examId)
-const answers = reactive<Record<number, string>>({})
+const answers = ref<Record<number, string>>({})
 const exam = ref<Exam | null>(null)
 const questions = ref<Question[]>([])
 const remainingSeconds = ref(0)
@@ -17,7 +17,7 @@ const initialRemainingSeconds = ref(0)
 const submitting = ref(false)
 let timer: number | null = null
 
-const answeredCount = computed(() => Object.keys(answers).length)
+const answeredCount = computed(() => Object.keys(answers.value).length)
 const progress = computed(() => (questions.value.length === 0 ? 0 : Math.round((answeredCount.value / questions.value.length) * 100)))
 const historyCount = computed(() => store.results.filter((result) => result.examId === examId).length)
 const elapsedSeconds = computed(() => Math.max(0, initialRemainingSeconds.value - remainingSeconds.value))
@@ -97,7 +97,7 @@ async function handleSubmit(options?: { auto?: boolean }) {
   clearTimer()
 
   try {
-    const result = await store.submitExam(exam.value.examId, answers, elapsedSeconds.value)
+    const result = await store.submitExam(exam.value.examId, answers.value, elapsedSeconds.value)
     if (autoSubmit) {
       ElMessage.warning('考试时间已到，系统已自动交卷')
     } else {
@@ -158,54 +158,52 @@ onUnmounted(() => {
 <template>
   <StudentLayout :title="exam?.examName ?? '考试加载中'" :subtitle="exam ? `时长 ${exam.duration} 分钟，总分 ${exam.totalScore} 分` : ''">
     <section v-if="exam" class="answer-layout">
-      <div class="question-list">
-        <article class="question-card">
-          <div class="status-line">
-            <div class="status-box"><span class="muted">开放开始</span><b>{{ exam.startTime ? new Date(exam.startTime).toLocaleString() : '未设置' }}</b></div>
-            <div class="status-box"><span class="muted">开放结束</span><b>{{ exam.endTime ? new Date(exam.endTime).toLocaleString() : '未设置' }}</b></div>
-            <div class="status-box"><span class="muted">历史提交</span><b>{{ historyCount }} 次</b></div>
-          </div>
-        </article>
+      <div>
+        <el-card shadow="hover" style="margin-bottom: 14px">
+          <el-descriptions :column="3" border size="small">
+            <el-descriptions-item label="开放开始">{{ exam.startTime ? new Date(exam.startTime).toLocaleString() : '未设置' }}</el-descriptions-item>
+            <el-descriptions-item label="开放结束">{{ exam.endTime ? new Date(exam.endTime).toLocaleString() : '未设置' }}</el-descriptions-item>
+            <el-descriptions-item label="历史提交">{{ historyCount }} 次</el-descriptions-item>
+          </el-descriptions>
+        </el-card>
 
-        <article v-for="(question, index) in questions" :key="question.questionId" class="question-card">
-          <div class="toolbar" style="margin-bottom: 10px">
-            <h3>{{ index + 1 }}. {{ question.questionContent }}</h3>
+        <el-card v-for="(question, index) in questions" :key="question.questionId" shadow="hover" style="margin-bottom: 14px">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
+            <strong>{{ index + 1 }}. {{ question.questionContent }}</strong>
             <el-tag>{{ question.score }} 分</el-tag>
           </div>
-          <el-radio-group v-model="answers[question.questionId]" class="option-grid">
-            <el-radio-button value="A">A. {{ question.optionA }}</el-radio-button>
-            <el-radio-button value="B">B. {{ question.optionB }}</el-radio-button>
-            <el-radio-button v-if="question.optionC" value="C">C. {{ question.optionC }}</el-radio-button>
-            <el-radio-button v-if="question.optionD" value="D">D. {{ question.optionD }}</el-radio-button>
+          <el-radio-group v-model="answers[question.questionId]" style="display: flex; flex-direction: column; gap: 8px">
+            <el-radio value="A" style="min-height: 40px; align-items: center">A. {{ question.optionA }}</el-radio>
+            <el-radio value="B" style="min-height: 40px; align-items: center">B. {{ question.optionB }}</el-radio>
+            <el-radio v-if="question.optionC" value="C" style="min-height: 40px; align-items: center">C. {{ question.optionC }}</el-radio>
+            <el-radio v-if="question.optionD" value="D" style="min-height: 40px; align-items: center">D. {{ question.optionD }}</el-radio>
           </el-radio-group>
-        </article>
+        </el-card>
       </div>
       <aside class="answer-index">
         <strong>答题进度</strong>
         <el-progress :percentage="progress" style="margin: 12px 0" />
-        <div class="answer-summary">
-          <div><span class="muted">已答</span><b>{{ answeredCount }}</b></div>
-          <div><span class="muted">剩余</span><b>{{ questions.length - answeredCount }}</b></div>
+        <el-descriptions :column="2" border size="small" style="margin-bottom: 12px">
+          <el-descriptions-item label="已答">{{ answeredCount }}</el-descriptions-item>
+          <el-descriptions-item label="剩余">{{ questions.length - answeredCount }}</el-descriptions-item>
+        </el-descriptions>
+        <el-card shadow="never" style="margin-bottom: 10px">
+          <el-statistic title="剩余时间" :value="countdownText" />
+        </el-card>
+        <el-card shadow="never" style="margin-bottom: 10px">
+          <el-statistic title="已用时间" :value="`${elapsedSeconds} 秒`" />
+        </el-card>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px">
+          <el-tag v-for="(q, idx) in questions" :key="q.questionId" :type="answers[q.questionId] ? 'success' : 'info'" size="large">
+            {{ idx + 1 }}
+          </el-tag>
         </div>
-        <div class="status-box">
-          <span class="muted">剩余时间</span>
-          <b>{{ countdownText }}</b>
-        </div>
-        <div class="status-box" style="margin-top: 10px">
-          <span class="muted">已用时间</span>
-          <b>{{ elapsedSeconds }} 秒</b>
-        </div>
-        <div class="index-grid">
-          <span v-for="(question, index) in questions" :key="question.questionId" class="index-dot" :class="{ done: answers[question.questionId] }">
-            {{ index + 1 }}
-          </span>
-        </div>
-        <el-button type="primary" size="large" style="width: 100%; margin-top: 18px" :loading="submitting" @click="handleSubmit()">
+        <el-button type="primary" size="large" style="width: 100%" :loading="submitting" @click="handleSubmit()">
           提交试卷
         </el-button>
       </aside>
     </section>
-    <section v-else class="panel">
+    <section v-else>
       <el-empty description="考试不存在或正在加载" />
     </section>
   </StudentLayout>

@@ -56,7 +56,7 @@ async function updateSelectedScore() {
 
 <template>
   <AdminLayout title="题库管理" subtitle="支持按关键词、题型、来源筛选题目，并进行批量删除与批量分值设置。">
-    <section class="panel">
+    <el-card>
       <div class="toolbar">
         <div class="toolbar-left">
           <el-input v-model="keyword" placeholder="搜索题干或答案" clearable style="width: 240px" />
@@ -94,6 +94,6 @@ async function updateSelectedScore() {
           </template>
         </el-table-column>
       </el-table>
-    </section>
+    </el-card>
   </AdminLayout>
 </template>

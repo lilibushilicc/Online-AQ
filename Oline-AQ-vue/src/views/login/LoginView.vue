@@ -29,13 +29,13 @@ async function submit() {
     <section class="login-hero">
       <h1>智能在线答题系统</h1>
       <p>面向教师与学生的在线考试平台：从试题文件导入、自动解析、组卷发布，到在线作答和成绩反馈，形成一条清晰的测验闭环。</p>
-      <div class="workflow" style="margin-top: 26px">
-        <div class="workflow-step"><b>文件导入</b><span class="muted">TXT / DOCX</span></div>
-        <div class="workflow-step"><b>自动解析</b><span class="muted">题干与答案</span></div>
-        <div class="workflow-step"><b>在线答题</b><span class="muted">学生提交</span></div>
-        <div class="workflow-step"><b>即时评分</b><span class="muted">成绩反馈</span></div>
-        <div class="workflow-step"><b>数据沉淀</b><span class="muted">题库与结果</span></div>
-      </div>
+      <el-steps :active="5" align-center style="margin-top: 32px">
+        <el-step title="文件导入" description="TXT / DOCX" />
+        <el-step title="自动解析" description="题干与答案" />
+        <el-step title="在线答题" description="学生提交" />
+        <el-step title="即时评分" description="成绩反馈" />
+        <el-step title="数据沉淀" description="题库与结果" />
+      </el-steps>
     </section>
 
     <section class="login-card">

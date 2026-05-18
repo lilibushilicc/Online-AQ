@@ -86,6 +86,18 @@ export interface ResultDetail {
   history: ExamHistory[]
 }
 
+export interface CreateUserPayload {
+  username: string
+  password: string
+  realName: string
+  role: Role
+}
+
+export interface UpdateUserPayload {
+  realName?: string
+  password?: string
+}
+
 export interface CreateExamPayload {
   examName: string
   description: string
@@ -153,6 +165,7 @@ export const useExamStore = defineStore('exam', {
     questions: [] as Question[],
     exams: [] as Exam[],
     results: [] as ExamResult[],
+    users: [] as User[],
     latestParsedCount: 0,
   }),
   getters: {
@@ -275,6 +288,22 @@ export const useExamStore = defineStore('exam', {
     },
     isExamAccessible(exam: Exam) {
       return isExamPublished(exam) && isExamInTimeWindow(exam)
+    },
+    async loadUsers() {
+      const { data } = await request.get<unknown, ApiResponse<User[]>>('/users')
+      this.users = data
+    },
+    async createUser(payload: CreateUserPayload) {
+      await request.post('/users', payload)
+      await this.loadUsers()
+    },
+    async updateUser(userId: number, payload: UpdateUserPayload) {
+      await request.put(`/users/${userId}`, payload)
+      await this.loadUsers()
+    },
+    async deleteUser(userId: number) {
+      await request.delete(`/users/${userId}`)
+      await this.loadUsers()
     },
   },
 })
