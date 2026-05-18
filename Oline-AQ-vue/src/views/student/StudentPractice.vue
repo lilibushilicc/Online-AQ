@@ -9,8 +9,16 @@ const store = useExamStore()
 const answers = ref<Record<number, string>>({})
 const submitted = ref(false)
 const score = ref(0)
+const practiceCategory = ref('')
 
-const questions = computed(() => store.questions)
+const categoryOptions = computed(() => {
+  const cats = new Set(store.questions.map((q) => q.category).filter(Boolean))
+  return Array.from(cats) as string[]
+})
+const questions = computed(() => {
+  if (!practiceCategory.value) return store.questions
+  return store.questions.filter((q) => q.category === practiceCategory.value)
+})
 const answeredCount = computed(() => Object.keys(answers.value).length)
 const progress = computed(() =>
   questions.value.length === 0 ? 0 : Math.round((answeredCount.value / questions.value.length) * 100),
@@ -48,14 +56,26 @@ function getOptionText(question: { optionA: string; optionB: string; optionC?: s
   return question[key] ?? ''
 }
 
+function handleCategoryChange() {
+  answers.value = {}
+  submitted.value = false
+  score.value = 0
+}
+
 onMounted(async () => {
-  await store.loadQuestions()
+  await Promise.all([store.loadQuestions(), store.loadCategories()])
 })
 </script>
 
 <template>
   <StudentLayout title="在线做题" subtitle="题库练习，所有题目自由作答，即时反馈">
-    <section v-if="questions.length > 0">
+    <section v-if="store.questions.length > 0">
+      <div style="margin-bottom: 16px">
+        <el-select v-model="practiceCategory" placeholder="按分类练习" clearable style="width: 200px" @change="handleCategoryChange">
+          <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
+        </el-select>
+        <span class="muted" style="margin-left: 12px; font-size: 13px">显示 {{ questions.length }} / {{ store.questions.length }} 道题</span>
+      </div>
       <el-row :gutter="14" style="margin-bottom: 16px">
         <el-col :xs="24" :sm="12" :lg="6">
           <el-card shadow="hover">
@@ -114,6 +134,7 @@ onMounted(async () => {
         </el-button>
       </div>
     </section>
-    <el-empty v-else description="题库暂无题目，请联系管理员上传题目" />
+    <el-empty v-if="store.questions.length === 0" description="题库暂无题目，请联系管理员上传题目" />
+    <el-empty v-else description="当前分类下暂无题目，请选择其他分类" />
   </StudentLayout>
 </template>

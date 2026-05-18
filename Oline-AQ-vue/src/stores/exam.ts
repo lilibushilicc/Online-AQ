@@ -23,6 +23,7 @@ export interface Question {
   optionD: string
   correctAnswer: string
   score: number
+  category?: string
   sourceFileId?: number
 }
 
@@ -98,6 +99,11 @@ export interface UpdateUserPayload {
   password?: string
 }
 
+export interface BatchCategoryPayload {
+  questionIds: number[]
+  category: string
+}
+
 export interface CreateExamPayload {
   examName: string
   description: string
@@ -166,6 +172,7 @@ export const useExamStore = defineStore('exam', {
     exams: [] as Exam[],
     results: [] as ExamResult[],
     users: [] as User[],
+    categories: [] as string[],
     latestParsedCount: 0,
   }),
   getters: {
@@ -201,16 +208,29 @@ export const useExamStore = defineStore('exam', {
       localStorage.removeItem(TOKEN_STORAGE_KEY)
       localStorage.removeItem(USER_STORAGE_KEY)
     },
-    async loadQuestions() {
-      const { data } = await request.get<unknown, ApiResponse<Question[]>>('/questions')
+    async loadQuestions(category?: string) {
+      const params: Record<string, string> = {}
+      if (category) {
+        params.category = category
+      }
+      const { data } = await request.get<unknown, ApiResponse<Question[]>>('/questions', { params })
       this.questions = data
     },
-    async uploadAndParse(file: File) {
+    async loadCategories() {
+      const { data } = await request.get<unknown, ApiResponse<string[]>>('/questions/categories')
+      this.categories = data
+    },
+    async uploadAndParse(file: File, category?: string) {
       const formData = new FormData()
       formData.append('file', file)
       const { data: uploadData } = await request.post<unknown, ApiResponse<{ fileId: number }>>('/files/upload', formData)
+      const params: Record<string, string> = {}
+      if (category) {
+        params.category = category
+      }
       const { data: parsedData } = await request.post<unknown, ApiResponse<{ questionCount: number }>>(
         `/files/${uploadData.fileId}/parse`,
+        params,
       )
       this.latestParsedCount = parsedData.questionCount
       await this.loadQuestions()
@@ -227,6 +247,11 @@ export const useExamStore = defineStore('exam', {
     async updateQuestionScores(questionIds: number[], score: number) {
       await request.post('/questions/batch-score', { questionIds, score })
       await this.loadQuestions()
+    },
+    async updateQuestionCategories(questionIds: number[], category: string) {
+      await request.post('/questions/batch-category', { questionIds, category })
+      await this.loadQuestions()
+      await this.loadCategories()
     },
     async loadExams() {
       const { data } = await request.get<unknown, ApiResponse<Exam[]>>('/exams')
@@ -304,6 +329,17 @@ export const useExamStore = defineStore('exam', {
     async deleteUser(userId: number) {
       await request.delete(`/users/${userId}`)
       await this.loadUsers()
+    },
+    async loadConfig() {
+      const { data } = await request.get<unknown, ApiResponse<Record<string, string>>>('/config')
+      return data
+    },
+    async saveConfig(config: Record<string, string>) {
+      await request.put('/config', config)
+    },
+    async testR2() {
+      const { data } = await request.post<unknown, ApiResponse<{ result: string }>>('/config/test-r2')
+      return data
     },
   },
 })

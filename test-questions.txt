@@ -1,0 +1,61 @@
+1. Java 属于哪种类型的编程语言？
+A. 面向过程
+B. 面向对象
+C. 函数式
+D. 汇编
+答案：B
+
+2. JDK 的全称是什么？
+A. Java Development Kit
+B. Java Deployment Kit
+C. Java Data Kit
+D. Java Document Kit
+答案：A
+
+3. Java 中基本数据类型 boolean 的默认值是 true。
+A. 对
+B. 错
+答案：错
+
+4. 以下哪个不是 Java 的关键字？
+A. static
+B. final
+C. null
+D. main
+答案：D
+
+5. Java 接口中的方法默认使用什么修饰符？
+A. private
+B. protected
+C. public
+D. 默认包可见
+答案：C
+
+6. final 关键字可以用于修饰类、方法和变量。
+A. 对
+B. 错
+答案：对
+
+7. 在 Java 中，try 块后面必须紧跟 catch 块。
+A. 对
+B. 错
+答案：错
+
+8. 以下哪个集合类是有序且可重复的？
+A. HashSet
+B. TreeSet
+C. ArrayList
+D. HashMap
+答案：C
+
+9. JVM 的中文含义是什么？
+A. Java 虚拟机
+B. Java 方法库
+C. Java 变量管理
+D. Java 视窗管理器
+答案：A
+
+10. Java 支持多继承。
+A. 对
+B. 错
+答案：错

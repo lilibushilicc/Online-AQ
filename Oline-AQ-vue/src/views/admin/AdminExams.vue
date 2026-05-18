@@ -10,6 +10,7 @@ const previewExam = ref<Exam | null>(null)
 const previewQuestions = ref<Question[]>([])
 const historyVisible = ref(false)
 const currentHistory = ref<ExamHistory[]>([])
+const formCategory = ref('')
 const form = reactive({
   examName: '新建基础测试',
   description: '用于课堂快速测验',
@@ -25,9 +26,17 @@ const selectedScore = computed(() => selectedQuestions.value.reduce((sum, questi
 const publishedCount = computed(() => store.exams.filter((exam) => exam.status === 'published').length)
 const draftCount = computed(() => store.exams.filter((exam) => exam.status === 'draft').length)
 const closedCount = computed(() => store.exams.filter((exam) => exam.status === 'closed').length)
+const categoryOptions = computed(() => {
+  const cats = new Set(store.questions.map((q) => q.category).filter(Boolean))
+  return Array.from(cats) as string[]
+})
+const filteredQuestions = computed(() => {
+  if (!formCategory.value) return store.questions
+  return store.questions.filter((q) => q.category === formCategory.value)
+})
 
 onMounted(async () => {
-  await Promise.all([store.loadQuestions(), store.loadExams()])
+  await Promise.all([store.loadQuestions(), store.loadExams(), store.loadCategories()])
   form.questionIds = store.questions.map((question) => question.questionId)
 })
 
@@ -144,9 +153,16 @@ async function handleClose(exam: Exam) {
         </div>
 
         <el-form-item label="选择题目">
+          <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px">
+            <el-select v-model="formCategory" placeholder="按分类筛选" clearable style="width: 180px" @change="form.questionIds = filteredQuestions.map((q) => q.questionId)">
+              <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
+            </el-select>
+            <span class="muted" style="font-size: 13px">显示 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
+          </div>
           <el-checkbox-group v-model="form.questionIds">
-            <el-checkbox v-for="question in store.questions" :key="question.questionId" :value="question.questionId">
+            <el-checkbox v-for="question in filteredQuestions" :key="question.questionId" :value="question.questionId">
               {{ question.questionContent }}
+              <el-tag v-if="question.category" size="small" effect="plain" style="margin-left: 6px">{{ question.category }}</el-tag>
             </el-checkbox>
           </el-checkbox-group>
         </el-form-item>

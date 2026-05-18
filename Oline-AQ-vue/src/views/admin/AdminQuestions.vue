@@ -8,10 +8,13 @@ const store = useExamStore()
 const keyword = ref('')
 const source = ref('')
 const questionType = ref('')
+const categoryFilter = ref('')
 const selectedIds = ref<number[]>([])
 const batchScore = ref(5)
+const batchCategoryValue = ref('')
 
 const sourceOptions = computed(() => Array.from(new Set(store.questions.map((question) => String(question.sourceFileId ?? '手动新增')))))
+const categoryOptions = computed(() => Array.from(new Set(store.questions.map((question) => question.category ?? '未分类'))))
 const filteredQuestions = computed(() => {
   const normalizedKeyword = keyword.value.trim().toLowerCase()
   return store.questions.filter((question) => {
@@ -21,11 +24,26 @@ const filteredQuestions = computed(() => {
       question.correctAnswer.toLowerCase().includes(normalizedKeyword)
     const matchSource = !source.value || String(question.sourceFileId ?? '手动新增') === source.value
     const matchType = !questionType.value || question.questionType === questionType.value
-    return matchKeyword && matchSource && matchType
+    const matchCategory = !categoryFilter.value || (question.category ?? '未分类') === categoryFilter.value
+    return matchKeyword && matchSource && matchType && matchCategory
   })
 })
 
-onMounted(() => store.loadQuestions())
+onMounted(() => { store.loadQuestions(); store.loadCategories() })
+
+async function updateSelectedCategory() {
+  if (selectedIds.value.length === 0) {
+    ElMessage.warning('请先选择要设置分类的题目')
+    return
+  }
+  if (!batchCategoryValue.value.trim()) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+  await store.updateQuestionCategories(selectedIds.value, batchCategoryValue.value.trim())
+  selectedIds.value = []
+  ElMessage.success('批量设置分类完成')
+}
 
 function updateSelection(rows: Array<{ questionId: number }>) {
   selectedIds.value = rows.map((row) => row.questionId)
@@ -59,12 +77,15 @@ async function updateSelectedScore() {
     <el-card>
       <div class="toolbar">
         <div class="toolbar-left">
-          <el-input v-model="keyword" placeholder="搜索题干或答案" clearable style="width: 240px" />
-          <el-select v-model="questionType" placeholder="题型" clearable style="width: 160px">
+          <el-input v-model="keyword" placeholder="搜索题干或答案" clearable style="width: 200px" />
+          <el-select v-model="questionType" placeholder="题型" clearable style="width: 130px">
             <el-option label="单选题" value="single" />
             <el-option label="判断题" value="judge" />
           </el-select>
-          <el-select v-model="source" placeholder="来源文件" clearable style="width: 220px">
+          <el-select v-model="categoryFilter" placeholder="分类" clearable style="width: 150px">
+            <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
+          </el-select>
+          <el-select v-model="source" placeholder="来源文件" clearable style="width: 180px">
             <el-option v-for="item in sourceOptions" :key="item" :label="item" :value="item" />
           </el-select>
         </div>
@@ -73,8 +94,10 @@ async function updateSelectedScore() {
 
       <div class="toolbar">
         <div class="toolbar-left">
-          <el-input-number v-model="batchScore" :min="1" :max="100" />
+          <el-input-number v-model="batchScore" :min="1" :max="100" style="width: 120px" />
           <el-button type="primary" plain @click="updateSelectedScore">批量设分</el-button>
+          <el-input v-model="batchCategoryValue" placeholder="分类名称" clearable style="width: 140px" />
+          <el-button type="success" plain @click="updateSelectedCategory">批量设分类</el-button>
           <el-button type="danger" plain @click="deleteSelected">批量删除</el-button>
         </div>
         <span class="muted">已选 {{ selectedIds.length }} 道题</span>
@@ -85,9 +108,15 @@ async function updateSelectedScore() {
         <el-table-column prop="questionId" label="ID" width="70" />
         <el-table-column prop="questionContent" label="题干" min-width="240" />
         <el-table-column prop="questionType" label="题型" width="100" />
-        <el-table-column prop="correctAnswer" label="答案" width="90" />
-        <el-table-column prop="score" label="分值" width="90" />
-        <el-table-column prop="sourceFileId" label="来源文件ID" min-width="120" />
+        <el-table-column prop="correctAnswer" label="答案" width="80" />
+        <el-table-column prop="score" label="分值" width="70" />
+        <el-table-column label="分类" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.category" size="small" effect="plain">{{ row.category }}</el-tag>
+            <span v-else class="muted" style="font-size: 12px">未分类</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sourceFileId" label="来源" min-width="100" />
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
             <el-button type="danger" link @click="store.deleteQuestion(row.questionId)">删除</el-button>
