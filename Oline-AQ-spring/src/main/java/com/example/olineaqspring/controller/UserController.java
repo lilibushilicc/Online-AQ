@@ -1,0 +1,62 @@
+package com.example.olineaqspring.controller;
+
+import com.example.olineaqspring.entity.SysUser;
+import com.example.olineaqspring.service.UserService;
+import com.example.olineaqspring.vo.ApiResponse;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @GetMapping
+    public ApiResponse<List<SysUser>> list() {
+        return ApiResponse.ok("查询成功", userService.list());
+    }
+
+    @PostMapping
+    public ApiResponse<SysUser> create(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String password = body.get("password");
+        String realName = body.get("realName");
+        String role = body.getOrDefault("role", "student");
+
+        if (username == null || username.isEmpty()) {
+            return ApiResponse.fail("账号不能为空");
+        }
+        if (password == null || password.isEmpty()) {
+            return ApiResponse.fail("密码不能为空");
+        }
+        if (realName == null || realName.isEmpty()) {
+            return ApiResponse.fail("姓名不能为空");
+        }
+
+        return ApiResponse.ok("新增成功", userService.create(username, password, realName, role));
+    }
+
+    @PutMapping("/{userId}")
+    public ApiResponse<SysUser> update(@PathVariable Integer userId, @RequestBody Map<String, String> body) {
+        return ApiResponse.ok("修改成功", userService.update(userId, body.get("realName"), body.get("password")));
+    }
+
+    @DeleteMapping("/{userId}")
+    public ApiResponse<Void> delete(@PathVariable Integer userId) {
+        userService.delete(userId);
+        return ApiResponse.ok("删除成功", null);
+    }
+}

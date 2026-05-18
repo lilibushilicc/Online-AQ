@@ -1,0 +1,101 @@
+package com.example.olineaqspring.config;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+@Component
+public class SchemaInitializer implements CommandLineRunner {
+    private final JdbcTemplate jdbcTemplate;
+
+    public SchemaInitializer(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public void run(String... args) {
+        // Fix exam table columns
+        jdbcTemplate.execute("ALTER TABLE exam ADD COLUMN IF NOT EXISTS allow_retake BOOLEAN DEFAULT FALSE");
+        jdbcTemplate.execute("ALTER TABLE exam ADD COLUMN IF NOT EXISTS start_time TIMESTAMP");
+        jdbcTemplate.execute("ALTER TABLE exam ADD COLUMN IF NOT EXISTS end_time TIMESTAMP");
+
+        // Fix question table columns
+        jdbcTemplate.execute("ALTER TABLE question ADD COLUMN IF NOT EXISTS category VARCHAR(100)");
+
+        // Ensure all required tables exist
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS exam_history (" +
+            "  history_id SERIAL PRIMARY KEY," +
+            "  exam_id INTEGER NOT NULL," +
+            "  operator_id INTEGER," +
+            "  action_type VARCHAR(100)," +
+            "  action_detail TEXT," +
+            "  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")"
+        );
+
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS exam_question (" +
+            "  id SERIAL PRIMARY KEY," +
+            "  exam_id INTEGER NOT NULL," +
+            "  question_id INTEGER NOT NULL," +
+            "  sort_order INTEGER," +
+            "  score NUMERIC(5,2)" +
+            ")"
+        );
+
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS student_answer (" +
+            "  answer_id SERIAL PRIMARY KEY," +
+            "  exam_id INTEGER NOT NULL," +
+            "  student_id INTEGER NOT NULL," +
+            "  question_id INTEGER NOT NULL," +
+            "  student_answer TEXT," +
+            "  correct_answer TEXT," +
+            "  is_correct BOOLEAN," +
+            "  score NUMERIC(5,2)," +
+            "  submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")"
+        );
+
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS exam_result (" +
+            "  result_id SERIAL PRIMARY KEY," +
+            "  exam_id INTEGER NOT NULL," +
+            "  student_id INTEGER NOT NULL," +
+            "  total_score NUMERIC(6,2)," +
+            "  correct_count INTEGER," +
+            "  wrong_count INTEGER," +
+            "  use_time INTEGER," +
+            "  submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")"
+        );
+
+        // Add assign_all to exam table
+        jdbcTemplate.execute("ALTER TABLE exam ADD COLUMN IF NOT EXISTS assign_all BOOLEAN DEFAULT TRUE");
+
+        // Create exam_student assignment table
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS exam_student (" +
+            "  id SERIAL PRIMARY KEY," +
+            "  exam_id INTEGER NOT NULL," +
+            "  student_id INTEGER NOT NULL" +
+            ")"
+        );
+
+        // Create system config table
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS sys_config (" +
+            "  config_key VARCHAR(100) PRIMARY KEY," +
+            "  config_value TEXT" +
+            ")"
+        );
+
+        // Insert default config values if not exist
+        jdbcTemplate.execute(
+            "INSERT INTO sys_config (config_key, config_value) " +
+            "SELECT 'storage.type', 'local' " +
+            "WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'storage.type')"
+        );
+    }
+}
