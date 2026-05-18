@@ -10,7 +10,11 @@ const previewExam = ref<Exam | null>(null)
 const previewQuestions = ref<Question[]>([])
 const historyVisible = ref(false)
 const currentHistory = ref<ExamHistory[]>([])
-const formCategory = ref('')
+const questionPickerVisible = ref(false)
+const publishDialogVisible = ref(false)
+const publishExamTarget = ref<Exam | null>(null)
+const publishMode = ref<'all' | 'select'>('all')
+const publishStudentIds = ref<number[]>([])
 const form = reactive({
   examName: '新建基础测试',
   description: '用于课堂快速测验',
@@ -20,28 +24,48 @@ const form = reactive({
   allowRetake: false,
   questionIds: [] as number[],
 })
+const pickerCategory = ref('')
+const pickerSearch = ref('')
+const selectedSearch = ref('')
 
-const selectedQuestions = computed(() => store.questions.filter((question) => form.questionIds.includes(question.questionId)))
-const selectedScore = computed(() => selectedQuestions.value.reduce((sum, question) => sum + Number(question.score), 0))
-const publishedCount = computed(() => store.exams.filter((exam) => exam.status === 'published').length)
-const draftCount = computed(() => store.exams.filter((exam) => exam.status === 'draft').length)
-const closedCount = computed(() => store.exams.filter((exam) => exam.status === 'closed').length)
+const selectedQuestions = computed(() => store.questions.filter((q) => form.questionIds.includes(q.questionId)))
+const filteredSelected = computed(() => {
+  if (!selectedSearch.value) return selectedQuestions.value
+  return selectedQuestions.value.filter((q) => q.questionContent.includes(selectedSearch.value))
+})
+const selectedScore = computed(() => selectedQuestions.value.reduce((sum, q) => sum + Number(q.score), 0))
+const publishedCount = computed(() => store.exams.filter((e) => e.status === 'published').length)
+const draftCount = computed(() => store.exams.filter((e) => e.status === 'draft').length)
+const closedCount = computed(() => store.exams.filter((e) => e.status === 'closed').length)
 const categoryOptions = computed(() => {
   const cats = new Set(store.questions.map((q) => q.category).filter(Boolean))
   return Array.from(cats) as string[]
 })
-const filteredQuestions = computed(() => {
-  if (!formCategory.value) return store.questions
-  return store.questions.filter((q) => q.category === formCategory.value)
+const pickerQuestions = computed(() => {
+  let list = store.questions
+  if (pickerCategory.value) list = list.filter((q) => q.category === pickerCategory.value)
+  if (pickerSearch.value) list = list.filter((q) => q.questionContent.includes(pickerSearch.value))
+  return list
 })
+const studentOptions = computed(() => store.users.filter((u) => u.role === 'student'))
 
 onMounted(async () => {
-  await Promise.all([store.loadQuestions(), store.loadExams(), store.loadCategories()])
-  form.questionIds = store.questions.map((question) => question.questionId)
+  await Promise.all([store.loadQuestions(), store.loadExams(), store.loadCategories(), store.loadUsers()])
+  form.questionIds = store.questions.map((q) => q.questionId)
 })
 
 function formatTime(value?: string | null) {
   return value ? new Date(value).toLocaleString() : '未设置'
+}
+
+function openQuestionPicker() {
+  pickerCategory.value = ''
+  pickerSearch.value = ''
+  questionPickerVisible.value = true
+}
+
+function confirmQuestionSelection() {
+  questionPickerVisible.value = false
 }
 
 async function createExam() {
@@ -49,7 +73,6 @@ async function createExam() {
     ElMessage.warning('请填写考试名称并至少选择一道题')
     return
   }
-
   await store.createExam({
     examName: form.examName,
     description: form.description,
@@ -75,13 +98,24 @@ async function showHistory(row: Exam) {
   historyVisible.value = true
 }
 
-async function handlePublish(exam: Exam) {
+function openPublishDialog(exam: Exam) {
+  publishExamTarget.value = exam
+  publishMode.value = 'all'
+  publishStudentIds.value = []
+  publishDialogVisible.value = true
+}
+
+async function confirmPublish() {
+  if (!publishExamTarget.value) return
   try {
-    await ElMessageBox.confirm(`确认发布「${exam.examName}」吗？发布后学生端即可看到该考试。`, '发布考试', { type: 'warning' })
-    await store.publishExam(exam.examId)
-    ElMessage.success(`「${exam.examName}」已发布`)
+    await store.publishExam(publishExamTarget.value.examId, {
+      assignAll: publishMode.value === 'all',
+      studentIds: publishMode.value === 'select' ? publishStudentIds.value : undefined,
+    })
+    ElMessage.success(`「${publishExamTarget.value.examName}」已发布`)
+    publishDialogVisible.value = false
   } catch {
-    // user cancelled or error handled by interceptor
+    // handled by interceptor
   }
 }
 
@@ -91,7 +125,17 @@ async function handleClose(exam: Exam) {
     await store.closeExam(exam.examId)
     ElMessage.success(`「${exam.examName}」已关闭`)
   } catch {
-    // user cancelled or error handled by interceptor
+    // user cancelled
+  }
+}
+
+async function handleDelete(exam: Exam) {
+  try {
+    await ElMessageBox.confirm(`确认永久删除「${exam.examName}」吗？相关数据（成绩、答案等）也将一并删除，不可恢复。`, '删除考试', { type: 'error', confirmButtonText: '确认删除', confirmButtonClass: 'el-button--danger' })
+    await store.deleteExam(exam.examId)
+    ElMessage.success(`「${exam.examName}」已删除`)
+  } catch {
+    // user cancelled
   }
 }
 </script>
@@ -129,6 +173,7 @@ async function handleClose(exam: Exam) {
       </el-col>
     </el-row>
 
+    <!-- 创建考试 -->
     <el-card style="margin-bottom: 14px">
       <template #header>
         <div style="display: flex; align-items: center; justify-content: space-between">
@@ -153,18 +198,10 @@ async function handleClose(exam: Exam) {
         </div>
 
         <el-form-item label="选择题目">
-          <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px">
-            <el-select v-model="formCategory" placeholder="按分类筛选" clearable style="width: 180px" @change="form.questionIds = filteredQuestions.map((q) => q.questionId)">
-              <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
-            </el-select>
-            <span class="muted" style="font-size: 13px">显示 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <el-button type="primary" @click="openQuestionPicker">打开选题面板</el-button>
+            <span class="muted" style="font-size: 13px">已选 {{ form.questionIds.length }} 道题</span>
           </div>
-          <el-checkbox-group v-model="form.questionIds">
-            <el-checkbox v-for="question in filteredQuestions" :key="question.questionId" :value="question.questionId">
-              {{ question.questionContent }}
-              <el-tag v-if="question.category" size="small" effect="plain" style="margin-left: 6px">{{ question.category }}</el-tag>
-            </el-checkbox>
-          </el-checkbox-group>
         </el-form-item>
 
         <el-descriptions :column="3" border style="margin-bottom: 16px">
@@ -173,9 +210,33 @@ async function handleClose(exam: Exam) {
           <el-descriptions-item label="重考策略">{{ form.allowRetake ? '允许重考' : '仅一次提交' }}</el-descriptions-item>
         </el-descriptions>
         <el-button type="primary" @click="createExam">保存考试</el-button>
+
+        <!-- 已选题目列表 -->
+        <el-collapse style="margin-top: 16px" v-if="selectedQuestions.length > 0">
+          <el-collapse-item title="已选题目列表">
+            <el-input v-model="selectedSearch" placeholder="在已选题目中搜索..." clearable style="max-width: 360px; margin-bottom: 12px" />
+            <div class="selected-question-list" style="max-height: 400px; overflow-y: auto">
+              <div v-for="(question, index) in filteredSelected" :key="question.questionId" class="picker-item">
+                <div class="picker-number">{{ index + 1 }}</div>
+                <div style="flex: 1; min-width: 0">
+                  <div class="picker-content">{{ question.questionContent }}</div>
+                  <div class="picker-meta">
+                    <el-tag size="small" :type="question.questionType === 'single' ? 'primary' : question.questionType === 'judge' ? 'warning' : 'success'">
+                      {{ ({ single: '单选', judge: '判断', short_answer: '简答', fill_blank: '填空' } as any)[question.questionType] || question.questionType }}
+                    </el-tag>
+                    <el-tag v-if="question.category" size="small" effect="plain">{{ question.category }}</el-tag>
+                    <span>{{ question.score }} 分</span>
+                  </div>
+                </div>
+                <el-button size="small" type="danger" link @click="form.questionIds = form.questionIds.filter((id) => id !== question.questionId)">移除</el-button>
+              </div>
+            </div>
+          </el-collapse-item>
+        </el-collapse>
       </el-form>
     </el-card>
 
+    <!-- 考试列表 -->
     <el-row :gutter="14" v-if="store.exams.length > 0">
       <el-col v-for="exam in store.exams" :key="exam.examId" :xs="24" :md="12" style="margin-bottom: 14px">
         <el-card shadow="hover">
@@ -199,14 +260,75 @@ async function handleClose(exam: Exam) {
           <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px">
             <el-button type="success" plain @click="showPreview(exam)">预览试卷</el-button>
             <el-button type="info" plain @click="showHistory(exam)">历史记录</el-button>
-            <el-button v-if="exam.status === 'draft'" type="primary" plain @click="handlePublish(exam)">发布</el-button>
+            <el-button v-if="exam.status === 'draft'" type="primary" plain @click="openPublishDialog(exam)">发布</el-button>
             <el-button v-if="exam.status === 'published'" type="warning" plain @click="handleClose(exam)">关闭</el-button>
+            <el-button type="danger" plain @click="handleDelete(exam)">删除</el-button>
           </div>
         </el-card>
       </el-col>
     </el-row>
     <el-empty v-if="store.exams.length === 0" description="暂无考试，请先创建考试" />
 
+    <!-- 独立选题弹窗 -->
+    <el-dialog v-model="questionPickerVisible" title="选择题目" width="800px" top="5vh">
+      <div style="display: flex; gap: 12px; margin-bottom: 14px">
+        <el-select v-model="pickerCategory" placeholder="按分类筛选" clearable style="width: 180px">
+          <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
+        </el-select>
+        <el-input v-model="pickerSearch" placeholder="搜索题目内容" clearable style="width: 260px" />
+        <span class="muted" style="font-size: 13px; line-height: 32px">显示 {{ pickerQuestions.length }} / {{ store.questions.length }} 道题</span>
+      </div>
+      <div style="max-height: 60vh; overflow-y: auto">
+        <div v-for="(question, index) in pickerQuestions" :key="question.questionId" class="picker-item" :class="{ 'picker-item--selected': form.questionIds.includes(question.questionId) }" @click="
+          form.questionIds.includes(question.questionId)
+            ? form.questionIds = form.questionIds.filter((id) => id !== question.questionId)
+            : form.questionIds.push(question.questionId)
+        ">
+          <div class="picker-number">{{ index + 1 }}</div>
+          <div style="flex: 1; min-width: 0">
+            <div class="picker-content">{{ question.questionContent }}</div>
+            <div class="picker-meta">
+              <el-tag size="small" :type="question.questionType === 'single' ? 'primary' : question.questionType === 'judge' ? 'warning' : 'success'">{{ ({ single: '单选', judge: '判断', short_answer: '简答', fill_blank: '填空' } as any)[question.questionType] || question.questionType }}</el-tag>
+              <el-tag v-if="question.category" size="small" effect="plain">{{ question.category }}</el-tag>
+              <span>{{ question.score }} 分</span>
+            </div>
+          </div>
+          <el-checkbox :model-value="form.questionIds.includes(question.questionId)" @click.stop />
+        </div>
+      </div>
+      <template #footer>
+        <span style="color: var(--muted); font-size: 13px">已选 {{ form.questionIds.length }} 道题</span>
+        <el-button type="primary" @click="confirmQuestionSelection">确认选择</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 发布弹窗 -->
+    <el-dialog v-model="publishDialogVisible" title="发布考试" width="500px">
+      <template v-if="publishExamTarget">
+        <p style="margin-bottom: 16px">考试：<strong>{{ publishExamTarget.examName }}</strong></p>
+        <el-radio-group v-model="publishMode" style="margin-bottom: 16px">
+          <el-radio value="all">全体学生</el-radio>
+          <el-radio value="select">仅指定学生</el-radio>
+        </el-radio-group>
+
+        <template v-if="publishMode === 'select'">
+          <el-checkbox-group v-model="publishStudentIds">
+            <el-checkbox v-for="s in studentOptions" :key="s.userId" :value="s.userId" style="margin-bottom: 6px">
+              {{ s.realName }}（{{ s.username }}）
+            </el-checkbox>
+          </el-checkbox-group>
+          <div v-if="publishStudentIds.length === 0" style="margin-top: 8px">
+            <span class="muted">请至少选择一名学生</span>
+          </div>
+        </template>
+      </template>
+      <template #footer>
+        <el-button @click="publishDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmPublish" :disabled="publishMode === 'select' && publishStudentIds.length === 0">确认发布</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 试卷预览 -->
     <el-drawer v-model="previewVisible" title="试卷预览" size="42%">
       <template v-if="previewExam">
         <h3>{{ previewExam.examName }}</h3>
@@ -215,18 +337,21 @@ async function handleClose(exam: Exam) {
         <div class="question-list">
           <el-card v-for="(question, index) in previewQuestions" :key="question.questionId" shadow="hover" style="margin-bottom: 14px">
             <strong>{{ index + 1 }}. {{ question.questionContent }}</strong>
-            <div class="option-grid">
-              <span>A. {{ question.optionA }}</span>
-              <span>B. {{ question.optionB }}</span>
-              <span v-if="question.optionC">C. {{ question.optionC }}</span>
-              <span v-if="question.optionD">D. {{ question.optionD }}</span>
-            </div>
+            <template v-if="question.questionType === 'single' || question.questionType === 'judge'">
+              <div class="option-grid">
+                <span>A. {{ question.optionA }}</span>
+                <span>B. {{ question.optionB }}</span>
+                <span v-if="question.optionC">C. {{ question.optionC }}</span>
+                <span v-if="question.optionD">D. {{ question.optionD }}</span>
+              </div>
+            </template>
             <p class="muted">答案：{{ question.correctAnswer }}，分值：{{ question.score }}</p>
           </el-card>
         </div>
       </template>
     </el-drawer>
 
+    <!-- 历史记录 -->
     <el-drawer v-model="historyVisible" title="考试历史记录" size="42%">
       <template v-if="previewExam">
         <h3>{{ previewExam.examName }}</h3>
@@ -246,3 +371,52 @@ async function handleClose(exam: Exam) {
     </el-drawer>
   </AdminLayout>
 </template>
+
+<style scoped>
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.picker-item:hover {
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
+}
+.picker-item--selected {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+.picker-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--el-color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.picker-content {
+  font-size: 14px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picker-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+</style>

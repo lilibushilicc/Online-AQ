@@ -172,12 +172,20 @@ onUnmounted(() => {
             <strong>{{ index + 1 }}. {{ question.questionContent }}</strong>
             <el-tag>{{ question.score }} 分</el-tag>
           </div>
-          <el-radio-group v-model="answers[question.questionId]" style="display: flex; flex-direction: column; gap: 8px">
-            <el-radio value="A" style="min-height: 40px; align-items: center">A. {{ question.optionA }}</el-radio>
-            <el-radio value="B" style="min-height: 40px; align-items: center">B. {{ question.optionB }}</el-radio>
-            <el-radio v-if="question.optionC" value="C" style="min-height: 40px; align-items: center">C. {{ question.optionC }}</el-radio>
-            <el-radio v-if="question.optionD" value="D" style="min-height: 40px; align-items: center">D. {{ question.optionD }}</el-radio>
-          </el-radio-group>
+          <template v-if="question.questionType === 'single' || question.questionType === 'judge'">
+            <el-radio-group v-model="answers[question.questionId]" style="display: flex; flex-direction: column; gap: 8px">
+              <el-radio value="A" style="min-height: 40px; align-items: center">A. {{ question.optionA }}</el-radio>
+              <el-radio value="B" style="min-height: 40px; align-items: center">B. {{ question.optionB }}</el-radio>
+              <el-radio v-if="question.optionC" value="C" style="min-height: 40px; align-items: center">C. {{ question.optionC }}</el-radio>
+              <el-radio v-if="question.optionD" value="D" style="min-height: 40px; align-items: center">D. {{ question.optionD }}</el-radio>
+            </el-radio-group>
+          </template>
+          <template v-else-if="question.questionType === 'fill_blank'">
+            <el-input v-model="answers[question.questionId]" placeholder="请输入答案" clearable style="max-width: 400px" />
+          </template>
+          <template v-else-if="question.questionType === 'short_answer'">
+            <el-input v-model="answers[question.questionId]" type="textarea" :rows="4" placeholder="请输入你的回答" />
+          </template>
         </el-card>
       </div>
       <aside class="answer-index">

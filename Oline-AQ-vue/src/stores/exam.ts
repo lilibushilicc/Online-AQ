@@ -13,10 +13,12 @@ export interface User {
   role: Role
 }
 
+export type QuestionType = 'single' | 'judge' | 'short_answer' | 'fill_blank'
+
 export interface Question {
   questionId: number
   questionContent: string
-  questionType: 'single' | 'judge'
+  questionType: QuestionType
   optionA: string
   optionB: string
   optionC: string
@@ -35,6 +37,7 @@ export interface Exam {
   status: 'draft' | 'published' | 'closed'
   totalScore: number
   allowRetake: boolean
+  assignAll?: boolean
   startTime?: string | null
   endTime?: string | null
   createTime?: string
@@ -64,7 +67,7 @@ export interface ExamHistory {
 export interface ResultAnswerDetail {
   questionId: number
   questionContent: string
-  questionType: 'single' | 'judge'
+  questionType: QuestionType
   optionA: string
   optionB: string
   optionC: string
@@ -112,6 +115,11 @@ export interface CreateExamPayload {
   endTime?: string | null
   allowRetake: boolean
   questionIds: number[]
+}
+
+export interface PublishExamPayload {
+  assignAll: boolean
+  studentIds?: number[]
 }
 
 interface ApiResponse<T> {
@@ -269,12 +277,20 @@ export const useExamStore = defineStore('exam', {
       await request.post('/exams', payload)
       await this.loadExams()
     },
-    async publishExam(examId: number) {
-      await request.put(`/exams/${examId}/publish`)
+    async publishExam(examId: number, payload?: PublishExamPayload) {
+      await request.put(`/exams/${examId}/publish`, payload ?? {})
       await this.loadExams()
+    },
+    async loadStudentExams() {
+      const { data } = await request.get<unknown, ApiResponse<Exam[]>>('/exams/student')
+      this.exams = data
     },
     async closeExam(examId: number) {
       await request.put(`/exams/${examId}/close`)
+      await this.loadExams()
+    },
+    async deleteExam(examId: number) {
+      await request.delete(`/exams/${examId}`)
       await this.loadExams()
     },
     async submitExam(examId: number, answers: Record<number, string>, useTime = 0) {

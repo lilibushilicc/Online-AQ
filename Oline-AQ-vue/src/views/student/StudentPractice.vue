@@ -116,14 +116,25 @@ onMounted(async () => {
             </el-tag>
           </div>
         </div>
-        <el-radio-group v-model="answers[question.questionId]" :disabled="submitted">
-          <el-radio value="A">A. {{ question.optionA }}</el-radio>
-          <el-radio value="B">B. {{ question.optionB }}</el-radio>
-          <el-radio v-if="question.optionC" value="C">C. {{ question.optionC }}</el-radio>
-          <el-radio v-if="question.optionD" value="D">D. {{ question.optionD }}</el-radio>
-        </el-radio-group>
-        <div v-if="submitted && !isCorrect(question.questionId)" style="margin-top: 10px; color: var(--el-color-success)">
+        <template v-if="question.questionType === 'single' || question.questionType === 'judge'">
+          <el-radio-group v-model="answers[question.questionId]" :disabled="submitted">
+            <el-radio value="A">A. {{ question.optionA }}</el-radio>
+            <el-radio value="B">B. {{ question.optionB }}</el-radio>
+            <el-radio v-if="question.optionC" value="C">C. {{ question.optionC }}</el-radio>
+            <el-radio v-if="question.optionD" value="D">D. {{ question.optionD }}</el-radio>
+          </el-radio-group>
+        </template>
+        <template v-else-if="question.questionType === 'fill_blank'">
+          <el-input v-model="answers[question.questionId]" placeholder="请输入答案" :disabled="submitted" clearable style="max-width: 400px" />
+        </template>
+        <template v-else-if="question.questionType === 'short_answer'">
+          <el-input v-model="answers[question.questionId]" type="textarea" :rows="4" placeholder="请输入你的回答" :disabled="submitted" />
+        </template>
+        <div v-if="submitted && !isCorrect(question.questionId) && (question.questionType === 'single' || question.questionType === 'judge')" style="margin-top: 10px; color: var(--el-color-success)">
           正确答案：{{ question.correctAnswer }}. {{ getOptionText(question, question.correctAnswer) }}
+        </div>
+        <div v-else-if="submitted && !isCorrect(question.questionId)" style="margin-top: 10px; color: var(--el-color-success)">
+          参考答案：{{ question.correctAnswer }}
         </div>
       </el-card>
 

@@ -72,7 +72,7 @@ onMounted(async () => {
           <strong>{{ index + 1 }}. {{ answer.questionContent }}</strong>
           <el-tag :type="answer.isCorrect ? 'success' : 'danger'">{{ answer.isCorrect ? '正确' : '错误' }}</el-tag>
         </div>
-        <div class="option-grid">
+        <div v-if="answer.questionType === 'single' || answer.questionType === 'judge'" class="option-grid">
           <span>A. {{ answer.optionA }}</span>
           <span>B. {{ answer.optionB }}</span>
           <span v-if="answer.optionC">C. {{ answer.optionC }}</span>

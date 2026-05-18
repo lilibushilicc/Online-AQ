@@ -81,6 +81,8 @@ async function updateSelectedScore() {
           <el-select v-model="questionType" placeholder="题型" clearable style="width: 130px">
             <el-option label="单选题" value="single" />
             <el-option label="判断题" value="judge" />
+            <el-option label="简答题" value="short_answer" />
+            <el-option label="填空题" value="fill_blank" />
           </el-select>
           <el-select v-model="categoryFilter" placeholder="分类" clearable style="width: 150px">
             <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
@@ -107,7 +109,11 @@ async function updateSelectedScore() {
         <el-table-column type="selection" width="50" />
         <el-table-column prop="questionId" label="ID" width="70" />
         <el-table-column prop="questionContent" label="题干" min-width="240" />
-        <el-table-column prop="questionType" label="题型" width="100" />
+        <el-table-column label="题型" width="100">
+          <template #default="{ row }">
+            {{ ({ single: '单选', judge: '判断', short_answer: '简答', fill_blank: '填空' } as any)[row.questionType] || row.questionType }}
+          </template>
+        </el-table-column>
         <el-table-column prop="correctAnswer" label="答案" width="80" />
         <el-table-column prop="score" label="分值" width="70" />
         <el-table-column label="分类" width="100">
