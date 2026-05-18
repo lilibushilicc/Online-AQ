@@ -107,6 +107,40 @@ export interface BatchCategoryPayload {
   category: string
 }
 
+export interface QuestionFeedback {
+  feedbackId: number
+  questionId: number
+  studentId: number
+  examId?: number
+  feedbackType: string
+  description: string
+  status: string
+  rejectReason?: string
+  resolveType?: string
+  createTime: string
+  updateTime: string
+}
+
+export interface FeedbackListVO {
+  feedbackId: number
+  questionId: number
+  questionContent: string
+  studentName: string
+  feedbackType: string
+  description: string
+  status: string
+  rejectReason?: string
+  createTime: string
+  pendingCount?: number
+}
+
+export interface FeedbackCreatePayload {
+  questionId: number
+  examId?: number
+  feedbackType: string
+  description: string
+}
+
 export interface CreateExamPayload {
   examName: string
   description: string
@@ -355,6 +389,36 @@ export const useExamStore = defineStore('exam', {
     },
     async testR2() {
       const { data } = await request.post<unknown, ApiResponse<{ result: string }>>('/config/test-r2')
+      return data
+    },
+
+    // -------- Question Feedback --------
+    async submitFeedback(payload: FeedbackCreatePayload) {
+      const { data } = await request.post<unknown, ApiResponse<QuestionFeedback>>('/feedbacks', payload)
+      return data
+    },
+    async myFeedbackQuestionIds(questionIds: number[]) {
+      const { data } = await request.get<unknown, ApiResponse<number[]>>('/feedbacks/my', {
+        params: { questionIds: questionIds.join(',') },
+      })
+      return data
+    },
+    async loadFeedbacks(status?: string) {
+      const params: Record<string, string> = {}
+      if (status) params.status = status
+      const { data } = await request.get<unknown, ApiResponse<FeedbackListVO[]>>('/feedbacks', { params })
+      return data
+    },
+    async getFeedbackDetail(feedbackId: number) {
+      const { data } = await request.get<unknown, ApiResponse<any>>(`/feedbacks/${feedbackId}`)
+      return data
+    },
+    async resolveFeedback(feedbackId: number, questionRequest: Record<string, unknown>) {
+      const { data } = await request.put<unknown, ApiResponse<{ affectedOther: number }>>(`/feedbacks/${feedbackId}/resolve`, questionRequest)
+      return data
+    },
+    async rejectFeedback(feedbackId: number, rejectReason: string) {
+      const { data } = await request.put<unknown, ApiResponse<{ affectedOther: number }>>(`/feedbacks/${feedbackId}/reject`, { rejectReason })
       return data
     },
   },

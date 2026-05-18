@@ -14,6 +14,7 @@ const AdminExams = () => import('@/views/admin/AdminExams.vue')
 const AdminResults = () => import('@/views/admin/AdminResults.vue')
 const AdminStudents = () => import('@/views/admin/AdminStudents.vue')
 const AdminConfig = () => import('@/views/admin/AdminConfig.vue')
+const AdminFeedbacks = () => import('@/views/admin/AdminFeedbacks.vue')
 const StudentExams = () => import('@/views/student/StudentExams.vue')
 const StudentExamDetail = () => import('@/views/student/StudentExamDetail.vue')
 const StudentResults = () => import('@/views/student/StudentResults.vue')
@@ -31,6 +32,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/admin/results', component: AdminResults, meta: { requiresAuth: true, role: 'admin' } },
   { path: '/admin/students', component: AdminStudents, meta: { requiresAuth: true, role: 'admin' } },
   { path: '/admin/config', component: AdminConfig, meta: { requiresAuth: true, role: 'admin' } },
+  { path: '/admin/feedbacks', component: AdminFeedbacks, meta: { requiresAuth: true, role: 'admin' } },
   { path: '/student/exams', component: StudentExams, meta: { requiresAuth: true, role: 'student' } },
   { path: '/student/exams/:examId', component: StudentExamDetail, meta: { requiresAuth: true, role: 'student' } },
   { path: '/student/results', component: StudentResults, meta: { requiresAuth: true, role: 'student' } },

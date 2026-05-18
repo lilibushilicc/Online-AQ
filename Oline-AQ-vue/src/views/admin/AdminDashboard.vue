@@ -18,10 +18,10 @@ const averageScore = computed(() => store.averageScore)
 const totalDuration = computed(() => store.exams.reduce((sum, exam) => sum + (exam.duration || 0), 0))
 
 const cells = computed(() => [
-  { label: '题库题目', value: store.questions.length, unit: '道', desc: '可用于组卷的有效题量', trend: null },
-  { label: '考试数量', value: store.exams.length, unit: '场', desc: '草稿、已发布、已关闭合计', trend: null },
-  { label: '发布率', value: publishedRate.value, unit: '%', desc: `${store.publishedExams.length} 场正在开放`, trend: publishedRate.value > 50 ? 'up' : 'down' },
-  { label: '平均得分', value: averageScore.value, unit: '分', desc: '来自当前成绩记录', trend: null },
+  { label: '题库题目', value: store.questions.length, unit: '道', desc: '可用于组卷的有效题量' },
+  { label: '考试数量', value: store.exams.length, unit: '场', desc: '草稿、已发布、已关闭合计' },
+  { label: '发布率', value: publishedRate.value, unit: '%', desc: `${store.publishedExams.length} 场正在开放` },
+  { label: '平均得分', value: averageScore.value, unit: '分', desc: '来自当前成绩记录' },
 ])
 
 onMounted(async () => {
@@ -41,11 +41,9 @@ onMounted(async () => {
         <div class="bento-label">{{ cell.label }}</div>
         <div class="bento-value">
           {{ cell.value }}
-          <span style="font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0;">{{ cell.unit }}</span>
+          <span style="font-size: 15px; font-weight: 400; color: var(--muted); letter-spacing: 0;">{{ cell.unit }}</span>
         </div>
-        <div class="bento-trend" :class="cell.trend ?? ''">
-          {{ cell.desc }}
-        </div>
+        <div class="bento-trend">{{ cell.desc }}</div>
       </div>
 
       <div class="bento-cell bento-cell-wide fade-in stagger-5">
@@ -53,7 +51,7 @@ onMounted(async () => {
         <div style="display: grid; gap: 12px; margin-top: 4px">
           <div style="display: grid; grid-template-columns: 64px 1fr 40px; gap: 10px; align-items: center">
             <span style="color: var(--muted); font-size: 12px">已发布</span>
-            <el-progress :percentage="publishedRate" :stroke-width="8" :show-text="false" color="var(--green)" />
+            <el-progress :percentage="publishedRate" :stroke-width="8" :show-text="false" color="var(--ink-green)" />
             <strong style="font-size: 13px">{{ publishedRate }}%</strong>
           </div>
           <div style="display: grid; grid-template-columns: 64px 1fr 40px; gap: 10px; align-items: center">
@@ -67,7 +65,7 @@ onMounted(async () => {
             <strong style="font-size: 13px">{{ closedCount }}</strong>
           </div>
         </div>
-        <div class="bento-trend" style="margin-top: 8px">
+        <div class="bento-trend" style="margin-top: 10px">
           累计设计分值 <strong>{{ totalScore }}</strong> 分 | 总计时长 <strong>{{ totalDuration }}</strong> 分钟
         </div>
       </div>
@@ -88,8 +86,8 @@ onMounted(async () => {
       </div>
 
       <div class="bento-cell bento-cell-full fade-in stagger-7" style="padding: 0;">
-        <div style="padding: 18px 20px; border-bottom: 1px solid var(--line-light); display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;">工作流程</span>
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--line-light);">
+          <span style="font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;">工作流程</span>
         </div>
         <div style="padding: 16px 20px">
           <el-steps :active="5" align-center>
@@ -103,8 +101,8 @@ onMounted(async () => {
       </div>
 
       <div class="bento-cell bento-cell-full fade-in stagger-8" style="padding: 0;">
-        <div style="padding: 18px 20px; border-bottom: 1px solid var(--line-light); display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;">最近考试</span>
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--line-light); display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;">最近考试</span>
           <el-button link type="primary" size="small" @click="$router.push('/admin/exams')">管理考试</el-button>
         </div>
         <div style="padding: 0">
@@ -113,7 +111,7 @@ onMounted(async () => {
             <el-table-column label="状态" width="100">
               <template #default="{ row }">
                 <el-tag :type="row.status === 'published' ? 'success' : row.status === 'closed' ? 'info' : 'warning'" size="small">
-                  {{ row.status }}
+                  {{ row.status === 'published' ? '已发布' : row.status === 'closed' ? '已关闭' : '草稿' }}
                 </el-tag>
               </template>
             </el-table-column>

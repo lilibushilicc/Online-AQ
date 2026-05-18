@@ -35,13 +35,13 @@ async function submit() {
 <template>
   <main class="login-page">
     <section class="login-hero">
-      <div class="hero-badge">在线考试平台 v1.0</div>
-      <h1>智能<br><span>在线答题</span>系统</h1>
+      <div class="hero-divider"></div>
+      <h1>智能<br><span>在线答题</span><br>系统</h1>
       <p class="hero-sub">教师导入试题、自动解析组卷并发布考试。学生在线作答，系统即时评分并沉淀数据，形成完整的教学测验闭环。</p>
       <div class="hero-features">
-        <div v-for="item in features" :key="item.label" class="hero-feature">
+        <div v-for="item in features" :key="item.label" class="hero-feature fade-in">
           <span class="hero-feature-icon">
-            <el-icon :size="15"><component :is="item.icon" /></el-icon>
+            <el-icon :size="13"><component :is="item.icon" /></el-icon>
           </span>
           <span>{{ item.label }}</span>
         </div>
@@ -50,9 +50,9 @@ async function submit() {
 
     <section class="login-card">
       <h2>登录系统</h2>
-      <p class="muted">选择身份，使用测试账号快速体验</p>
+      <p class="login-muted">选择身份，使用测试账号快速体验</p>
 
-      <el-form label-position="top" style="margin-top: 22px" @submit.prevent>
+      <el-form class="login-form" label-position="top" @submit.prevent>
         <el-form-item label="账号">
           <el-input v-model="form.username" placeholder="admin / 2023001" />
         </el-form-item>
@@ -68,11 +68,11 @@ async function submit() {
             ]"
           />
         </el-form-item>
-        <el-button type="primary" class="login-submit" @click="submit">登录</el-button>
+        <el-button class="login-submit" @click="submit">登 录</el-button>
       </el-form>
 
       <div class="login-footer">
-        <span class="muted">测试账号 · admin / 2023001 &nbsp; 密码 123456</span>
+        测试账号 · admin / 2023001 &nbsp; 密码 123456
       </div>
     </section>
   </main>

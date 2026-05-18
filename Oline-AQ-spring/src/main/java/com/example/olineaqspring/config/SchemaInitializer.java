@@ -97,5 +97,22 @@ public class SchemaInitializer implements CommandLineRunner {
             "SELECT 'storage.type', 'local' " +
             "WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'storage.type')"
         );
+
+        // Create question_feedback table
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS question_feedback (" +
+            "  feedback_id SERIAL PRIMARY KEY," +
+            "  question_id INTEGER NOT NULL," +
+            "  student_id INTEGER NOT NULL," +
+            "  exam_id INTEGER," +
+            "  feedback_type VARCHAR(50) NOT NULL," +
+            "  description TEXT NOT NULL," +
+            "  status VARCHAR(50) DEFAULT 'pending'," +
+            "  reject_reason TEXT," +
+            "  resolve_type VARCHAR(50)," +
+            "  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+            "  update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")"
+        );
     }
 }

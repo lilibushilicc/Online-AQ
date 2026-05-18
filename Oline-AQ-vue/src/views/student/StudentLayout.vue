@@ -25,22 +25,17 @@ const userName = computed(() => store.currentUser?.realName ?? '学生')
           </div>
         </div>
 
-        <div style="padding: 12px 14px 8px; margin: 0 8px;">
-          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--primary-light); border-radius: var(--radius);">
-            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-gradient); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0;">
-              {{ userName.charAt(0) }}
-            </div>
-            <div style="min-width: 0">
-              <div style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ userName }}</div>
-              <div style="font-size: 11px; color: var(--muted);">学生</div>
-            </div>
+        <div class="user-card">
+          <div class="user-avatar">{{ userName.charAt(0) }}</div>
+          <div>
+            <div class="user-name">{{ userName }}</div>
+            <div class="user-role">学生</div>
           </div>
         </div>
 
         <el-menu
           :default-active="route.path"
           router
-          style="border-right: none"
         >
           <el-menu-item index="/student/exams">
             <el-icon><List /></el-icon>
@@ -56,9 +51,7 @@ const userName = computed(() => store.currentUser?.realName ?? '学生')
           </el-menu-item>
         </el-menu>
 
-        <div style="margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--line-light); margin: auto 14px 0; font-size: 11px; color: var(--muted); text-align: center;">
-          AQ System v1.0
-        </div>
+        <div class="sidebar-footer">AQ System v1.0</div>
       </aside>
 
       <section class="content">
