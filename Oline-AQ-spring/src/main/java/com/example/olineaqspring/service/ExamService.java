@@ -25,10 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -62,12 +59,15 @@ public class ExamService {
     }
 
     public Map<String, Object> detail(Integer examId) {
+        return detail(examId, null);
+    }
+
+    public Map<String, Object> detail(Integer examId, String role) {
         Exam exam = getExam(examId);
         List<ExamQuestion> relations = listExamQuestions(examId);
         Map<Integer, Question> questionMap = getQuestionMap(relations.stream()
                 .map(ExamQuestion::getQuestionId)
                 .toList());
-        // Map relation scores: questionId -> score in this exam
         Map<Integer, BigDecimal> relationScoreMap = relations.stream()
                 .collect(Collectors.toMap(ExamQuestion::getQuestionId,
                         ExamQuestion::getScore,
@@ -75,13 +75,67 @@ public class ExamService {
         List<Question> questions = relations.stream()
                 .map(relation -> questionMap.get(relation.getQuestionId()))
                 .filter(question -> question != null)
-                .toList();
+                .collect(Collectors.toList());
+
+        boolean isStudent = "student".equals(role);
+        if (isStudent && Boolean.TRUE.equals(exam.getShuffleQuestions())) {
+            Collections.shuffle(questions);
+        }
+
+        Map<Integer, int[]> shuffleMap = new HashMap<>();
+        if (isStudent && Boolean.TRUE.equals(exam.getShuffleAnswers())) {
+            questions = questions.stream()
+                    .map(q -> shuffleQuestionOptions(q, shuffleMap))
+                    .collect(Collectors.toList());
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("exam", exam);
         data.put("questions", questions);
         data.put("relationScores", relationScoreMap);
+        data.put("serverTime", System.currentTimeMillis());
+        if (!shuffleMap.isEmpty()) {
+            data.put("shuffleMap", shuffleMap);
+        }
         return data;
+    }
+
+    private Question shuffleQuestionOptions(Question original, Map<Integer, int[]> shuffleMap) {
+        Question q = new Question();
+        q.setQuestionId(original.getQuestionId());
+        q.setQuestionContent(original.getQuestionContent());
+        q.setQuestionType(original.getQuestionType());
+        q.setScore(original.getScore());
+        q.setCategory(original.getCategory());
+        q.setSourceFileId(original.getSourceFileId());
+
+        String[] options = {original.getOptionA(), original.getOptionB(), original.getOptionC(), original.getOptionD()};
+        int[] indices = {0, 1, 2, 3};
+        List<Integer> list = new ArrayList<>(Arrays.asList(0, 1, 2, 3));
+        Collections.shuffle(list);
+        for (int i = 0; i < 4; i++) indices[i] = list.get(i);
+
+        q.setOptionA(options[indices[0]]);
+        q.setOptionB(options[indices[1]]);
+        q.setOptionC(options[indices[2]]);
+        q.setOptionD(options[indices[3]]);
+
+        // shuffleMap: newPosition -> originalIdx (student picks "A" at newPos 0, original was indices[0])
+        shuffleMap.put(original.getQuestionId(), indices);
+
+        String correct = original.getCorrectAnswer();
+        if (correct != null && correct.length() == 1) {
+            int oldIdx = correct.charAt(0) - 'A';
+            for (int i = 0; i < indices.length; i++) {
+                if (indices[i] == oldIdx) {
+                    q.setCorrectAnswer(String.valueOf((char) ('A' + i)));
+                    break;
+                }
+            }
+        } else {
+            q.setCorrectAnswer(correct);
+        }
+        return q;
     }
 
     public List<ExamHistory> history(Integer examId) {
@@ -157,6 +211,10 @@ public class ExamService {
     public void publish(Integer examId, Integer operatorId, PublishExamRequest request) {
         Exam exam = getExam(examId);
         exam.setStatus("published");
+        if (request != null) {
+            exam.setShuffleQuestions(Boolean.TRUE.equals(request.getShuffleQuestions()));
+            exam.setShuffleAnswers(Boolean.TRUE.equals(request.getShuffleAnswers()));
+        }
 
         if (request != null) {
             exam.setAssignAll(Boolean.TRUE.equals(request.getAssignAll()));

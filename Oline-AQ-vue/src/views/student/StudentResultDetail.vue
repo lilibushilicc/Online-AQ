@@ -2,9 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import StudentLayout from './StudentLayout.vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type ResultDetail } from '@/stores/exam'
+import { downloadFile } from '@/utils/download'
 
 const route = useRoute()
 const store = useExamStore()
@@ -62,10 +62,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <StudentLayout
-    :title="resultDetail?.exam.examName ?? '成绩详情加载中'"
-    :subtitle="resultDetail ? `成绩 ${resultDetail.result.totalScore} / ${resultDetail.exam.totalScore}，正确率 ${scorePercent}%` : ''"
-  >
     <section v-if="resultDetail">
       <StatCards :items="[
         { title: '总分', value: resultDetail.result.totalScore, suffix: '分' },
@@ -79,7 +75,12 @@ onMounted(async () => {
       <template #header>
         <div style="display: flex; align-items: center; justify-content: space-between">
           <strong>答题明细</strong>
-          <span style="color: var(--muted); font-size: 13px">记录 ID：{{ resultDetail.result.resultId }}</span>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <el-button size="small" plain @click="downloadFile(`/api/results/export/${resultId}/detail`, `成绩详情_${new Date().toLocaleDateString()}.xlsx`)">
+              导出详情
+            </el-button>
+            <span style="color: var(--muted); font-size: 13px">记录 ID：{{ resultDetail.result.resultId }}</span>
+          </div>
         </div>
       </template>
       <el-card v-for="(answer, index) in resultDetail.answers" :key="answer.questionId" shadow="hover" style="margin-bottom: 14px">
@@ -133,5 +134,4 @@ onMounted(async () => {
         <el-button type="primary" @click="submitFeedback">提交反馈</el-button>
       </template>
     </el-dialog>
-  </StudentLayout>
 </template>

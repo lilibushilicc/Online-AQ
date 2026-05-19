@@ -1,9 +1,13 @@
 package com.example.olineaqspring.controller;
 
 import com.example.olineaqspring.entity.WrongNotebook;
+import com.example.olineaqspring.service.ExportService;
 import com.example.olineaqspring.service.WrongNotebookService;
 import com.example.olineaqspring.vo.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,9 +17,11 @@ import java.util.Map;
 @RequestMapping("/api/wrong-notebooks")
 public class WrongNotebookController {
     private final WrongNotebookService wrongNotebookService;
+    private final ExportService exportService;
 
-    public WrongNotebookController(WrongNotebookService wrongNotebookService) {
+    public WrongNotebookController(WrongNotebookService wrongNotebookService, ExportService exportService) {
         this.wrongNotebookService = wrongNotebookService;
+        this.exportService = exportService;
     }
 
     @GetMapping
@@ -54,6 +60,19 @@ public class WrongNotebookController {
                                                                HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
         return ApiResponse.ok("查询成功", wrongNotebookService.getNotebookDetail(notebookId, userId));
+    }
+
+    @GetMapping("/{notebookId}/export")
+    public ResponseEntity<byte[]> exportNotebook(@PathVariable Integer notebookId, HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        Map<String, Object> detail = wrongNotebookService.getNotebookDetail(notebookId, userId);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> groups = (List<Map<String, Object>>) detail.get("groups");
+        byte[] bytes = exportService.exportWrongQuestions(groups);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=错题本导出.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
     }
 
     @PostMapping("/{notebookId}/items")

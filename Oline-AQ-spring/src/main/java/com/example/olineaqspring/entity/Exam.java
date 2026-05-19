@@ -20,6 +20,8 @@ public class Exam {
     private String status;
     private Boolean allowRetake;
     private Boolean assignAll;
+    private Boolean shuffleQuestions;
+    private Boolean shuffleAnswers;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private LocalDateTime createTime;

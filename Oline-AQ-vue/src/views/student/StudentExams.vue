@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import StudentLayout from './StudentLayout.vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type Exam } from '@/stores/exam'
 
 const store = useExamStore()
+const loading = ref(true)
 
 function toTimeLabel(value?: string | null) {
   if (!value) return '未设置'
@@ -50,12 +50,14 @@ onMounted(async () => {
     await Promise.all([store.loadStudentExams(), store.loadMyResults()])
   } catch {
     ElMessage.error('加载考试列表失败，请刷新重试')
+  } finally {
+    loading.value = false
   }
 })
 </script>
 
 <template>
-  <StudentLayout title="考试列表" subtitle="查看可参加的考试和历史试卷记录。">
+    <div v-loading="loading" style="min-height: 200px">
     <StatCards :items="[
       { title: '当前可参加', value: availableExams.length, suffix: '场' },
       { title: '已发布考试', value: store.publishedExams.length, suffix: '场' },
@@ -126,5 +128,5 @@ onMounted(async () => {
         </el-card>
       </el-col>
     </el-row>
-  </StudentLayout>
+    </div>
 </template>

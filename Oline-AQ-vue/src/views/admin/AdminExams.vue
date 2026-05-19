@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import AdminLayout from './AdminLayout.vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type Exam, type ExamHistory, type Question, type QuestionScoreItem } from '@/stores/exam'
 
@@ -16,6 +15,8 @@ const publishDialogVisible = ref(false)
 const publishExamTarget = ref<Exam | null>(null)
 const publishMode = ref<'all' | 'select'>('all')
 const publishStudentIds = ref<number[]>([])
+const publishShuffleQuestions = ref(false)
+const publishShuffleAnswers = ref(false)
 const creating = ref(false)
 const publishing = ref(false)
 const form = reactive({
@@ -146,6 +147,8 @@ function openPublishDialog(exam: Exam) {
   publishExamTarget.value = exam
   publishMode.value = 'all'
   publishStudentIds.value = []
+  publishShuffleQuestions.value = false
+  publishShuffleAnswers.value = false
   publishDialogVisible.value = true
 }
 
@@ -156,6 +159,8 @@ async function confirmPublish() {
     await store.publishExam(publishExamTarget.value.examId, {
       assignAll: publishMode.value === 'all',
       studentIds: publishMode.value === 'select' ? publishStudentIds.value : undefined,
+      shuffleQuestions: publishShuffleQuestions.value,
+      shuffleAnswers: publishShuffleAnswers.value,
     })
     ElMessage.success(`「${publishExamTarget.value.examName}」已发布`)
     publishDialogVisible.value = false
@@ -186,7 +191,6 @@ async function handleDelete(exam: Exam) {
 </script>
 
 <template>
-  <AdminLayout title="考试管理" subtitle="支持设置考试开放时间、重考策略，并查看每场考试的历史记录。">
     <StatCards :items="[
       { title: '全部考试', value: store.exams.length, suffix: '场' },
       { title: '已发布', value: publishedCount, suffix: '场' },
@@ -285,16 +289,28 @@ async function handleDelete(exam: Exam) {
             <el-descriptions-item label="时长">{{ exam.duration }} 分钟</el-descriptions-item>
             <el-descriptions-item label="总分">{{ exam.totalScore }} 分</el-descriptions-item>
             <el-descriptions-item label="重考">{{ exam.allowRetake ? '允许' : '禁止' }}</el-descriptions-item>
+            <el-descriptions-item label="乱序">{{ [exam.shuffleQuestions && '题目', exam.shuffleAnswers && '选项'].filter(Boolean).join('+') || '无' }}</el-descriptions-item>
             <el-descriptions-item label="开始时间">{{ formatTime(exam.startTime) }}</el-descriptions-item>
             <el-descriptions-item label="结束时间">{{ formatTime(exam.endTime) }}</el-descriptions-item>
             <el-descriptions-item label="考试ID">{{ exam.examId }}</el-descriptions-item>
           </el-descriptions>
-          <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px">
-            <el-button type="success" plain @click="showPreview(exam)">预览试卷</el-button>
-            <el-button type="info" plain @click="showHistory(exam)">历史记录</el-button>
-            <el-button v-if="exam.status === 'draft'" type="primary" plain @click="openPublishDialog(exam)">发布</el-button>
-            <el-button v-if="exam.status === 'published'" type="warning" plain @click="handleClose(exam)">关闭</el-button>
-            <el-button type="danger" plain @click="handleDelete(exam)">删除</el-button>
+          <div class="exam-actions">
+            <span class="exam-action-group">
+              <el-button size="small" plain @click="showPreview(exam)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                预览试卷
+              </el-button>
+              <el-button size="small" plain @click="showHistory(exam)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                历史记录
+              </el-button>
+            </span>
+            <span class="exam-action-divider" />
+            <span class="exam-action-group">
+              <el-button v-if="exam.status === 'draft'" type="primary" size="small" @click="openPublishDialog(exam)">发布</el-button>
+              <el-button v-if="exam.status === 'published'" type="warning" plain size="small" @click="handleClose(exam)">关闭</el-button>
+              <el-button type="danger" plain size="small" @click="handleDelete(exam)">删除</el-button>
+            </span>
           </div>
         </el-card>
       </el-col>
@@ -353,6 +369,13 @@ async function handleDelete(exam: Exam) {
             <span class="muted">请至少选择一名学生</span>
           </div>
         </template>
+
+        <el-divider />
+        <p style="font-weight: 600; margin-bottom: 12px">乱序配置（发布后可关闭再发布不同版本）</p>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <el-switch v-model="publishShuffleQuestions" active-text="题目乱序" inactive-text="题目按创建顺序" />
+          <el-switch v-model="publishShuffleAnswers" active-text="选项乱序" inactive-text="选项按原始顺序" />
+        </div>
       </template>
       <template #footer>
         <el-button @click="publishDialogVisible = false">取消</el-button>
@@ -401,7 +424,6 @@ async function handleDelete(exam: Exam) {
         </div>
       </template>
     </el-drawer>
-  </AdminLayout>
 </template>
 
 <style scoped>
@@ -450,5 +472,24 @@ async function handleDelete(exam: Exam) {
   gap: 6px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+.exam-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.exam-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.exam-action-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--line-light);
+  flex-shrink: 0;
 }
 </style>

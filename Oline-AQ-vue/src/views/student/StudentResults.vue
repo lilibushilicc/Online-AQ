@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import StudentLayout from './StudentLayout.vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore } from '@/stores/exam'
+import { downloadFile } from '@/utils/download'
 
 const store = useExamStore()
+const loading = ref(true)
 const bestScore = computed(() => Math.max(0, ...store.results.map((result) => Number(result.totalScore))))
 const averageScore = computed(() => {
   if (store.results.length === 0) return 0
@@ -23,12 +24,14 @@ onMounted(async () => {
     await Promise.all([store.loadMyResults(), store.loadExams()])
   } catch {
     ElMessage.error('加载成绩数据失败，请刷新重试')
+  } finally {
+    loading.value = false
   }
 })
 </script>
 
 <template>
-  <StudentLayout title="我的成绩" subtitle="查看自己的提交历史，并进入每次考试的答题详情与历史记录。">
+    <div v-loading="loading" style="min-height: 200px">
     <StatCards :items="[
       { title: '提交次数', value: store.results.length, suffix: '次' },
       { title: '最近得分', value: latestScore, suffix: '分' },
@@ -36,6 +39,13 @@ onMounted(async () => {
       { title: '平均得分', value: averageScore, suffix: '分' },
     ]" />
 
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px" v-if="store.results.length > 0">
+      <span class="muted">共 {{ store.results.length }} 条成绩记录</span>
+      <el-button size="small" plain @click="downloadFile('/api/results/export/my', `我的成绩_${new Date().toLocaleDateString()}.xlsx`)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出成绩
+      </el-button>
+    </div>
     <el-empty v-if="store.results.length === 0" description="暂无成绩，请先参加考试" />
     <div v-else>
       <el-row :gutter="14">
@@ -63,5 +73,5 @@ onMounted(async () => {
         </el-col>
       </el-row>
     </div>
-  </StudentLayout>
+    </div>
 </template>

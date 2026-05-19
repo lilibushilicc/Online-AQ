@@ -1,6 +1,5 @@
 package com.example.olineaqspring.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.olineaqspring.entity.SysConfig;
 import com.example.olineaqspring.mapper.SysConfigMapper;
 import lombok.RequiredArgsConstructor;

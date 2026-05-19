@@ -27,7 +27,7 @@ export function loginApi(username: string, password: string, role: string) {
 }
 
 // -------- Questions --------
-export function loadQuestionsApi(category?: string, page = 1, pageSize = 9999) {
+export function loadQuestionsApi(category?: string, page = 1, pageSize = 200) {
   const params: Record<string, string | number> = { page, pageSize }
   if (category) params.category = category
   return apiGet<PageResult<Question>>('/questions', params)
@@ -58,11 +58,15 @@ export function loadUploadFilesApi() {
   return apiGet<UploadFileItem[]>('/files')
 }
 
-export function uploadAndParseApi(file: File, category?: string) {
+export function deleteFileApi(fileId: number) {
+  return apiDelete(`/files/${fileId}`)
+}
+
+export function uploadAndParseApi(file: File, category?: string, useAi = false) {
   const formData = new FormData()
   formData.append('file', file)
   return apiPost<{ fileId: number }>('/files/upload', formData).then((uploadData) =>
-    apiPost<{ questionCount: number }>(`/files/${uploadData.fileId}/parse`, category ? { category } : undefined)
+    apiPost<{ questionCount: number }>(`/files/${uploadData.fileId}/parse`, { category, useAi })
       .then((parsedData) => parsedData.questionCount),
   )
 }
@@ -159,6 +163,10 @@ export function saveConfigApi(config: Record<string, string>) {
 
 export function testR2Api() {
   return apiPost<{ result: string }>('/config/test-r2')
+}
+
+export function testAiApi() {
+  return apiPost<{ result: string }>('/config/test-ai')
 }
 
 // -------- Wrong Notebooks --------

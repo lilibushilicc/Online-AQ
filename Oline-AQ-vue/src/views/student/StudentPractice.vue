@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import StudentLayout from './StudentLayout.vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore } from '@/stores/exam'
 
@@ -75,7 +74,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <StudentLayout title="在线做题" subtitle="题库练习，所有题目自由作答，即时反馈">
     <section v-if="store.questions.length > 0">
       <div style="margin-bottom: 16px">
         <el-select v-model="practiceCategory" placeholder="按分类练习" clearable style="width: 200px" @change="handleCategoryChange">
@@ -134,5 +132,4 @@ onMounted(async () => {
     </section>
     <el-empty v-if="store.questions.length === 0" description="题库暂无题目，请联系管理员上传题目" />
     <el-empty v-else-if="questions.length === 0" description="当前分类下暂无题目，请选择其他分类" />
-  </StudentLayout>
 </template>

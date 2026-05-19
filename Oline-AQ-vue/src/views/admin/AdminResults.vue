@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import AdminLayout from './AdminLayout.vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type ResultDetail } from '@/stores/exam'
+import { downloadFile } from '@/utils/download'
 
 const store = useExamStore()
 const examId = ref<number>()
@@ -43,7 +43,6 @@ async function openDetail(resultId: number) {
 </script>
 
 <template>
-  <AdminLayout title="成绩查看" subtitle="按考试查看学生成绩，并下钻到每次提交的答题详情和历史记录。">
     <StatCards :items="[
       { title: '提交人数', value: store.results.length, suffix: '人' },
       { title: '平均分', value: averageScore, suffix: '分' },
@@ -80,7 +79,18 @@ async function openDetail(resultId: number) {
         <el-select v-model="examId" placeholder="选择考试" style="width: 260px" @change="loadResults">
           <el-option v-for="exam in store.exams" :key="exam.examId" :label="exam.examName" :value="exam.examId" />
         </el-select>
-        <span class="muted">共 {{ store.results.length }} 条成绩记录</span>
+        <span class="toolbar-right">
+          <span class="muted">共 {{ store.results.length }} 条成绩记录</span>
+          <el-button
+            v-if="examId"
+            size="small"
+            plain
+            @click="downloadFile(`/api/results/export/${examId}`, `考试成绩_${store.exams.find(e => e.examId === examId)?.examName ?? examId}_${new Date().toLocaleDateString()}.xlsx`)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出成绩
+          </el-button>
+        </span>
       </div>
       <el-empty v-if="store.results.length === 0" description="暂无成绩，先用学生账号提交一次考试" />
       <el-table v-else :data="store.results" stripe>
@@ -139,5 +149,4 @@ async function openDetail(resultId: number) {
         </div>
       </template>
     </el-drawer>
-  </AdminLayout>
 </template>

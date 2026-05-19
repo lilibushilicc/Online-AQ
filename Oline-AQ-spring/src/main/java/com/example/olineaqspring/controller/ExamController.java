@@ -50,8 +50,9 @@ public class ExamController {
     }
 
     @GetMapping("/{examId}")
-    public ApiResponse<Map<String, Object>> detail(@PathVariable Integer examId) {
-        return ApiResponse.ok("查询成功", examService.detail(examId));
+    public ApiResponse<Map<String, Object>> detail(@PathVariable Integer examId, HttpServletRequest request) {
+        String role = (String) request.getAttribute("role");
+        return ApiResponse.ok("查询成功", examService.detail(examId, role));
     }
 
     @GetMapping("/{examId}/history")

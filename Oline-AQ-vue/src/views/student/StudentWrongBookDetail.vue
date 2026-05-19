@@ -2,8 +2,8 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import StudentLayout from './StudentLayout.vue'
-import { Loading, ArrowLeft, Delete, Plus, Notebook } from '@element-plus/icons-vue'
+import { Loading, Delete, Plus } from '@element-plus/icons-vue'
+import { downloadFile } from '@/utils/download'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type WrongQuestionGroup, type WrongNotebook, type NotebookDetail } from '@/stores/exam'
 
@@ -80,6 +80,14 @@ async function handleAddToNotebook() {
   }
 }
 
+function handleExport() {
+  if (isAllView.value) {
+    downloadFile('/api/results/export/wrong', `错题导出_${new Date().toLocaleDateString()}.xlsx`)
+  } else {
+    downloadFile(`/api/wrong-notebooks/${notebookId.value}/export`, `错题本导出_${new Date().toLocaleDateString()}.xlsx`)
+  }
+}
+
 async function handleDeleteNotebook() {
   if (isAllView.value) return
   try {
@@ -92,14 +100,6 @@ async function handleDeleteNotebook() {
 </script>
 
 <template>
-  <StudentLayout :title="isAllView ? '全部错题' : (notebookDetail?.notebook?.notebookName || '错题本')" :subtitle="isAllView ? '汇总所有考试中的错题' : (notebookDetail?.notebook?.description || '')">
-    <template #actions>
-      <div style="display: flex; gap: 8px">
-        <el-button :icon="ArrowLeft" @click="router.push('/student/wrong-book')">返回列表</el-button>
-        <el-button v-if="!isAllView" type="danger" plain :icon="Delete" @click="handleDeleteNotebook">删除本</el-button>
-      </div>
-    </template>
-
     <section v-if="!loading">
       <StatCards :columns="2" :items="[
         { title: '错题数量', value: totalQuestions, suffix: '道' },
@@ -167,7 +167,6 @@ async function handleDeleteNotebook() {
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
       <p style="margin-top: 12px; color: var(--muted)">加载中...</p>
     </div>
-  </StudentLayout>
 </template>
 
 <style scoped>

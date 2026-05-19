@@ -32,6 +32,8 @@ export interface Exam {
   totalScore: number
   allowRetake: boolean
   assignAll?: boolean
+  shuffleQuestions?: boolean
+  shuffleAnswers?: boolean
   startTime?: string | null
   endTime?: string | null
   createTime?: string
@@ -117,6 +119,7 @@ export interface ExamDetail {
   exam: Exam
   questions: Question[]
   relationScores?: Record<number, number>
+  shuffleMap?: Record<number, number[]>
 }
 
 export interface ResultDetail {
@@ -205,6 +208,8 @@ export interface CreateExamPayload {
 export interface PublishExamPayload {
   assignAll: boolean
   studentIds?: number[]
+  shuffleQuestions?: boolean
+  shuffleAnswers?: boolean
 }
 
 export interface PageResult<T> {

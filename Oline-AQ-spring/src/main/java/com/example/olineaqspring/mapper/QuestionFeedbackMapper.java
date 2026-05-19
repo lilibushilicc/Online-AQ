@@ -37,6 +37,9 @@ public interface QuestionFeedbackMapper extends BaseMapper<QuestionFeedback> {
     @Select("SELECT COUNT(*) FROM question_feedback WHERE question_id = #{questionId} AND status = 'pending'")
     int countPendingByQuestionId(Integer questionId);
 
+    @Select("SELECT question_id, COUNT(*) AS cnt FROM question_feedback WHERE status = 'pending' GROUP BY question_id")
+    List<java.util.Map<String, Object>> countPendingGroupByQuestion();
+
     @Update("UPDATE question_feedback SET status = #{status}, resolve_type = #{resolveType}, " +
             "update_time = CURRENT_TIMESTAMP " +
             "WHERE question_id = #{questionId} AND status = 'pending' AND feedback_id != #{excludeId}")

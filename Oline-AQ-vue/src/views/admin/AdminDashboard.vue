@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import AdminLayout from './AdminLayout.vue'
 import { useExamStore } from '@/stores/exam'
+import { loadQuestionsApi } from '@/api'
 
 const store = useExamStore()
+const loading = ref(true)
+const questionCount = ref(0)
 const latestExams = computed(() => store.exams.slice(0, 4))
 const publishedRate = computed(() => {
   if (store.exams.length === 0) return 0
@@ -19,7 +21,7 @@ const averageScore = computed(() => store.averageScore)
 const totalDuration = computed(() => store.exams.reduce((sum, exam) => sum + (exam.duration || 0), 0))
 
 const cells = computed(() => [
-  { label: '题库题目', value: store.questions.length, unit: '道', desc: '可用于组卷的有效题量' },
+  { label: '题库题目', value: questionCount.value, unit: '道', desc: '可用于组卷的有效题量' },
   { label: '考试数量', value: store.exams.length, unit: '场', desc: '草稿、已发布、已关闭合计' },
   { label: '发布率', value: publishedRate.value, unit: '%', desc: `${store.publishedExams.length} 场正在开放` },
   { label: '平均得分', value: averageScore.value, unit: '分', desc: '来自当前成绩记录' },
@@ -27,16 +29,18 @@ const cells = computed(() => [
 
 onMounted(async () => {
   try {
-    await Promise.all([store.loadQuestions(), store.loadExams()])
+    const [qResult] = await Promise.all([loadQuestionsApi(undefined, 1, 1), store.loadExams()])
+    questionCount.value = qResult.total ?? 0
   } catch {
     ElMessage.error('加载数据失败，请刷新重试')
+  } finally {
+    loading.value = false
   }
 })
 </script>
 
 <template>
-  <AdminLayout title="教学控制台" subtitle="围绕题库沉淀、考试发布和成绩反馈组织在线测验流程。">
-    <div class="bento-grid">
+    <div v-loading="loading" class="bento-grid">
       <div
         v-for="(cell, index) in cells"
         :key="cell.label"
@@ -77,16 +81,34 @@ onMounted(async () => {
 
       <div class="bento-cell fade-in stagger-6" style="display: flex; flex-direction: column;">
         <div class="bento-label">快捷操作</div>
-        <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; justify-content: center;">
-          <el-button type="primary" plain size="small" @click="$router.push('/admin/upload')">
-            上传试题
-          </el-button>
-          <el-button type="success" plain size="small" @click="$router.push('/admin/exams')">
-            创建考试
-          </el-button>
-          <el-button type="warning" plain size="small" @click="$router.push('/admin/results')">
-            查看成绩
-          </el-button>
+        <div class="quick-actions">
+          <div class="quick-action-item" @click="$router.push('/admin/upload')">
+            <div class="qa-icon" style="background: var(--accent-light); color: var(--ink-green)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div>
+              <div class="qa-label">上传试题</div>
+              <div class="qa-desc">TXT / DOCX 解析入库</div>
+            </div>
+          </div>
+          <div class="quick-action-item" @click="$router.push('/admin/exams')">
+            <div class="qa-icon" style="background: var(--green-light); color: var(--green)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="qa-label">创建考试</div>
+              <div class="qa-desc">组卷并发布</div>
+            </div>
+          </div>
+          <div class="quick-action-item" @click="$router.push('/admin/results')">
+            <div class="qa-icon" style="background: var(--amber-light); color: var(--amber)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <div>
+              <div class="qa-label">查看成绩</div>
+              <div class="qa-desc">统计与详情</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -126,5 +148,4 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-  </AdminLayout>
 </template>

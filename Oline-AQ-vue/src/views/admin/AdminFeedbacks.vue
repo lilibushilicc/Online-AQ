@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import AdminLayout from './AdminLayout.vue'
 import { useExamStore, type FeedbackListVO } from '@/stores/exam'
 
 const store = useExamStore()
@@ -162,7 +161,6 @@ onMounted(() => loadData())
 </script>
 
 <template>
-  <AdminLayout title="反馈管理" subtitle="查看学生对题目提出的纠错反馈，核实后修改题库或驳回。">
     <el-card>
       <el-tabs :model-value="activeTab" @tab-change="onTabChange">
         <el-tab-pane v-for="tab in tabs" :key="tab.value" :label="tab.label" :name="tab.value" />
@@ -315,5 +313,4 @@ onMounted(() => loadData())
         <el-button type="danger" @click="confirmReject">确认驳回</el-button>
       </template>
     </el-dialog>
-  </AdminLayout>
 </template>

@@ -51,7 +51,8 @@ export const useExamStore = defineStore('exam', {
     async loadQuestions(category?: string) { this.questions = (await api.loadQuestionsApi(category)).list },
     async loadCategories() { this.categories = await api.loadCategoriesApi() },
     async loadUploadFiles() { return api.loadUploadFilesApi() },
-    async uploadAndParse(file: File, category?: string) { this.latestParsedCount = await api.uploadAndParseApi(file, category); await this.loadQuestions(); return this.latestParsedCount },
+    async deleteFile(id: number) { await api.deleteFileApi(id) },
+    async uploadAndParse(file: File, category?: string, useAi = false) { this.latestParsedCount = await api.uploadAndParseApi(file, category, useAi); await this.loadQuestions(); return this.latestParsedCount },
     async deleteQuestion(id: number) { await api.deleteQuestionApi(id); await this.loadQuestions() },
     async deleteQuestions(ids: number[]) { await api.deleteQuestionsApi(ids); await this.loadQuestions() },
     async updateQuestionScores(ids: number[], s: number) { await api.updateQuestionScoresApi(ids, s); await this.loadQuestions() },
@@ -87,6 +88,7 @@ export const useExamStore = defineStore('exam', {
     loadConfig: () => api.loadConfigApi(),
     saveConfig: (c: Record<string, string>) => api.saveConfigApi(c),
     testR2: () => api.testR2Api(),
+    testAi: () => api.testAiApi(),
 
     // Notebooks
     loadNotebooks: () => api.loadNotebooksApi(),

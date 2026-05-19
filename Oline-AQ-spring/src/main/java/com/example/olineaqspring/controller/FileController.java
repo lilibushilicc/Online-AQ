@@ -4,6 +4,7 @@ import com.example.olineaqspring.service.FileService;
 import com.example.olineaqspring.vo.ApiResponse;
 import com.example.olineaqspring.vo.UploadFileVO;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,10 +36,17 @@ public class FileController {
         return ApiResponse.ok("上传成功", fileService.upload(file, userId));
     }
 
+    @DeleteMapping("/{fileId}")
+    public ApiResponse<Void> deleteFile(@PathVariable Integer fileId) {
+        fileService.deleteFile(fileId);
+        return ApiResponse.ok("删除成功", null);
+    }
+
     @PostMapping("/{fileId}/parse")
     public ApiResponse<Map<String, Object>> parse(
             @PathVariable Integer fileId,
-            @RequestParam(required = false) String category) {
-        return ApiResponse.ok("解析成功", fileService.parse(fileId, category));
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "false") boolean useAi) {
+        return ApiResponse.ok("解析成功", fileService.parse(fileId, category, useAi));
     }
 }

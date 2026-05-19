@@ -3,8 +3,6 @@ package com.example.olineaqspring.utils;
 import com.example.olineaqspring.dto.QuestionRequest;
 import com.example.olineaqspring.entity.Question;
 
-import java.math.BigDecimal;
-
 public class BeanUtils {
 
     public static void copyQuestion(QuestionRequest source, Question target) {

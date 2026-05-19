@@ -135,5 +135,20 @@ public class SchemaInitializer implements CommandLineRunner {
             "  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ")"
         );
+
+        // Performance indexes
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_exam_question_exam_id ON exam_question(exam_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_exam_question_question_id ON exam_question(question_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_student_answer_exam_id ON student_answer(exam_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_student_answer_student_id ON student_answer(student_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_student_answer_question_id ON student_answer(question_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_exam_result_exam_id ON exam_result(exam_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_exam_result_student_id ON exam_result(student_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_exam_history_exam_id ON exam_history(exam_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_question_source_file_id ON question(source_file_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_question_category ON question(category)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_upload_file_status ON upload_file(status)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_question_feedback_question_id ON question_feedback(question_id)");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_question_feedback_status ON question_feedback(status)");
     }
 }

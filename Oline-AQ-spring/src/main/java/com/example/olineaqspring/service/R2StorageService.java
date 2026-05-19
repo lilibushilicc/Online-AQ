@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 // 2. 确认 Access Key ID / Secret Access Key 在 R2 面板生成且未过期
 // 3. 确认 Bucket Name 在 R2 中已创建
 // 4. 若仍有问题，查看后端控制台日志获取完整异常堆栈
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -59,6 +60,17 @@ public class R2StorageService {
                     .contentType(contentType)
                     .build();
             s3.putObject(putReq, RequestBody.fromBytes(bytes));
+        } finally {
+            s3.close();
+        }
+    }
+
+    public void delete(String key) {
+        String bucket = configService.get("r2.bucket_name");
+        if (bucket == null) return;
+        S3Client s3 = buildClient();
+        try {
+            s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
         } finally {
             s3.close();
         }

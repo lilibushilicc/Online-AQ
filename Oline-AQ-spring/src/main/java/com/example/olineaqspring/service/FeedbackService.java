@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,16 +46,12 @@ public class FeedbackService {
 
     public List<FeedbackListVO> list(String status) {
         List<FeedbackListVO> list = feedbackMapper.selectFeedbackList(status);
-        Map<Integer, Integer> pendingCountCache = new HashMap<>();
+        Map<Integer, Integer> pendingCounts = feedbackMapper.countPendingGroupByQuestion().stream()
+                .collect(Collectors.toMap(
+                        m -> ((Number) m.get("question_id")).intValue(),
+                        m -> ((Number) m.get("cnt")).intValue()));
         for (FeedbackListVO item : list) {
-            if ("pending".equals(item.getStatus())) {
-                Integer qid = item.getQuestionId();
-                if (!pendingCountCache.containsKey(qid)) {
-                    int count = feedbackMapper.countPendingByQuestionId(qid);
-                    pendingCountCache.put(qid, count);
-                }
-            }
-            item.setPendingCount(pendingCountCache.getOrDefault(item.getQuestionId(), 0));
+            item.setPendingCount(pendingCounts.getOrDefault(item.getQuestionId(), 0));
         }
         return list;
     }

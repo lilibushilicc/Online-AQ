@@ -30,6 +30,7 @@ public class FileService {
     private final UploadFileMapper uploadFileMapper;
     private final QuestionMapper questionMapper;
     private final QuestionParseService questionParseService;
+    private final AiQuestionParseService aiQuestionParseService;
     private final R2StorageService r2StorageService;
 
     @Value("${app.upload-dir}")
@@ -81,13 +82,20 @@ public class FileService {
     }
 
     public Map<String, Object> parse(Integer fileId) {
-        return parse(fileId, null);
+        return parse(fileId, null, false);
     }
 
-    public Map<String, Object> parse(Integer fileId, String category) {
+    public Map<String, Object> parse(Integer fileId, String category, boolean useAi) {
         UploadFile uploadFile = uploadFileMapper.selectById(fileId);
         if (uploadFile == null) throw new RuntimeException("文件不存在");
-        List<Question> questions = questionParseService.parse(uploadFile.getRawText(), fileId, category);
+
+        List<Question> questions;
+        if (useAi) {
+            questions = aiQuestionParseService.parse(uploadFile.getRawText(), fileId, category);
+        } else {
+            questions = questionParseService.parse(uploadFile.getRawText(), fileId, category);
+        }
+
         questions.forEach(questionMapper::insert);
         uploadFile.setStatus("parsed");
         uploadFileMapper.updateById(uploadFile);
@@ -95,6 +103,28 @@ public class FileService {
         data.put("fileId", fileId);
         data.put("questionCount", questions.size());
         return data;
+    }
+
+    public void deleteFile(Integer fileId) {
+        UploadFile uploadFile = uploadFileMapper.selectById(fileId);
+        if (uploadFile == null) throw new RuntimeException("文件不存在");
+
+        questionMapper.delete(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Question>()
+                .eq(Question::getSourceFileId, fileId));
+
+        String filePath = uploadFile.getFilePath();
+        if (filePath != null) {
+            if (filePath.startsWith("r2://")) {
+                String r2Key = filePath.substring(5);
+                r2StorageService.delete(r2Key);
+            } else {
+                try {
+                    Files.deleteIfExists(Path.of(filePath));
+                } catch (Exception ignored) {}
+            }
+        }
+
+        uploadFileMapper.deleteById(fileId);
     }
 
     public List<UploadFileVO> listFiles() {

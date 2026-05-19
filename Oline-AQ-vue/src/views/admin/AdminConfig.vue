@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Setting } from '@element-plus/icons-vue'
-import AdminLayout from './AdminLayout.vue'
+import { ElMessage } from 'element-plus'
+import { Setting, MagicStick } from '@element-plus/icons-vue'
 import { useExamStore } from '@/stores/exam'
 
 const store = useExamStore()
 const loading = ref(false)
 const testing = ref(false)
+const testingAi = ref(false)
 
 const config = ref({
   'storage.type': 'local',
@@ -15,6 +15,9 @@ const config = ref({
   'r2.access_key_id': '',
   'r2.secret_access_key': '',
   'r2.bucket_name': '',
+  'ai.endpoint': '',
+  'ai.api_key': '',
+  'ai.model': '',
 })
 
 async function load() {
@@ -81,12 +84,28 @@ async function testConnection() {
   }
 }
 
+async function testAiConnection() {
+  if (!config.value['ai.endpoint'] || !config.value['ai.api_key']) {
+    ElMessage.warning('请先填写 AI Endpoint 和 API Key')
+    return
+  }
+  testingAi.value = true
+  try {
+    await store.saveConfig({ ...config.value })
+    const result = await store.testAi()
+    ElMessage.success(`AI 连接测试成功：${result.result}`)
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : 'AI 连接测试失败')
+  } finally {
+    testingAi.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
 <template>
-  <AdminLayout title="系统设置" subtitle="配置存储方式、R2 云存储参数等系统级选项。">
-    <el-card v-loading="loading" style="max-width: 640px">
+    <el-card v-loading="loading" style="max-width: 640px; margin-bottom: 14px">
       <template #header>
         <div style="display: flex; align-items: center; gap: 8px">
           <el-icon><Setting /></el-icon>
@@ -128,5 +147,32 @@ onMounted(load)
         </el-form-item>
       </el-form>
     </el-card>
-  </AdminLayout>
+
+    <el-card style="max-width: 640px">
+      <template #header>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <el-icon><MagicStick /></el-icon>
+          <span>AI 智能解析</span>
+        </div>
+      </template>
+      <p class="muted" style="margin-bottom: 16px; font-size: 13px">
+        配置 AI 接口后可对上传的试题文件进行智能解析，支持任意排版格式，准确率远高于正则解析。
+        兼容 OpenAI / DeepSeek 等兼容接口。
+      </p>
+      <el-form label-width="140px" label-position="left">
+        <el-form-item label="API Endpoint">
+          <el-input v-model="config['ai.endpoint']" placeholder="https://api.deepseek.com/v1/chat/completions" clearable />
+        </el-form-item>
+        <el-form-item label="API Key">
+          <el-input v-model="config['ai.api_key']" type="password" placeholder="sk-..." show-password clearable />
+        </el-form-item>
+        <el-form-item label="模型名称">
+          <el-input v-model="config['ai.model']" placeholder="deepseek-chat（留空默认）" clearable />
+        </el-form-item>
+        <el-form-item label=" ">
+          <el-button type="primary" :loading="loading" @click="save">保存设置</el-button>
+          <el-button :loading="testingAi" @click="testAiConnection">保存并测试连接</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 </template>

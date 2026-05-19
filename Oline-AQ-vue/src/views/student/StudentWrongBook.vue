@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import StudentLayout from './StudentLayout.vue'
 import { Loading, Plus, Notebook, Delete, Edit } from '@element-plus/icons-vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type WrongNotebook, type WrongQuestionGroup } from '@/stores/exam'
@@ -79,7 +78,6 @@ async function handleDelete(notebook: WrongNotebook) {
 </script>
 
 <template>
-  <StudentLayout title="错题本" subtitle="管理多个错题本，分类整理错题，高效复习">
     <section v-if="!loading">
       <StatCards :columns="3" :items="[
         { title: '错题本数量', value: notebooks.length, suffix: '个' },
@@ -168,7 +166,6 @@ async function handleDelete(notebook: WrongNotebook) {
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
       <p style="margin-top: 12px; color: var(--muted)">加载中...</p>
     </div>
-  </StudentLayout>
 </template>
 
 <style scoped>

@@ -9,6 +9,11 @@ defineProps<{ title: string; subtitle?: string }>()
 const route = useRoute()
 const store = useExamStore()
 const userName = computed(() => store.currentUser?.realName ?? '教师')
+const todayLabel = computed(() => new Intl.DateTimeFormat('zh-CN', {
+  month: '2-digit',
+  day: '2-digit',
+  weekday: 'short',
+}).format(new Date()))
 const COLLAPSE_KEY = 'admin-sidebar-collapsed'
 const isCollapsed = ref(localStorage.getItem(COLLAPSE_KEY) === 'true')
 const mobileMenuOpen = ref(false)
@@ -24,8 +29,12 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <main class="page" :class="{ 'sidebar-collapsed': isCollapsed }">
+  <main class="page page--admin" :class="{ 'sidebar-collapsed': isCollapsed }">
     <section class="shell">
+      <transition name="fade">
+        <div v-if="mobileMenuOpen" class="sidebar-backdrop" @click="mobileMenuOpen = false"></div>
+      </transition>
+
       <aside class="sidebar" :class="{ 'menu-open': mobileMenuOpen }">
         <div class="sidebar-header">
           <div class="brand">
@@ -48,6 +57,7 @@ watch(() => route.path, () => {
             <div class="user-name">{{ userName }}</div>
             <div class="user-role">管理员</div>
           </div>
+          <div class="user-pulse"></div>
         </div>
 
         <el-menu
@@ -120,7 +130,11 @@ watch(() => route.path, () => {
 
       <section class="content">
         <div class="page-title">
-          <div>
+          <div class="page-title__copy">
+            <div class="page-title__meta">
+              <span class="page-chip">教师工作台</span>
+              <span class="page-chip page-chip--soft">{{ todayLabel }}</span>
+            </div>
             <h1>{{ title }}</h1>
             <p v-if="subtitle">{{ subtitle }}</p>
           </div>

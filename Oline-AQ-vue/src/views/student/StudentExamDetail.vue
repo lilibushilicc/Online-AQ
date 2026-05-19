@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import StudentLayout from './StudentLayout.vue'
 import { useExamStore, type Exam, type Question } from '@/stores/exam'
+
+const DRAFT_KEY_PREFIX = 'exam_draft_'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,11 +13,41 @@ const examId = Number(route.params.examId)
 const answers = ref<Record<number, string>>({})
 const exam = ref<Exam | null>(null)
 const questions = ref<Question[]>([])
+const shuffleMap = ref<Record<number, number[]> | null>(null)
+const serverTime = ref(0)
 const remainingSeconds = ref(0)
 const initialRemainingSeconds = ref(0)
 const submitting = ref(false)
 const activeQuestionIndex = ref(0)
+const hasDraft = ref(false)
 let timer: number | null = null
+let draftSaveTimer: number | null = null
+
+function draftKey() { return DRAFT_KEY_PREFIX + examId }
+
+function saveDraft() {
+  if (!exam.value || submitting.value) return
+  const data = { answers: answers.value, examId: examId, savedAt: Date.now() }
+  try {
+    localStorage.setItem(draftKey(), JSON.stringify(data))
+    hasDraft.value = true
+  } catch { /* storage full, ignore */ }
+}
+
+function loadDraft(): Record<number, string> | null {
+  try {
+    const raw = localStorage.getItem(draftKey())
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (data?.examId === examId && data?.answers) return data.answers
+  } catch { /* ignore corrupt draft */ }
+  return null
+}
+
+function clearDraft() {
+  localStorage.removeItem(draftKey())
+  hasDraft.value = false
+}
 
 const answeredCount = computed(() => Object.keys(answers.value).length)
 const progress = computed(() => (questions.value.length === 0 ? 0 : Math.round((answeredCount.value / questions.value.length) * 100)))
@@ -44,8 +75,9 @@ function examBlockedReason(currentExam: Exam) {
 
 function resolveRemainingSeconds(currentExam: Exam) {
   const durationLimit = Math.max(0, (currentExam.duration || 0) * 60)
+  const serverOffset = serverTime.value ? Date.now() - serverTime.value : 0
   const endLimit = currentExam.endTime
-    ? Math.max(0, Math.floor((new Date(currentExam.endTime).getTime() - Date.now()) / 1000))
+    ? Math.max(0, Math.floor((new Date(currentExam.endTime).getTime() - Date.now() + serverOffset) / 1000))
     : durationLimit
   if (durationLimit === 0) return endLimit
   if (!currentExam.endTime) return durationLimit
@@ -54,6 +86,14 @@ function resolveRemainingSeconds(currentExam: Exam) {
 
 function clearTimer() {
   if (timer !== null) { window.clearInterval(timer); timer = null }
+}
+
+function toOriginalAnswer(questionId: number, answer: string): string {
+  if (!answer || answer.length !== 1 || !shuffleMap.value) return answer
+  const perm = shuffleMap.value[questionId]
+  const idx = answer.charCodeAt(0) - 65
+  if (perm == null || idx < 0 || idx >= perm.length) return answer
+  return String.fromCharCode(65 + perm[idx]!)
 }
 
 function scrollToQuestion(index: number) {
@@ -89,7 +129,13 @@ async function handleSubmit(options?: { auto?: boolean }) {
   submitting.value = true
   clearTimer()
   try {
-    const result = await store.submitExam(exam.value.examId, answers.value, elapsedSeconds.value)
+    const transformedAnswers: Record<number, string> = {}
+    for (const [qId, answer] of Object.entries(answers.value)) {
+      transformedAnswers[Number(qId)] = toOriginalAnswer(Number(qId), answer)
+    }
+    const result = await store.submitExam(exam.value.examId, transformedAnswers, elapsedSeconds.value)
+    clearDraft()
+    if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer); draftSaveTimer = null }
     if (autoSubmit) ElMessage.warning('考试时间已到，系统已自动交卷')
     else ElMessage.success(`提交成功，得分 ${result.totalScore}`)
     router.push(`/student/results/${result.resultId}`)
@@ -107,17 +153,32 @@ function startCountdown(currentExam: Exam) {
   }, 1000)
 }
 
+watch(answers, () => {
+  if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer) }
+  draftSaveTimer = window.setTimeout(saveDraft, 800)
+}, { deep: true })
+
 onMounted(async () => {
   try {
     await store.loadMyResults()
     const detail = await store.getExamDetail(examId)
     exam.value = detail.exam
     questions.value = detail.questions
+    if (detail.shuffleMap) shuffleMap.value = detail.shuffleMap
+    if (detail.serverTime) serverTime.value = detail.serverTime
     if (!exam.value) return
     const blockedReason = examBlockedReason(exam.value)
     if (blockedReason) { ElMessage.warning(blockedReason); router.replace('/student/exams'); return }
+
+    const saved = loadDraft()
+    if (saved && Object.keys(saved).length > 0) {
+      answers.value = saved
+      ElMessage.info('已恢复上次作答草稿')
+    }
+
     startCountdown(exam.value)
     window.addEventListener('scroll', updateActiveQuestion, { passive: true })
+    window.addEventListener('beforeunload', saveDraft)
   } catch {
     ElMessage.error('加载试卷失败，请返回重试')
   }
@@ -125,12 +186,13 @@ onMounted(async () => {
 
 onUnmounted(() => {
   clearTimer()
+  if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer) }
   window.removeEventListener('scroll', updateActiveQuestion)
+  window.removeEventListener('beforeunload', saveDraft)
 })
 </script>
 
 <template>
-  <StudentLayout :title="exam?.examName ?? '考试加载中'" :subtitle="exam ? `时长 ${exam.duration} 分钟，总分 ${exam.totalScore} 分` : ''">
     <section v-if="exam" class="answer-layout">
       <div>
         <el-card shadow="hover" style="margin-bottom: 14px">
@@ -197,6 +259,9 @@ onUnmounted(() => {
             >{{ idx + 1 }}</button>
           </div>
         </div>
+        <div v-if="hasDraft" style="font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 8px">
+          草稿已自动保存
+        </div>
         <el-button type="primary" size="large" style="width: 100%" :loading="submitting" @click="handleSubmit()">
           提交试卷
         </el-button>
@@ -205,7 +270,6 @@ onUnmounted(() => {
     <section v-else>
       <el-empty description="考试不存在或正在加载" />
     </section>
-  </StudentLayout>
 </template>
 
 <style scoped>

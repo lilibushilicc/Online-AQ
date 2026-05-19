@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import AdminLayout from './AdminLayout.vue'
 import { useExamStore, type User } from '@/stores/exam'
 
 const store = useExamStore()
@@ -103,7 +102,6 @@ async function handleDelete(user: User) {
 </script>
 
 <template>
-  <AdminLayout title="学生管理" subtitle="管理学生账号，支持新增、编辑、删除，以及重置密码。">
     <el-card>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
         <span style="color: var(--muted)">共 {{ students.length }} 名学生</span>
@@ -140,5 +138,4 @@ async function handleDelete(user: User) {
         <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
       </template>
     </el-dialog>
-  </AdminLayout>
 </template>

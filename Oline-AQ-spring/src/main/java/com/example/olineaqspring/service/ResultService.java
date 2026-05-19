@@ -42,11 +42,9 @@ public class ResultService {
 
         Map<Integer, String> answerMap = buildAnswerMap(request);
         List<ExamQuestion> relations = examService.listExamQuestions(examId);
-        Map<Integer, Question> questionMap = relations.stream()
-                .map(ExamQuestion::getQuestionId)
-                .map(questionMapper::selectById)
-                .filter(question -> question != null)
-                .collect(Collectors.toMap(Question::getQuestionId, Function.identity(), (left, right) -> left));
+        List<Integer> qids = relations.stream().map(ExamQuestion::getQuestionId).distinct().toList();
+        Map<Integer, Question> questionMap = questionMapper.selectBatchIds(qids).stream()
+                .collect(Collectors.toMap(Question::getQuestionId, Function.identity()));
 
         BigDecimal totalScore = BigDecimal.ZERO;
         int correctCount = 0;
@@ -127,12 +125,9 @@ public class ResultService {
                 .eq(StudentAnswer::getSubmitTime, result.getSubmitTime())
                 .orderByAsc(StudentAnswer::getQuestionId));
 
-        Map<Integer, Question> questionMap = answers.stream()
-                .map(StudentAnswer::getQuestionId)
-                .distinct()
-                .map(questionMapper::selectById)
-                .filter(question -> question != null)
-                .collect(Collectors.toMap(Question::getQuestionId, Function.identity(), (left, right) -> left));
+        List<Integer> qids = answers.stream().map(StudentAnswer::getQuestionId).distinct().toList();
+        Map<Integer, Question> questionMap = questionMapper.selectBatchIds(qids).stream()
+                .collect(Collectors.toMap(Question::getQuestionId, Function.identity()));
 
         List<Map<String, Object>> answerDetails = answers.stream().map(answer ->
                 toAnswerMap(answer, questionMap, false)

@@ -4,9 +4,14 @@ import { useExamStore, type Role } from '@/stores/exam'
 type RouteMeta = {
   requiresAuth?: boolean
   role?: Role
+  title?: string
+  subtitle?: string
+  showBack?: boolean
 }
 
 const LoginView = () => import('@/views/login/LoginView.vue')
+const AdminLayoutWrapper = () => import('@/views/admin/AdminLayoutWrapper.vue')
+const StudentLayoutWrapper = () => import('@/views/student/StudentLayoutWrapper.vue')
 const AdminDashboard = () => import('@/views/admin/AdminDashboard.vue')
 const AdminUpload = () => import('@/views/admin/AdminUpload.vue')
 const AdminQuestions = () => import('@/views/admin/AdminQuestions.vue')
@@ -26,27 +31,54 @@ const StudentWrongBookDetail = () => import('@/views/student/StudentWrongBookDet
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: LoginView },
-  { path: '/admin/dashboard', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/upload', component: AdminUpload, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/questions', component: AdminQuestions, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/exams', component: AdminExams, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/exams/create', component: AdminExams, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/results', component: AdminResults, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/students', component: AdminStudents, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/config', component: AdminConfig, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/feedbacks', component: AdminFeedbacks, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/student/exams', component: StudentExams, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/exams/:examId', component: StudentExamDetail, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/results', component: StudentResults, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/results/:resultId', component: StudentResultDetail, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/practice', component: StudentPractice, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/wrong-book', component: StudentWrongBook, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/wrong-book/:notebookId', component: StudentWrongBookDetail, meta: { requiresAuth: true, role: 'student' } },
+  {
+    path: '/admin',
+    component: AdminLayoutWrapper,
+    meta: { requiresAuth: true, role: 'admin' },
+    children: [
+      { path: 'dashboard', component: AdminDashboard, meta: { title: '教学控制台', subtitle: '考试数据概览与快捷操作。' } },
+      { path: 'upload', component: AdminUpload, meta: { title: '上传试题', subtitle: '上传 TXT 或 DOCX 文件，可指定分类，后端自动解析并保存到题库。' } },
+      { path: 'questions', component: AdminQuestions, meta: { title: '题库管理', subtitle: '按文件、分类、题型筛选题目，并进行批量操作。' } },
+      { path: 'exams', component: AdminExams, meta: { title: '考试管理' } },
+      { path: 'exams/create', component: AdminExams, meta: { title: '创建考试' } },
+      { path: 'results', component: AdminResults, meta: { title: '成绩查看' } },
+      { path: 'students', component: AdminStudents, meta: { title: '学生管理' } },
+      { path: 'config', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置存储方式、R2 云存储、AI 解析等系统级选项。' } },
+      { path: 'feedbacks', component: AdminFeedbacks, meta: { title: '反馈管理', subtitle: '查看并处理学生对试题的反馈与申诉。' } },
+    ],
+  },
+  {
+    path: '/student',
+    component: StudentLayoutWrapper,
+    meta: { requiresAuth: true, role: 'student' },
+    children: [
+      { path: 'exams', component: StudentExams, meta: { title: '考试列表', subtitle: '查看并参与可用的在线考试。' } },
+      { path: 'exams/:examId', component: StudentExamDetail, meta: { title: '考试作答' } },
+      { path: 'results', component: StudentResults, meta: { title: '我的成绩', subtitle: '查看历史考试记录与得分情况。' } },
+      { path: 'results/:resultId', component: StudentResultDetail, meta: { title: '成绩详情' } },
+      { path: 'practice', component: StudentPractice, meta: { title: '在线做题', subtitle: '随机抽题练习，检验学习成果。' } },
+      { path: 'wrong-book', component: StudentWrongBook, meta: { title: '错题本', subtitle: '整理和管理你的错题。' } },
+      { path: 'wrong-book/:notebookId', component: StudentWrongBookDetail, meta: { title: '错题本详情', subtitle: '查看错题本中的题目', showBack: true } },
+    ],
+  },
   { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 function getDefaultRoute(role?: Role) {
   return role === 'admin' ? '/admin/dashboard' : '/student/exams'
+}
+
+function getRouteTitle(to: { path: string; meta: Record<string, unknown> }): string {
+  const metaTitle = to.meta.title as string | undefined
+  if (metaTitle) return `${metaTitle} - 智能在线答题系统`
+  const segments = to.path.split('/').filter(Boolean)
+  for (const segment of segments) {
+    if (segment !== 'admin' && segment !== 'student') {
+      const label = TITLE_MAP[segment] || segment
+      return `${label} - 智能在线答题系统`
+    }
+  }
+  return '智能在线答题系统'
 }
 
 const router = createRouter({
@@ -87,16 +119,7 @@ const TITLE_MAP: Record<string, string> = {
 }
 
 router.afterEach((to) => {
-  const segments = to.path.split('/').filter(Boolean)
-  let title = '智能在线答题系统'
-  for (const segment of segments) {
-    if (segment !== 'admin' && segment !== 'student') {
-      const label = TITLE_MAP[segment] || segment
-      title = `${label} - 智能在线答题系统`
-      break
-    }
-  }
-  document.title = title
+  document.title = getRouteTitle(to)
 })
 
 export default router

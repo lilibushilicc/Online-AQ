@@ -1,6 +1,8 @@
 package com.example.olineaqspring.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.olineaqspring.dto.QuestionRequest;
 import com.example.olineaqspring.entity.Question;
 import com.example.olineaqspring.mapper.QuestionMapper;
@@ -19,22 +21,21 @@ import java.util.stream.Collectors;
 public class QuestionService {
     private final QuestionMapper questionMapper;
 
+    public List<Question> listAll(String category) {
+        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
+        if (category != null && !category.isEmpty()) {
+            wrapper.eq(Question::getCategory, category);
+        }
+        return questionMapper.selectList(wrapper);
+    }
+
     public PageResult<Question> list(String category, Integer page, Integer pageSize) {
-        LambdaQueryWrapper<Question> countWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
         if (category != null && !category.isEmpty()) {
-            countWrapper.eq(Question::getCategory, category);
+            wrapper.eq(Question::getCategory, category);
         }
-        long total = questionMapper.selectCount(countWrapper);
-
-        LambdaQueryWrapper<Question> listWrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
-        if (category != null && !category.isEmpty()) {
-            listWrapper.eq(Question::getCategory, category);
-        }
-        int offset = (page - 1) * pageSize;
-        listWrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
-        List<Question> list = questionMapper.selectList(listWrapper);
-
-        return new PageResult<>(list, total, page, pageSize);
+        IPage<Question> p = questionMapper.selectPage(new Page<>(page, pageSize), wrapper);
+        return new PageResult<>(p.getRecords(), p.getTotal(), (int) p.getCurrent(), (int) p.getSize());
     }
 
     public List<String> categories() {
@@ -81,11 +82,10 @@ public class QuestionService {
     @Transactional
     public void updateCategoryBatch(List<Integer> questionIds, String category) {
         validateQuestionIds(questionIds);
-        List<Question> questions = questionMapper.selectBatchIds(questionIds);
-        for (Question question : questions) {
-            question.setCategory(category);
-            questionMapper.updateById(question);
-        }
+        questionMapper.update(
+                new Question() {{ setCategory(category); }},
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Question>()
+                        .in(Question::getQuestionId, questionIds));
     }
 
     @Transactional
@@ -94,12 +94,10 @@ public class QuestionService {
         if (score == null || score.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("批量分值必须大于 0");
         }
-
-        List<Question> questions = questionMapper.selectBatchIds(questionIds);
-        for (Question question : questions) {
-            question.setScore(score);
-            questionMapper.updateById(question);
-        }
+        questionMapper.update(
+                new Question() {{ setScore(score); }},
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Question>()
+                        .in(Question::getQuestionId, questionIds));
     }
 
     private void validateQuestionIds(List<Integer> questionIds) {

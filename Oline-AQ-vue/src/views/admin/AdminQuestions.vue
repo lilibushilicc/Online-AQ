@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import AdminLayout from './AdminLayout.vue'
 import { useExamStore, type UploadFileItem } from '@/stores/exam'
+import { downloadFile } from '@/utils/download'
 
 const store = useExamStore()
+const loading = ref(true)
 const keyword = ref('')
 const source = ref('')
 const questionType = ref('')
@@ -49,6 +50,8 @@ onMounted(async () => {
     uploadFiles.value = await store.loadUploadFiles()
   } catch {
     ElMessage.error('加载数据失败，请刷新重试')
+  } finally {
+    loading.value = false
   }
 })
 
@@ -75,6 +78,14 @@ function updateSelection(rows: Array<{ questionId: number }>) {
   selectedIds.value = rows.map((row) => row.questionId)
 }
 
+async function handleDeleteFile(fileId: number) {
+  if (activeFileId.value === fileId) activeFileId.value = null
+  await store.deleteFile(fileId)
+  uploadFiles.value = await store.loadUploadFiles()
+  await store.loadQuestions()
+  ElMessage.success('文件及关联题目已删除')
+}
+
 async function deleteSelected() {
   if (selectedIds.value.length === 0) {
     ElMessage.warning('请先选择要删除的题目')
@@ -99,8 +110,7 @@ async function updateSelectedScore() {
 </script>
 
 <template>
-  <AdminLayout title="题库管理" subtitle="按文件、分类、题型筛选题目，并进行批量操作。">
-    <div class="question-bank-layout">
+    <div v-loading="loading" class="question-bank-layout">
       <!-- 左侧文件面板 -->
       <aside class="file-sidebar">
         <div class="file-sidebar-header">
@@ -126,6 +136,7 @@ async function updateSelectedScore() {
             <span>📄 {{ file.fileName }}</span>
           </div>
           <span class="muted">{{ file.questionCount }}</span>
+          <el-button size="small" type="danger" link @click.stop="handleDeleteFile(file.fileId)">删除</el-button>
         </div>
         <div v-if="uploadFiles.length === 0" class="muted" style="padding: 20px; text-align: center; font-size: 13px">
           暂无已解析文档
@@ -151,19 +162,29 @@ async function updateSelectedScore() {
                 <el-option v-for="item in sourceOptions" :key="item" :label="item" :value="item" />
               </el-select>
             </div>
-            <span class="muted">共 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
+            <span class="toolbar-right">
+              <span class="muted">共 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
+              <el-button size="small" plain @click="downloadFile('/api/questions/export', `题库导出_${new Date().toLocaleDateString()}.xlsx`)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                导出
+              </el-button>
+            </span>
           </div>
 
           <div class="toolbar">
             <div class="toolbar-left">
               <el-tag v-if="activeFileId" closable @close="selectFile(null)" style="margin-right: 8px">{{ activeFileName }}</el-tag>
-              <el-input-number v-model="batchScore" :min="1" :max="100" style="width: 120px" />
-              <el-button type="primary" plain @click="updateSelectedScore">批量设分</el-button>
-              <el-input v-model="batchCategoryValue" placeholder="分类名称" clearable style="width: 140px" />
-              <el-button type="success" plain @click="updateSelectedCategory">批量设分类</el-button>
-              <el-button type="danger" plain @click="deleteSelected">批量删除</el-button>
+              <span class="batch-group">
+                <el-input-number v-model="batchScore" :min="1" :max="100" style="width: 110px" size="small" />
+                <el-button size="small" type="primary" plain @click="updateSelectedScore">批量设分</el-button>
+              </span>
+              <span class="batch-group">
+                <el-input v-model="batchCategoryValue" placeholder="分类名称" clearable style="width: 130px" size="small" />
+                <el-button size="small" type="success" plain @click="updateSelectedCategory">批量设分类</el-button>
+              </span>
+              <el-button size="small" type="danger" plain @click="deleteSelected">批量删除</el-button>
             </div>
-            <span class="muted">已选 {{ selectedIds.length }} 道题</span>
+            <span class="muted" style="font-size: 12px">已选 {{ selectedIds.length }} 道题</span>
           </div>
 
           <el-table :data="filteredQuestions" stripe @selection-change="updateSelection">
@@ -193,7 +214,6 @@ async function updateSelectedScore() {
         </el-card>
       </div>
     </div>
-  </AdminLayout>
 </template>
 
 <style scoped>
@@ -240,5 +260,10 @@ async function updateSelectedScore() {
 .question-bank-main {
   flex: 1;
   min-width: 0;
+}
+.batch-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>
