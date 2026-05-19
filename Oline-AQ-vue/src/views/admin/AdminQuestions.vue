@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AdminLayout from './AdminLayout.vue'
-import { useExamStore } from '@/stores/exam'
+import { useExamStore, type UploadFileItem } from '@/stores/exam'
 
 const store = useExamStore()
 const keyword = ref('')
@@ -12,6 +12,8 @@ const categoryFilter = ref('')
 const selectedIds = ref<number[]>([])
 const batchScore = ref(5)
 const batchCategoryValue = ref('')
+const uploadFiles = ref<UploadFileItem[]>([])
+const activeFileId = ref<number | null>(null)
 
 const sourceOptions = computed(() => Array.from(new Set(store.questions.map((question) => String(question.sourceFileId ?? '手动新增')))))
 const categoryOptions = computed(() => Array.from(new Set(store.questions.map((question) => question.category ?? '未分类'))))
@@ -25,11 +27,35 @@ const filteredQuestions = computed(() => {
     const matchSource = !source.value || String(question.sourceFileId ?? '手动新增') === source.value
     const matchType = !questionType.value || question.questionType === questionType.value
     const matchCategory = !categoryFilter.value || (question.category ?? '未分类') === categoryFilter.value
-    return matchKeyword && matchSource && matchType && matchCategory
+    const matchFile = !activeFileId.value || question.sourceFileId === activeFileId.value
+    return matchKeyword && matchSource && matchType && matchCategory && matchFile
   })
 })
+const QUESTION_TYPE_LABEL: Record<string, string> = {
+  single: '单选',
+  judge: '判断',
+  short_answer: '简答',
+  fill_blank: '填空',
+}
 
-onMounted(() => { store.loadQuestions(); store.loadCategories() })
+const activeFileName = computed(() => {
+  if (!activeFileId.value) return '全部题目'
+  return uploadFiles.value.find((f) => f.fileId === activeFileId.value)?.fileName ?? '全部题目'
+})
+
+onMounted(async () => {
+  try {
+    await Promise.all([store.loadQuestions(), store.loadCategories()])
+    uploadFiles.value = await store.loadUploadFiles()
+  } catch {
+    ElMessage.error('加载数据失败，请刷新重试')
+  }
+})
+
+function selectFile(fileId: number | null) {
+  activeFileId.value = fileId
+  selectedIds.value = []
+}
 
 async function updateSelectedCategory() {
   if (selectedIds.value.length === 0) {
@@ -73,62 +99,146 @@ async function updateSelectedScore() {
 </script>
 
 <template>
-  <AdminLayout title="题库管理" subtitle="支持按关键词、题型、来源筛选题目，并进行批量删除与批量分值设置。">
-    <el-card>
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <el-input v-model="keyword" placeholder="搜索题干或答案" clearable style="width: 200px" />
-          <el-select v-model="questionType" placeholder="题型" clearable style="width: 130px">
-            <el-option label="单选题" value="single" />
-            <el-option label="判断题" value="judge" />
-            <el-option label="简答题" value="short_answer" />
-            <el-option label="填空题" value="fill_blank" />
-          </el-select>
-          <el-select v-model="categoryFilter" placeholder="分类" clearable style="width: 150px">
-            <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
-          </el-select>
-          <el-select v-model="source" placeholder="来源文件" clearable style="width: 180px">
-            <el-option v-for="item in sourceOptions" :key="item" :label="item" :value="item" />
-          </el-select>
+  <AdminLayout title="题库管理" subtitle="按文件、分类、题型筛选题目，并进行批量操作。">
+    <div class="question-bank-layout">
+      <!-- 左侧文件面板 -->
+      <aside class="file-sidebar">
+        <div class="file-sidebar-header">
+          <strong>文档列表</strong>
+          <span class="muted" style="font-size: 12px">{{ uploadFiles.length }} 个文件</span>
         </div>
-        <span class="muted">共 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
-      </div>
-
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <el-input-number v-model="batchScore" :min="1" :max="100" style="width: 120px" />
-          <el-button type="primary" plain @click="updateSelectedScore">批量设分</el-button>
-          <el-input v-model="batchCategoryValue" placeholder="分类名称" clearable style="width: 140px" />
-          <el-button type="success" plain @click="updateSelectedCategory">批量设分类</el-button>
-          <el-button type="danger" plain @click="deleteSelected">批量删除</el-button>
+        <div
+          class="file-item"
+          :class="{ 'file-item--active': activeFileId === null }"
+          @click="selectFile(null)"
+        >
+          <span>📂 全部题目</span>
+          <span class="muted">{{ store.questions.length }}</span>
         </div>
-        <span class="muted">已选 {{ selectedIds.length }} 道题</span>
-      </div>
+        <div
+          v-for="file in uploadFiles"
+          :key="file.fileId"
+          class="file-item"
+          :class="{ 'file-item--active': activeFileId === file.fileId }"
+          @click="selectFile(file.fileId)"
+        >
+          <div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+            <span>📄 {{ file.fileName }}</span>
+          </div>
+          <span class="muted">{{ file.questionCount }}</span>
+        </div>
+        <div v-if="uploadFiles.length === 0" class="muted" style="padding: 20px; text-align: center; font-size: 13px">
+          暂无已解析文档
+        </div>
+      </aside>
 
-      <el-table :data="filteredQuestions" stripe @selection-change="updateSelection">
-        <el-table-column type="selection" width="50" />
-        <el-table-column prop="questionId" label="ID" width="70" />
-        <el-table-column prop="questionContent" label="题干" min-width="240" />
-        <el-table-column label="题型" width="100">
-          <template #default="{ row }">
-            {{ ({ single: '单选', judge: '判断', short_answer: '简答', fill_blank: '填空' } as any)[row.questionType] || row.questionType }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="correctAnswer" label="答案" width="80" />
-        <el-table-column prop="score" label="分值" width="70" />
-        <el-table-column label="分类" width="100">
-          <template #default="{ row }">
-            <el-tag v-if="row.category" size="small" effect="plain">{{ row.category }}</el-tag>
-            <span v-else class="muted" style="font-size: 12px">未分类</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="sourceFileId" label="来源" min-width="100" />
-        <el-table-column label="操作" width="100">
-          <template #default="{ row }">
-            <el-button type="danger" link @click="store.deleteQuestion(row.questionId)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+      <!-- 右侧内容区 -->
+      <div class="question-bank-main">
+        <el-card>
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-input v-model="keyword" placeholder="搜索题干或答案" clearable style="width: 200px" />
+              <el-select v-model="questionType" placeholder="题型" clearable style="width: 130px">
+                <el-option label="单选题" value="single" />
+                <el-option label="判断题" value="judge" />
+                <el-option label="简答题" value="short_answer" />
+                <el-option label="填空题" value="fill_blank" />
+              </el-select>
+              <el-select v-model="categoryFilter" placeholder="分类" clearable style="width: 150px">
+                <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
+              </el-select>
+              <el-select v-model="source" placeholder="来源文件" clearable style="width: 180px">
+                <el-option v-for="item in sourceOptions" :key="item" :label="item" :value="item" />
+              </el-select>
+            </div>
+            <span class="muted">共 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-tag v-if="activeFileId" closable @close="selectFile(null)" style="margin-right: 8px">{{ activeFileName }}</el-tag>
+              <el-input-number v-model="batchScore" :min="1" :max="100" style="width: 120px" />
+              <el-button type="primary" plain @click="updateSelectedScore">批量设分</el-button>
+              <el-input v-model="batchCategoryValue" placeholder="分类名称" clearable style="width: 140px" />
+              <el-button type="success" plain @click="updateSelectedCategory">批量设分类</el-button>
+              <el-button type="danger" plain @click="deleteSelected">批量删除</el-button>
+            </div>
+            <span class="muted">已选 {{ selectedIds.length }} 道题</span>
+          </div>
+
+          <el-table :data="filteredQuestions" stripe @selection-change="updateSelection">
+            <el-table-column type="selection" width="50" />
+            <el-table-column prop="questionId" label="ID" width="70" />
+            <el-table-column prop="questionContent" label="题干" min-width="240" />
+            <el-table-column label="题型" width="100">
+              <template #default="{ row }">
+                {{ QUESTION_TYPE_LABEL[row.questionType] || row.questionType }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="correctAnswer" label="答案" width="80" />
+            <el-table-column prop="score" label="分值" width="70" />
+            <el-table-column label="分类" width="100">
+              <template #default="{ row }">
+                <el-tag v-if="row.category" size="small" effect="plain">{{ row.category }}</el-tag>
+                <span v-else class="muted" style="font-size: 12px">未分类</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="sourceFileId" label="来源" min-width="100" />
+            <el-table-column label="操作" width="100">
+              <template #default="{ row }">
+                <el-button type="danger" link @click="store.deleteQuestion(row.questionId)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </div>
+    </div>
   </AdminLayout>
 </template>
+
+<style scoped>
+.question-bank-layout {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.file-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+  overflow: hidden;
+}
+.file-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--el-border-color);
+  background: var(--el-fill-color-lighter);
+}
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 13px;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+.file-item:hover {
+  background: var(--el-color-primary-light-9);
+}
+.file-item--active {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+.question-bank-main {
+  flex: 1;
+  min-width: 0;
+}
+</style>

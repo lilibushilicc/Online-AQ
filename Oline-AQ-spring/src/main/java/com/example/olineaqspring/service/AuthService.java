@@ -6,37 +6,32 @@ import com.example.olineaqspring.entity.SysUser;
 import com.example.olineaqspring.exception.UnauthorizedException;
 import com.example.olineaqspring.mapper.UserMapper;
 import com.example.olineaqspring.utils.JwtUtils;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
     private final UserMapper userMapper;
     private final JwtUtils jwtUtils;
-
-    public AuthService(UserMapper userMapper, JwtUtils jwtUtils) {
-        this.userMapper = userMapper;
-        this.jwtUtils = jwtUtils;
-    }
+    private final PasswordEncoder passwordEncoder;
 
     public Map<String, Object> login(LoginRequest request) {
-        // 根据用户名查询用户
         SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUsername, request.getUsername()));
 
-        // 先判断用户是否存在
         if (user == null) {
             throw new UnauthorizedException("账号或密码不正确");
         }
 
-        // 再判断密码是否正确
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new UnauthorizedException("账号或密码不正确");
         }
 
-        // 最后判断身份（角色）是否匹配
         if (!user.getRole().equals(request.getRole())) {
             throw new UnauthorizedException("账号或密码不正确");
         }

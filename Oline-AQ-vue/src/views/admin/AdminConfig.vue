@@ -47,8 +47,9 @@ async function save() {
   try {
     await store.saveConfig({ ...config.value })
     ElMessage.success('保存成功')
-  } catch (e: any) {
-    ElMessage.error(e?.message || '保存失败')
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '保存失败'
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }
@@ -73,8 +74,8 @@ async function testConnection() {
     } else {
       ElMessage.error(result.result)
     }
-  } catch (e: any) {
-    ElMessage.error(e?.message || e?.response?.data?.message || '连接测试失败')
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '连接测试失败')
   } finally {
     testing.value = false
   }

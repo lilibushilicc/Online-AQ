@@ -14,7 +14,7 @@ function logout() {
 <template>
   <router-view v-slot="{ Component, route: r }">
     <transition name="page" mode="out-in">
-      <component :key="r.fullPath" :is="Component" />
+      <component :key="r.path.split('/')[1] || 'login'" :is="Component" />
     </transition>
   </router-view>
 

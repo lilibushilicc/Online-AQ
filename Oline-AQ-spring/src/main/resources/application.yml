@@ -2,13 +2,11 @@ server:
   port: 8080
 
 spring:
-  application:
-    name: oline-aq-spring
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/exam_system
-    username: postgres
-    password: 123456
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/exam_system}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:123456}
   servlet:
     multipart:
       max-file-size: 20MB
@@ -22,6 +20,6 @@ mybatis-plus:
       id-type: auto
 
 app:
-  jwt-secret: oline-aq-demo-secret-key-change-me-please-32bytes
-  jwt-expire-hours: 24
-  upload-dir: uploads/exam-files
+  jwt-secret: ${JWT_SECRET:oline-aq-demo-secret-key-change-me-please-32bytes}
+  jwt-expire-hours: ${JWT_EXPIRE_HOURS:24}
+  upload-dir: ${UPLOAD_DIR:uploads/exam-files}

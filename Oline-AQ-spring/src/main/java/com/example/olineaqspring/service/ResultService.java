@@ -11,11 +11,14 @@ import com.example.olineaqspring.mapper.ExamMapper;
 import com.example.olineaqspring.mapper.ExamResultMapper;
 import com.example.olineaqspring.mapper.QuestionMapper;
 import com.example.olineaqspring.mapper.StudentAnswerMapper;
+import com.example.olineaqspring.utils.AnswerMapHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,21 +26,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ResultService {
     private final ExamService examService;
     private final ExamMapper examMapper;
     private final QuestionMapper questionMapper;
     private final StudentAnswerMapper studentAnswerMapper;
     private final ExamResultMapper examResultMapper;
-
-    public ResultService(ExamService examService, ExamMapper examMapper, QuestionMapper questionMapper,
-                         StudentAnswerMapper studentAnswerMapper, ExamResultMapper examResultMapper) {
-        this.examService = examService;
-        this.examMapper = examMapper;
-        this.questionMapper = questionMapper;
-        this.studentAnswerMapper = studentAnswerMapper;
-        this.examResultMapper = examResultMapper;
-    }
 
     @Transactional
     public Map<String, Object> submit(Integer examId, SubmitExamRequest request, Integer loginUserId) {
@@ -139,29 +134,71 @@ public class ResultService {
                 .filter(question -> question != null)
                 .collect(Collectors.toMap(Question::getQuestionId, Function.identity(), (left, right) -> left));
 
-        List<Map<String, Object>> answerDetails = answers.stream().map(answer -> {
-            Question question = questionMap.get(answer.getQuestionId());
-            Map<String, Object> item = new HashMap<>();
-            item.put("questionId", answer.getQuestionId());
-            item.put("questionContent", question == null ? "" : question.getQuestionContent());
-            item.put("questionType", question == null ? "single" : question.getQuestionType());
-            item.put("optionA", question == null ? "" : question.getOptionA());
-            item.put("optionB", question == null ? "" : question.getOptionB());
-            item.put("optionC", question == null ? "" : question.getOptionC());
-            item.put("optionD", question == null ? "" : question.getOptionD());
-            item.put("studentAnswer", answer.getStudentAnswer());
-            item.put("correctAnswer", answer.getCorrectAnswer());
-            item.put("isCorrect", answer.getIsCorrect());
-            item.put("score", answer.getScore());
-            return item;
-        }).toList();
+        List<Map<String, Object>> answerDetails = answers.stream().map(answer ->
+                toAnswerMap(answer, questionMap, false)
+        ).toList();
 
         Map<String, Object> data = new HashMap<>();
         data.put("result", result);
         data.put("exam", exam);
         data.put("answers", answerDetails);
-        data.put("history", examService.history(result.getExamId()));
+        if ("admin".equals(role)) {
+            data.put("history", examService.history(result.getExamId()));
+        }
         return data;
+    }
+
+    public List<Map<String, Object>> wrongQuestions(Integer studentId) {
+        List<StudentAnswer> wrongAnswers = studentAnswerMapper.selectList(
+                new LambdaQueryWrapper<StudentAnswer>()
+                        .eq(StudentAnswer::getStudentId, studentId)
+                        .eq(StudentAnswer::getIsCorrect, false)
+                        .orderByDesc(StudentAnswer::getSubmitTime));
+
+        if (wrongAnswers.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Get distinct question IDs and exam IDs
+        List<Integer> questionIds = wrongAnswers.stream()
+                .map(StudentAnswer::getQuestionId)
+                .distinct()
+                .toList();
+        List<Integer> examIds = wrongAnswers.stream()
+                .map(StudentAnswer::getExamId)
+                .distinct()
+                .toList();
+
+        Map<Integer, Question> questionMap = questionMapper.selectBatchIds(questionIds).stream()
+                .collect(Collectors.toMap(Question::getQuestionId, Function.identity(), (left, right) -> left));
+        Map<Integer, Exam> examMap = examMapper.selectBatchIds(examIds).stream()
+                .collect(Collectors.toMap(Exam::getExamId, Function.identity(), (left, right) -> left));
+
+        // Group by exam for structured output
+        Map<Integer, List<StudentAnswer>> byExam = wrongAnswers.stream()
+                .collect(Collectors.groupingBy(StudentAnswer::getExamId));
+
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (Map.Entry<Integer, List<StudentAnswer>> entry : byExam.entrySet()) {
+            Integer eid = entry.getKey();
+            Exam exam = examMap.get(eid);
+            List<Map<String, Object>> questions = entry.getValue().stream().map(answer ->
+                    toAnswerMap(answer, questionMap, true)
+            ).toList();
+
+            Map<String, Object> group = new HashMap<>();
+            group.put("examId", eid);
+            group.put("examName", exam == null ? "未知考试" : exam.getExamName());
+            group.put("questions", questions);
+            result.add(group);
+        }
+
+        return result;
+    }
+
+    private Map<String, Object> toAnswerMap(StudentAnswer answer, Map<Integer, Question> questionMap, boolean forWrongBook) {
+        Question question = questionMap.get(answer.getQuestionId());
+        return AnswerMapHelper.toAnswerMap(answer, question, forWrongBook);
     }
 
     private void validateSubmit(Exam exam, Integer studentId) {

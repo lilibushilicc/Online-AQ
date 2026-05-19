@@ -3,17 +3,17 @@ package com.example.olineaqspring.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.olineaqspring.entity.SysUser;
 import com.example.olineaqspring.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserMapper userMapper;
-
-    public UserService(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
+    private final PasswordEncoder passwordEncoder;
 
     public List<SysUser> list() {
         List<SysUser> users = userMapper.selectList(new LambdaQueryWrapper<SysUser>()
@@ -31,7 +31,7 @@ public class UserService {
 
         SysUser user = new SysUser();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(password));
         user.setRealName(realName);
         user.setRole(role);
         userMapper.insert(user);
@@ -49,7 +49,7 @@ public class UserService {
             user.setRealName(realName);
         }
         if (password != null && !password.isEmpty()) {
-            user.setPassword(password);
+            user.setPassword(passwordEncoder.encode(password));
         }
         userMapper.updateById(user);
         user.setPassword(null);

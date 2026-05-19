@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import StudentLayout from './StudentLayout.vue'
+import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type Exam } from '@/stores/exam'
 
 const store = useExamStore()
@@ -44,40 +46,22 @@ const historyExams = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([store.loadStudentExams(), store.loadMyResults()])
+  try {
+    await Promise.all([store.loadStudentExams(), store.loadMyResults()])
+  } catch {
+    ElMessage.error('加载考试列表失败，请刷新重试')
+  }
 })
 </script>
 
 <template>
   <StudentLayout title="考试列表" subtitle="查看可参加的考试和历史试卷记录。">
-    <el-row :gutter="14">
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="当前可参加" :value="availableExams.length">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="已发布考试" :value="store.publishedExams.length">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="历史提交" :value="store.results.length">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">次</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="当前身份" :value="store.currentUser?.realName || '学生'" />
-        </el-card>
-      </el-col>
-    </el-row>
+    <StatCards :items="[
+      { title: '当前可参加', value: availableExams.length, suffix: '场' },
+      { title: '已发布考试', value: store.publishedExams.length, suffix: '场' },
+      { title: '历史提交', value: store.results.length, suffix: '次' },
+      { title: '当前身份', value: store.currentUser?.realName || '学生' },
+    ]" />
 
     <!-- 可参加的考试 -->
     <h3 style="margin-bottom: 12px">📋 可参加考试</h3>

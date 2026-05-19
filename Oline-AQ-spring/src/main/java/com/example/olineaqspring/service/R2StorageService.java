@@ -15,15 +15,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import lombok.RequiredArgsConstructor;
 import java.net.URI;
 
 @Service
+@RequiredArgsConstructor
 public class R2StorageService {
     private final ConfigService configService;
-
-    public R2StorageService(ConfigService configService) {
-        this.configService = configService;
-    }
 
     public boolean isEnabled() {
         return "r2".equals(configService.get("storage.type"));

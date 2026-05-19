@@ -114,5 +114,26 @@ public class SchemaInitializer implements CommandLineRunner {
             "  update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ")"
         );
+
+        // Create wrong_notebook table
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS wrong_notebook (" +
+            "  notebook_id SERIAL PRIMARY KEY," +
+            "  student_id INTEGER NOT NULL," +
+            "  notebook_name VARCHAR(100) NOT NULL," +
+            "  description TEXT," +
+            "  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")"
+        );
+
+        // Create wrong_notebook_item table
+        jdbcTemplate.execute(
+            "CREATE TABLE IF NOT EXISTS wrong_notebook_item (" +
+            "  id SERIAL PRIMARY KEY," +
+            "  notebook_id INTEGER NOT NULL," +
+            "  answer_id INTEGER NOT NULL," +
+            "  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")"
+        );
     }
 }

@@ -10,22 +10,18 @@ import java.util.List;
 
 public interface QuestionFeedbackMapper extends BaseMapper<QuestionFeedback> {
 
-    @Select("SELECT f.feedback_id, f.question_id, q.question_content, u.real_name AS student_name, " +
+    @Select("<script>" +
+            "SELECT f.feedback_id, f.question_id, q.question_content, u.real_name AS student_name, " +
             "f.feedback_type, f.description, f.status, f.reject_reason, f.create_time " +
             "FROM question_feedback f " +
             "LEFT JOIN question q ON f.question_id = q.question_id " +
             "LEFT JOIN sys_user u ON f.student_id = u.user_id " +
-            "ORDER BY f.create_time DESC")
-    List<FeedbackListVO> selectAllFeedbackList();
-
-    @Select("SELECT f.feedback_id, f.question_id, q.question_content, u.real_name AS student_name, " +
-            "f.feedback_type, f.description, f.status, f.reject_reason, f.create_time " +
-            "FROM question_feedback f " +
-            "LEFT JOIN question q ON f.question_id = q.question_id " +
-            "LEFT JOIN sys_user u ON f.student_id = u.user_id " +
-            "WHERE f.status = #{status} " +
-            "ORDER BY f.create_time DESC")
-    List<FeedbackListVO> selectFeedbackListByStatus(String status);
+            "<where>" +
+            "<if test='status != null and status != \"\"'> AND f.status = #{status} </if>" +
+            "</where>" +
+            "ORDER BY f.create_time DESC" +
+            "</script>")
+    List<FeedbackListVO> selectFeedbackList(String status);
 
     @Select("SELECT f.feedback_id, f.question_id, q.question_content, u.real_name AS student_name, " +
             "f.feedback_type, f.description, f.status, f.reject_reason, f.create_time " +

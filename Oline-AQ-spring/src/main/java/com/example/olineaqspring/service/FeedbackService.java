@@ -7,7 +7,9 @@ import com.example.olineaqspring.entity.QuestionFeedback;
 import com.example.olineaqspring.mapper.QuestionFeedbackMapper;
 import com.example.olineaqspring.mapper.QuestionMapper;
 import com.example.olineaqspring.vo.FeedbackDetailVO;
+import com.example.olineaqspring.utils.BeanUtils;
 import com.example.olineaqspring.vo.FeedbackListVO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,16 +20,20 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class FeedbackService {
     private final QuestionFeedbackMapper feedbackMapper;
     private final QuestionMapper questionMapper;
 
-    public FeedbackService(QuestionFeedbackMapper feedbackMapper, QuestionMapper questionMapper) {
-        this.feedbackMapper = feedbackMapper;
-        this.questionMapper = questionMapper;
-    }
-
     public QuestionFeedback create(FeedbackCreateRequest request, Integer studentId) {
+        // 防止同一学生对同一题重复提交反馈
+        long existingCount = feedbackMapper.selectCount(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<QuestionFeedback>()
+                        .eq(QuestionFeedback::getQuestionId, request.getQuestionId())
+                        .eq(QuestionFeedback::getStudentId, studentId));
+        if (existingCount > 0) {
+            throw new RuntimeException("你已经反馈过这道题了，无需重复提交");
+        }
         QuestionFeedback feedback = new QuestionFeedback();
         feedback.setQuestionId(request.getQuestionId());
         feedback.setStudentId(studentId);
@@ -40,12 +46,7 @@ public class FeedbackService {
     }
 
     public List<FeedbackListVO> list(String status) {
-        List<FeedbackListVO> list;
-        if (status != null && !status.isEmpty()) {
-            list = feedbackMapper.selectFeedbackListByStatus(status);
-        } else {
-            list = feedbackMapper.selectAllFeedbackList();
-        }
+        List<FeedbackListVO> list = feedbackMapper.selectFeedbackList(status);
         Map<Integer, Integer> pendingCountCache = new HashMap<>();
         for (FeedbackListVO item : list) {
             if ("pending".equals(item.getStatus())) {
@@ -84,7 +85,7 @@ public class FeedbackService {
         if (question == null) {
             throw new RuntimeException("题目不存在");
         }
-        copy(request, question);
+        BeanUtils.copyQuestion(request, question);
         questionMapper.updateById(question);
 
         feedback.setStatus("resolved");
@@ -125,21 +126,4 @@ public class FeedbackService {
                 .collect(Collectors.toList());
     }
 
-    private void copy(QuestionRequest request, Question question) {
-        if (request.getQuestionContent() != null) {
-            question.setQuestionContent(request.getQuestionContent());
-        }
-        if (request.getQuestionType() != null) {
-            question.setQuestionType(request.getQuestionType());
-        }
-        if (request.getOptionA() != null) question.setOptionA(request.getOptionA());
-        if (request.getOptionB() != null) question.setOptionB(request.getOptionB());
-        if (request.getOptionC() != null) question.setOptionC(request.getOptionC());
-        if (request.getOptionD() != null) question.setOptionD(request.getOptionD());
-        if (request.getCorrectAnswer() != null) {
-            question.setCorrectAnswer(request.getCorrectAnswer());
-        }
-        if (request.getScore() != null) question.setScore(request.getScore());
-        if (request.getCategory() != null) question.setCategory(request.getCategory());
-    }
 }

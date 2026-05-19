@@ -4,6 +4,7 @@ import com.example.olineaqspring.entity.Question;
 import com.example.olineaqspring.entity.UploadFile;
 import com.example.olineaqspring.mapper.QuestionMapper;
 import com.example.olineaqspring.mapper.UploadFileMapper;
+import com.example.olineaqspring.vo.UploadFileVO;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,12 +16,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class FileService {
     private final UploadFileMapper uploadFileMapper;
     private final QuestionMapper questionMapper;
@@ -29,13 +34,6 @@ public class FileService {
 
     @Value("${app.upload-dir}")
     private String uploadDir;
-
-    public FileService(UploadFileMapper uploadFileMapper, QuestionMapper questionMapper, QuestionParseService questionParseService, R2StorageService r2StorageService) {
-        this.uploadFileMapper = uploadFileMapper;
-        this.questionMapper = questionMapper;
-        this.questionParseService = questionParseService;
-        this.r2StorageService = r2StorageService;
-    }
 
     public Map<String, Object> upload(MultipartFile file, Integer userId) {
         if (file.isEmpty()) throw new RuntimeException("上传文件不能为空");
@@ -97,6 +95,34 @@ public class FileService {
         data.put("fileId", fileId);
         data.put("questionCount", questions.size());
         return data;
+    }
+
+    public List<UploadFileVO> listFiles() {
+        List<UploadFile> files = uploadFileMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UploadFile>()
+                        .eq(UploadFile::getStatus, "parsed")
+                        .orderByDesc(UploadFile::getCreateTime));
+        if (files.isEmpty()) {
+            return List.of();
+        }
+        List<Integer> fileIds = files.stream().map(UploadFile::getFileId).toList();
+        Map<Integer, Long> countMap = questionMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Question>()
+                        .in(Question::getSourceFileId, fileIds)
+        ).stream().collect(Collectors.groupingBy(Question::getSourceFileId, Collectors.counting()));
+
+        List<UploadFileVO> result = new ArrayList<>();
+        for (UploadFile f : files) {
+            UploadFileVO vo = new UploadFileVO();
+            vo.setFileId(f.getFileId());
+            vo.setFileName(f.getFileName());
+            vo.setFileType(f.getFileType());
+            vo.setStatus(f.getStatus());
+            vo.setQuestionCount(countMap.getOrDefault(f.getFileId(), 0L).intValue());
+            vo.setCreateTime(f.getCreateTime());
+            result.add(vo);
+        }
+        return result;
     }
 
     private String readRawText(byte[] bytes, String suffix) throws Exception {

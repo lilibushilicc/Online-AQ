@@ -1,12 +1,13 @@
 package com.example.olineaqspring.controller;
 
-import com.example.olineaqspring.dto.QuestionBatchCategoryRequest;
-import com.example.olineaqspring.dto.QuestionBatchDeleteRequest;
-import com.example.olineaqspring.dto.QuestionBatchScoreRequest;
+import com.example.olineaqspring.dto.QuestionBatchRequest;
 import com.example.olineaqspring.dto.QuestionRequest;
 import com.example.olineaqspring.entity.Question;
 import com.example.olineaqspring.service.QuestionService;
 import com.example.olineaqspring.vo.ApiResponse;
+import com.example.olineaqspring.vo.PageResult;
+import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/questions")
@@ -29,8 +28,11 @@ public class QuestionController {
     }
 
     @GetMapping
-    public ApiResponse<List<Question>> list(@RequestParam(required = false) String category) {
-        return ApiResponse.ok("查询成功", questionService.list(category));
+    public ApiResponse<PageResult<Question>> list(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "50") Integer pageSize) {
+        return ApiResponse.ok("查询成功", questionService.list(category, page, pageSize));
     }
 
     @GetMapping("/categories")
@@ -39,12 +41,12 @@ public class QuestionController {
     }
 
     @PostMapping
-    public ApiResponse<Question> create(@RequestBody QuestionRequest request) {
+    public ApiResponse<Question> create(@RequestBody @Valid QuestionRequest request) {
         return ApiResponse.ok("新增成功", questionService.create(request));
     }
 
     @PutMapping("/{questionId}")
-    public ApiResponse<Question> update(@PathVariable Integer questionId, @RequestBody QuestionRequest request) {
+    public ApiResponse<Question> update(@PathVariable Integer questionId, @RequestBody @Valid QuestionRequest request) {
         return ApiResponse.ok("修改成功", questionService.update(questionId, request));
     }
 
@@ -55,19 +57,19 @@ public class QuestionController {
     }
 
     @PostMapping("/batch-delete")
-    public ApiResponse<Void> deleteBatch(@RequestBody QuestionBatchDeleteRequest request) {
+    public ApiResponse<Void> deleteBatch(@RequestBody QuestionBatchRequest request) {
         questionService.deleteBatch(request.getQuestionIds());
         return ApiResponse.ok("批量删除成功", null);
     }
 
     @PostMapping("/batch-score")
-    public ApiResponse<Void> updateBatchScore(@RequestBody QuestionBatchScoreRequest request) {
+    public ApiResponse<Void> updateBatchScore(@RequestBody QuestionBatchRequest request) {
         questionService.updateScoreBatch(request.getQuestionIds(), request.getScore());
         return ApiResponse.ok("批量设置分值成功", null);
     }
 
     @PostMapping("/batch-category")
-    public ApiResponse<Void> updateBatchCategory(@RequestBody QuestionBatchCategoryRequest request) {
+    public ApiResponse<Void> updateBatchCategory(@RequestBody QuestionBatchRequest request) {
         questionService.updateCategoryBatch(request.getQuestionIds(), request.getCategory());
         return ApiResponse.ok("批量设置分类成功", null);
     }

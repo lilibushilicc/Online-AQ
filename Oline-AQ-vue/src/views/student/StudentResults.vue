@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import StudentLayout from './StudentLayout.vue'
+import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore } from '@/stores/exam'
 
 const store = useExamStore()
@@ -17,42 +19,22 @@ function getExamName(examId: number) {
 }
 
 onMounted(async () => {
-  await Promise.all([store.loadMyResults(), store.loadExams()])
+  try {
+    await Promise.all([store.loadMyResults(), store.loadExams()])
+  } catch {
+    ElMessage.error('加载成绩数据失败，请刷新重试')
+  }
 })
 </script>
 
 <template>
   <StudentLayout title="我的成绩" subtitle="查看自己的提交历史，并进入每次考试的答题详情与历史记录。">
-    <el-row :gutter="14">
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="提交次数" :value="store.results.length">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">次</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="最近得分" :value="latestScore">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">分</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="最高得分" :value="bestScore">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">分</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="平均得分" :value="averageScore">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">分</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-    </el-row>
+    <StatCards :items="[
+      { title: '提交次数', value: store.results.length, suffix: '次' },
+      { title: '最近得分', value: latestScore, suffix: '分' },
+      { title: '最高得分', value: bestScore, suffix: '分' },
+      { title: '平均得分', value: averageScore, suffix: '分' },
+    ]" />
 
     <el-empty v-if="store.results.length === 0" description="暂无成绩，请先参加考试" />
     <div v-else>

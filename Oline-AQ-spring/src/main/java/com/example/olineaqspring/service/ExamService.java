@@ -19,6 +19,7 @@ import com.example.olineaqspring.mapper.ExamStudentMapper;
 import com.example.olineaqspring.mapper.QuestionMapper;
 import com.example.olineaqspring.mapper.StudentAnswerMapper;
 import com.example.olineaqspring.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ExamService {
     private final ExamMapper examMapper;
     private final ExamQuestionMapper examQuestionMapper;
@@ -41,19 +43,6 @@ public class ExamService {
     private final ExamStudentMapper examStudentMapper;
     private final ExamResultMapper examResultMapper;
     private final StudentAnswerMapper studentAnswerMapper;
-
-    public ExamService(ExamMapper examMapper, ExamQuestionMapper examQuestionMapper, QuestionMapper questionMapper,
-                       ExamHistoryMapper examHistoryMapper, UserMapper userMapper, ExamStudentMapper examStudentMapper,
-                       ExamResultMapper examResultMapper, StudentAnswerMapper studentAnswerMapper) {
-        this.examMapper = examMapper;
-        this.examQuestionMapper = examQuestionMapper;
-        this.questionMapper = questionMapper;
-        this.examHistoryMapper = examHistoryMapper;
-        this.userMapper = userMapper;
-        this.examStudentMapper = examStudentMapper;
-        this.examResultMapper = examResultMapper;
-        this.studentAnswerMapper = studentAnswerMapper;
-    }
 
     public List<Exam> list() {
         return examMapper.selectList(new LambdaQueryWrapper<Exam>().orderByDesc(Exam::getCreateTime));
@@ -78,6 +67,11 @@ public class ExamService {
         Map<Integer, Question> questionMap = getQuestionMap(relations.stream()
                 .map(ExamQuestion::getQuestionId)
                 .toList());
+        // Map relation scores: questionId -> score in this exam
+        Map<Integer, BigDecimal> relationScoreMap = relations.stream()
+                .collect(Collectors.toMap(ExamQuestion::getQuestionId,
+                        ExamQuestion::getScore,
+                        (left, right) -> left));
         List<Question> questions = relations.stream()
                 .map(relation -> questionMap.get(relation.getQuestionId()))
                 .filter(question -> question != null)
@@ -86,6 +80,7 @@ public class ExamService {
         Map<String, Object> data = new HashMap<>();
         data.put("exam", exam);
         data.put("questions", questions);
+        data.put("relationScores", relationScoreMap);
         return data;
     }
 
@@ -108,6 +103,16 @@ public class ExamService {
         validateTimeRange(request.getStartTime(), request.getEndTime());
         Map<Integer, Question> questionMap = getQuestionMap(questionIds);
 
+        // Build custom score map if provided
+        Map<Integer, BigDecimal> customScoreMap = new HashMap<>();
+        if (request.getQuestionScores() != null) {
+            for (ExamCreateRequest.QuestionScoreItem item : request.getQuestionScores()) {
+                if (item.getScore() != null) {
+                    customScoreMap.put(item.getQuestionId(), item.getScore());
+                }
+            }
+        }
+
         Exam exam = new Exam();
         exam.setExamName(request.getExamName());
         exam.setDescription(request.getDescription());
@@ -117,7 +122,7 @@ public class ExamService {
         exam.setStartTime(request.getStartTime());
         exam.setEndTime(request.getEndTime());
         exam.setCreateTime(LocalDateTime.now());
-        exam.setTotalScore(calculateTotalScore(questionIds, questionMap));
+        exam.setTotalScore(calculateTotalScore(questionIds, questionMap, customScoreMap));
         examMapper.insert(exam);
 
         int index = 1;
@@ -131,7 +136,7 @@ public class ExamService {
             relation.setExamId(exam.getExamId());
             relation.setQuestionId(questionId);
             relation.setSortOrder(index++);
-            relation.setScore(question.getScore());
+            relation.setScore(customScoreMap.getOrDefault(questionId, question.getScore()));
             examQuestionMapper.insert(relation);
         }
 
@@ -246,12 +251,14 @@ public class ExamService {
         historyList.forEach(history -> history.setOperatorName(userNameMap.getOrDefault(history.getOperatorId(), "未知用户")));
     }
 
-    private BigDecimal calculateTotalScore(List<Integer> questionIds, Map<Integer, Question> questionMap) {
+    private BigDecimal calculateTotalScore(List<Integer> questionIds, Map<Integer, Question> questionMap,
+                                           Map<Integer, BigDecimal> customScoreMap) {
         BigDecimal totalScore = BigDecimal.ZERO;
         for (Integer questionId : questionIds) {
             Question question = questionMap.get(questionId);
             if (question != null) {
-                totalScore = totalScore.add(question.getScore());
+                BigDecimal score = customScoreMap.getOrDefault(questionId, question.getScore());
+                totalScore = totalScore.add(score);
             }
         }
         return totalScore;
@@ -262,9 +269,7 @@ public class ExamService {
             return Collections.emptyMap();
         }
 
-        return questionIds.stream()
-                .map(questionMapper::selectById)
-                .filter(question -> question != null)
+        return questionMapper.selectBatchIds(questionIds).stream()
                 .collect(Collectors.toMap(Question::getQuestionId, Function.identity(), (left, right) -> left));
     }
 }

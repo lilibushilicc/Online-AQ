@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import AdminLayout from './AdminLayout.vue'
 import { useExamStore } from '@/stores/exam'
 
@@ -25,7 +26,11 @@ const cells = computed(() => [
 ])
 
 onMounted(async () => {
-  await Promise.all([store.loadQuestions(), store.loadExams()])
+  try {
+    await Promise.all([store.loadQuestions(), store.loadExams()])
+  } catch {
+    ElMessage.error('加载数据失败，请刷新重试')
+  }
 })
 </script>
 

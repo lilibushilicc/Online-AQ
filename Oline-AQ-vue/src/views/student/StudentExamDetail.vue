@@ -108,15 +108,19 @@ function startCountdown(currentExam: Exam) {
 }
 
 onMounted(async () => {
-  await store.loadMyResults()
-  const detail = await store.getExamDetail(examId)
-  exam.value = detail.exam
-  questions.value = detail.questions
-  if (!exam.value) return
-  const blockedReason = examBlockedReason(exam.value)
-  if (blockedReason) { ElMessage.warning(blockedReason); router.replace('/student/exams'); return }
-  startCountdown(exam.value)
-  window.addEventListener('scroll', updateActiveQuestion, { passive: true })
+  try {
+    await store.loadMyResults()
+    const detail = await store.getExamDetail(examId)
+    exam.value = detail.exam
+    questions.value = detail.questions
+    if (!exam.value) return
+    const blockedReason = examBlockedReason(exam.value)
+    if (blockedReason) { ElMessage.warning(blockedReason); router.replace('/student/exams'); return }
+    startCountdown(exam.value)
+    window.addEventListener('scroll', updateActiveQuestion, { passive: true })
+  } catch {
+    ElMessage.error('加载试卷失败，请返回重试')
+  }
 })
 
 onUnmounted(() => {

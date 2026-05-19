@@ -1,215 +1,31 @@
 import { defineStore } from 'pinia'
-import request from '@/utils/request'
+import type { Role, User, Question, Exam, ExamResult, ExamDetail, ResultDetail, PublishExamPayload, CreateUserPayload, UpdateUserPayload, FeedbackCreatePayload, FeedbackListVO } from '@/types'
+import * as api from '@/api'
 
-export type Role = 'admin' | 'student'
+export type {
+  Role, User, Question, Exam, ExamResult,
+  ExamDetail, ExamHistory, ExamResult as ExamResultDetail,
+  ResultDetail, WrongQuestionGroup, WrongQuestionItem,
+  WrongNotebook, NotebookDetail, UploadFileItem,
+  QuestionFeedback, FeedbackListVO, FeedbackCreatePayload,
+  QuestionScoreItem, CreateExamPayload, PublishExamPayload,
+  CreateUserPayload, UpdateUserPayload, BatchCategoryPayload,
+} from '@/types'
 
-const TOKEN_STORAGE_KEY = 'token'
-const USER_STORAGE_KEY = 'user'
+const TK = 'token', UK = 'user'
 
-export interface User {
-  userId: number
-  username: string
-  realName: string
-  role: Role
+function loadUser(): User | null {
+  try { return JSON.parse(localStorage.getItem(UK)!) } catch { localStorage.removeItem(UK); return null }
 }
 
-export type QuestionType = 'single' | 'judge' | 'short_answer' | 'fill_blank'
-
-export interface Question {
-  questionId: number
-  questionContent: string
-  questionType: QuestionType
-  optionA: string
-  optionB: string
-  optionC: string
-  optionD: string
-  correctAnswer: string
-  score: number
-  category?: string
-  sourceFileId?: number
-}
-
-export interface Exam {
-  examId: number
-  examName: string
-  description: string
-  duration: number
-  status: 'draft' | 'published' | 'closed'
-  totalScore: number
-  allowRetake: boolean
-  assignAll?: boolean
-  startTime?: string | null
-  endTime?: string | null
-  createTime?: string
-}
-
-export interface ExamResult {
-  resultId: number
-  examId: number
-  studentId: number
-  totalScore: number
-  correctCount: number
-  wrongCount: number
-  useTime: number
-  submitTime: string
-}
-
-export interface ExamHistory {
-  historyId: number
-  examId: number
-  operatorId: number | null
-  operatorName?: string
-  actionType: string
-  actionDetail: string
-  createTime: string
-}
-
-export interface ResultAnswerDetail {
-  questionId: number
-  questionContent: string
-  questionType: QuestionType
-  optionA: string
-  optionB: string
-  optionC: string
-  optionD: string
-  studentAnswer: string
-  correctAnswer: string
-  isCorrect: boolean
-  score: number
-}
-
-export interface ExamDetail {
-  exam: Exam
-  questions: Question[]
-}
-
-export interface ResultDetail {
-  result: ExamResult
-  exam: Exam
-  answers: ResultAnswerDetail[]
-  history: ExamHistory[]
-}
-
-export interface CreateUserPayload {
-  username: string
-  password: string
-  realName: string
-  role: Role
-}
-
-export interface UpdateUserPayload {
-  realName?: string
-  password?: string
-}
-
-export interface BatchCategoryPayload {
-  questionIds: number[]
-  category: string
-}
-
-export interface QuestionFeedback {
-  feedbackId: number
-  questionId: number
-  studentId: number
-  examId?: number
-  feedbackType: string
-  description: string
-  status: string
-  rejectReason?: string
-  resolveType?: string
-  createTime: string
-  updateTime: string
-}
-
-export interface FeedbackListVO {
-  feedbackId: number
-  questionId: number
-  questionContent: string
-  studentName: string
-  feedbackType: string
-  description: string
-  status: string
-  rejectReason?: string
-  createTime: string
-  pendingCount?: number
-}
-
-export interface FeedbackCreatePayload {
-  questionId: number
-  examId?: number
-  feedbackType: string
-  description: string
-}
-
-export interface CreateExamPayload {
-  examName: string
-  description: string
-  duration: number
-  startTime?: string | null
-  endTime?: string | null
-  allowRetake: boolean
-  questionIds: number[]
-}
-
-export interface PublishExamPayload {
-  assignAll: boolean
-  studentIds?: number[]
-}
-
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
-
-function readCurrentUser() {
-  const rawUser = localStorage.getItem(USER_STORAGE_KEY)
-  if (!rawUser) {
-    return null
-  }
-
-  try {
-    return JSON.parse(rawUser) as User
-  } catch {
-    localStorage.removeItem(USER_STORAGE_KEY)
-    return null
-  }
-}
-
-function persistCurrentUser(user: User) {
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
-}
-
-function toTimeValue(value?: string | null) {
-  if (!value) {
-    return null
-  }
-
-  const time = new Date(value).getTime()
-  return Number.isNaN(time) ? null : time
-}
-
-function isExamPublished(exam: Exam) {
-  return exam.status === 'published'
-}
-
-function isExamInTimeWindow(exam: Exam) {
-  const now = Date.now()
-  const startTime = toTimeValue(exam.startTime)
-  const endTime = toTimeValue(exam.endTime)
-
-  if (startTime !== null && now < startTime) {
-    return false
-  }
-  if (endTime !== null && now > endTime) {
-    return false
-  }
-  return true
+function canAccess(e: Exam) {
+  const n = Date.now(), s = e.startTime ? new Date(e.startTime).getTime() : null, en = e.endTime ? new Date(e.endTime).getTime() : null
+  return e.status === 'published' && !(s !== null && n < s) && !(en !== null && n > en)
 }
 
 export const useExamStore = defineStore('exam', {
   state: () => ({
-    currentUser: readCurrentUser(),
+    currentUser: loadUser(),
     questions: [] as Question[],
     exams: [] as Exam[],
     results: [] as ExamResult[],
@@ -218,208 +34,79 @@ export const useExamStore = defineStore('exam', {
     latestParsedCount: 0,
   }),
   getters: {
-    publishedExams: (state) => state.exams.filter((exam) => isExamPublished(exam)),
-    availableExams: (state) => state.exams.filter((exam) => isExamPublished(exam) && isExamInTimeWindow(exam)),
-    averageScore: (state) => {
-      if (state.results.length === 0) return 0
-      const total = state.results.reduce((sum, result) => sum + Number(result.totalScore), 0)
-      return Math.round((total / state.results.length) * 10) / 10
-    },
+    publishedExams: (s) => s.exams.filter((e) => e.status === 'published'),
+    availableExams: (s) => s.exams.filter((e) => canAccess(e)),
+    averageScore: (s) => s.results.length ? Math.round(s.results.reduce((a, r) => a + Number(r.totalScore), 0) / s.results.length * 10) / 10 : 0,
   },
   actions: {
     async login(username: string, password: string, role: Role) {
-      const { data } = await request.post<unknown, ApiResponse<User & { token: string }>>('/auth/login', {
-        username,
-        password,
-        role,
-      })
+      const d = await api.loginApi(username, password, role)
+      localStorage.setItem(TK, d.token)
+      const u: User = { userId: d.userId, username: d.username, realName: d.realName, role: d.role }
+      localStorage.setItem(UK, JSON.stringify(u)); this.currentUser = u; return u
+    },
+    logout() { this.currentUser = null; localStorage.removeItem(TK); localStorage.removeItem(UK) },
 
-      localStorage.setItem(TOKEN_STORAGE_KEY, data.token)
-      const user = {
-        userId: data.userId,
-        username: data.username,
-        realName: data.realName,
-        role: data.role,
-      }
-      persistCurrentUser(user)
-      this.currentUser = user
-      return user
-    },
-    logout() {
-      this.currentUser = null
-      localStorage.removeItem(TOKEN_STORAGE_KEY)
-      localStorage.removeItem(USER_STORAGE_KEY)
-    },
-    async loadQuestions(category?: string) {
-      const params: Record<string, string> = {}
-      if (category) {
-        params.category = category
-      }
-      const { data } = await request.get<unknown, ApiResponse<Question[]>>('/questions', { params })
-      this.questions = data
-    },
-    async loadCategories() {
-      const { data } = await request.get<unknown, ApiResponse<string[]>>('/questions/categories')
-      this.categories = data
-    },
-    async uploadAndParse(file: File, category?: string) {
-      const formData = new FormData()
-      formData.append('file', file)
-      const { data: uploadData } = await request.post<unknown, ApiResponse<{ fileId: number }>>('/files/upload', formData)
-      const params: Record<string, string> = {}
-      if (category) {
-        params.category = category
-      }
-      const { data: parsedData } = await request.post<unknown, ApiResponse<{ questionCount: number }>>(
-        `/files/${uploadData.fileId}/parse`,
-        params,
-      )
-      this.latestParsedCount = parsedData.questionCount
-      await this.loadQuestions()
-      return parsedData.questionCount
-    },
-    async deleteQuestion(questionId: number) {
-      await request.delete(`/questions/${questionId}`)
-      await this.loadQuestions()
-    },
-    async deleteQuestions(questionIds: number[]) {
-      await request.post('/questions/batch-delete', { questionIds })
-      await this.loadQuestions()
-    },
-    async updateQuestionScores(questionIds: number[], score: number) {
-      await request.post('/questions/batch-score', { questionIds, score })
-      await this.loadQuestions()
-    },
-    async updateQuestionCategories(questionIds: number[], category: string) {
-      await request.post('/questions/batch-category', { questionIds, category })
-      await this.loadQuestions()
-      await this.loadCategories()
-    },
-    async loadExams() {
-      const { data } = await request.get<unknown, ApiResponse<Exam[]>>('/exams')
-      this.exams = data
-    },
-    async getExamDetail(examId: number) {
-      const { data } = await request.get<unknown, ApiResponse<ExamDetail>>(`/exams/${examId}`)
-      return data
-    },
-    async loadExamHistory(examId: number) {
-      const { data } = await request.get<unknown, ApiResponse<ExamHistory[]>>(`/exams/${examId}/history`)
-      return data
-    },
-    async createExam(payload: CreateExamPayload) {
-      await request.post('/exams', payload)
-      await this.loadExams()
-    },
-    async publishExam(examId: number, payload?: PublishExamPayload) {
-      await request.put(`/exams/${examId}/publish`, payload ?? {})
-      await this.loadExams()
-    },
-    async loadStudentExams() {
-      const { data } = await request.get<unknown, ApiResponse<Exam[]>>('/exams/student')
-      this.exams = data
-    },
-    async closeExam(examId: number) {
-      await request.put(`/exams/${examId}/close`)
-      await this.loadExams()
-    },
-    async deleteExam(examId: number) {
-      await request.delete(`/exams/${examId}`)
-      await this.loadExams()
-    },
+    // Questions
+    async loadQuestions(category?: string) { this.questions = (await api.loadQuestionsApi(category)).list },
+    async loadCategories() { this.categories = await api.loadCategoriesApi() },
+    async loadUploadFiles() { return api.loadUploadFilesApi() },
+    async uploadAndParse(file: File, category?: string) { this.latestParsedCount = await api.uploadAndParseApi(file, category); await this.loadQuestions(); return this.latestParsedCount },
+    async deleteQuestion(id: number) { await api.deleteQuestionApi(id); await this.loadQuestions() },
+    async deleteQuestions(ids: number[]) { await api.deleteQuestionsApi(ids); await this.loadQuestions() },
+    async updateQuestionScores(ids: number[], s: number) { await api.updateQuestionScoresApi(ids, s); await this.loadQuestions() },
+    async updateQuestionCategories(ids: number[], category: string) { await api.updateQuestionCategoriesApi(ids, category); await this.loadQuestions(); await this.loadCategories() },
+
+    // Exams
+    async loadExams() { this.exams = await api.loadExamsApi() },
+    async loadStudentExams() { this.exams = await api.loadStudentExamsApi() },
+    getExamDetail: (id: number) => api.getExamDetailApi(id),
+    loadExamHistory: (id: number) => api.loadExamHistoryApi(id),
+    async createExam(p: Parameters<typeof api.createExamApi>[0]) { await api.createExamApi(p); await this.loadExams() },
+    async publishExam(id: number, p?: PublishExamPayload) { await api.publishExamApi(id, p); await this.loadExams() },
+    async closeExam(id: number) { await api.closeExamApi(id); await this.loadExams() },
+    async deleteExam(id: number) { await api.deleteExamApi(id); await this.loadExams() },
     async submitExam(examId: number, answers: Record<number, string>, useTime = 0) {
-      const payload = {
-        studentId: this.currentUser?.userId,
-        useTime,
-        answers: Object.entries(answers).map(([questionId, studentAnswer]) => ({
-          questionId: Number(questionId),
-          studentAnswer,
-        })),
-      }
-      const { data } = await request.post<
-        unknown,
-        ApiResponse<{ resultId: number; totalScore: number; correctCount: number; wrongCount: number }>
-      >(`/exams/${examId}/submit`, payload)
-      await this.loadMyResults()
-      return data
-    },
-    async loadMyResults() {
-      const { data } = await request.get<unknown, ApiResponse<ExamResult[]>>('/results/my')
-      this.results = data
-    },
-    async loadExamResults(examId: number) {
-      const { data } = await request.get<unknown, ApiResponse<ExamResult[]>>(`/results/exam/${examId}`)
-      this.results = data
-    },
-    async getResultDetail(resultId: number) {
-      const { data } = await request.get<unknown, ApiResponse<ResultDetail>>(`/results/${resultId}`)
-      return data
-    },
-    getExamResultHistory(examId: number) {
-      return this.results.filter((result) => result.examId === examId)
-    },
-    hasSubmittedExam(examId: number) {
-      return this.results.some((result) => result.examId === examId)
-    },
-    isExamAccessible(exam: Exam) {
-      return isExamPublished(exam) && isExamInTimeWindow(exam)
-    },
-    async loadUsers() {
-      const { data } = await request.get<unknown, ApiResponse<User[]>>('/users')
-      this.users = data
-    },
-    async createUser(payload: CreateUserPayload) {
-      await request.post('/users', payload)
-      await this.loadUsers()
-    },
-    async updateUser(userId: number, payload: UpdateUserPayload) {
-      await request.put(`/users/${userId}`, payload)
-      await this.loadUsers()
-    },
-    async deleteUser(userId: number) {
-      await request.delete(`/users/${userId}`)
-      await this.loadUsers()
-    },
-    async loadConfig() {
-      const { data } = await request.get<unknown, ApiResponse<Record<string, string>>>('/config')
-      return data
-    },
-    async saveConfig(config: Record<string, string>) {
-      await request.put('/config', config)
-    },
-    async testR2() {
-      const { data } = await request.post<unknown, ApiResponse<{ result: string }>>('/config/test-r2')
-      return data
+      const d = await api.submitExamApi(examId, this.currentUser?.userId, answers, useTime)
+      await this.loadMyResults(); return d
     },
 
-    // -------- Question Feedback --------
-    async submitFeedback(payload: FeedbackCreatePayload) {
-      const { data } = await request.post<unknown, ApiResponse<QuestionFeedback>>('/feedbacks', payload)
-      return data
-    },
-    async myFeedbackQuestionIds(questionIds: number[]) {
-      const { data } = await request.get<unknown, ApiResponse<number[]>>('/feedbacks/my', {
-        params: { questionIds: questionIds.join(',') },
-      })
-      return data
-    },
-    async loadFeedbacks(status?: string) {
-      const params: Record<string, string> = {}
-      if (status) params.status = status
-      const { data } = await request.get<unknown, ApiResponse<FeedbackListVO[]>>('/feedbacks', { params })
-      return data
-    },
-    async getFeedbackDetail(feedbackId: number) {
-      const { data } = await request.get<unknown, ApiResponse<any>>(`/feedbacks/${feedbackId}`)
-      return data
-    },
-    async resolveFeedback(feedbackId: number, questionRequest: Record<string, unknown>) {
-      const { data } = await request.put<unknown, ApiResponse<{ affectedOther: number }>>(`/feedbacks/${feedbackId}/resolve`, questionRequest)
-      return data
-    },
-    async rejectFeedback(feedbackId: number, rejectReason: string) {
-      const { data } = await request.put<unknown, ApiResponse<{ affectedOther: number }>>(`/feedbacks/${feedbackId}/reject`, { rejectReason })
-      return data
-    },
+    // Results
+    async loadMyResults() { this.results = await api.loadMyResultsApi() },
+    async loadExamResults(id: number) { this.results = await api.loadExamResultsApi(id) },
+    getResultDetail: (id: number) => api.getResultDetailApi(id),
+    getWrongQuestions: () => api.getWrongQuestionsApi(),
+
+    // Users
+    async loadUsers() { this.users = await api.loadUsersApi() },
+    async createUser(p: CreateUserPayload) { await api.createUserApi(p); await this.loadUsers() },
+    async updateUser(id: number, p: UpdateUserPayload) { await api.updateUserApi(id, p); await this.loadUsers() },
+    async deleteUser(id: number) { await api.deleteUserApi(id); await this.loadUsers() },
+
+    // Config
+    loadConfig: () => api.loadConfigApi(),
+    saveConfig: (c: Record<string, string>) => api.saveConfigApi(c),
+    testR2: () => api.testR2Api(),
+
+    // Notebooks
+    loadNotebooks: () => api.loadNotebooksApi(),
+    createNotebook: (n: string, d?: string) => api.createNotebookApi(n, d),
+    updateNotebook: (id: number, n?: string, d?: string) => api.updateNotebookApi(id, n, d),
+    deleteNotebook: (id: number) => api.deleteNotebookApi(id),
+    getNotebookDetail: (id: number) => api.getNotebookDetailApi(id),
+    addToNotebook: (id: number, aid: number) => api.addToNotebookApi(id, aid),
+    removeNotebookItem: (id: number, iid: number) => api.removeNotebookItemApi(id, iid),
+
+    // Feedback
+    submitFeedback: (p: FeedbackCreatePayload) => api.submitFeedbackApi(p),
+    myFeedbackQuestionIds: (ids: number[]) => api.myFeedbackQuestionIdsApi(ids),
+    loadFeedbacks: (s?: string) => api.loadFeedbacksApi(s),
+    getFeedbackDetail: (id: number) => api.getFeedbackDetailApi(id),
+    resolveFeedback: (id: number, req: Record<string, unknown>) => api.resolveFeedbackApi(id, req),
+    rejectFeedback: (id: number, reason: string) => api.rejectFeedbackApi(id, reason),
+
+    // Helpers
+    hasSubmittedExam(id: number) { return this.results.some((r) => r.examId === id) },
+    isExamAccessible: (e: Exam) => canAccess(e),
   },
 })

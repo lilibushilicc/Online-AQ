@@ -3,6 +3,7 @@ package com.example.olineaqspring.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.olineaqspring.entity.SysConfig;
 import com.example.olineaqspring.mapper.SysConfigMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -10,12 +11,9 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class ConfigService {
     private final SysConfigMapper sysConfigMapper;
-
-    public ConfigService(SysConfigMapper sysConfigMapper) {
-        this.sysConfigMapper = sysConfigMapper;
-    }
 
     public Map<String, String> getAll() {
         List<SysConfig> list = sysConfigMapper.selectList(null);

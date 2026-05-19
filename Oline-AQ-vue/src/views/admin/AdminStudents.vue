@@ -21,8 +21,12 @@ const form = reactive({
 const students = ref<User[]>([])
 
 onMounted(async () => {
-  await store.loadUsers()
-  students.value = store.users.filter((u) => u.role === 'student')
+  try {
+    await store.loadUsers()
+    students.value = store.users.filter((u) => u.role === 'student')
+  } catch {
+    ElMessage.error('加载学生数据失败，请刷新重试')
+  }
 })
 
 function openCreate() {

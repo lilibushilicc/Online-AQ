@@ -89,11 +89,9 @@ CREATE TABLE IF NOT EXISTS exam_result (
     submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO sys_user (username, password, real_name, role)
-VALUES
-    ('admin', '123456', '教师管理员', 'admin'),
-    ('2023001', '123456', '学生一号', 'student')
-ON CONFLICT (username) DO NOTHING;
+-- 密码使用 BCrypt 加密（明文 123456 的加密结果）
+-- 应用启动时会通过 DemoUserInitializer 自动创建用户（使用 BCrypt 加密）
+-- 如需手动插入，请使用编程方式生成加密密码
 
 INSERT INTO question (question_content, question_type, option_a, option_b, option_c, option_d, correct_answer, score)
 SELECT 'Java属于哪种语言？', 'single', '前端语言', '后端语言', '数据库语言', '标记语言', 'B', 5

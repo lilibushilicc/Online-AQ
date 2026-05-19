@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import StudentLayout from './StudentLayout.vue'
+import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type ResultDetail } from '@/stores/exam'
 
 const route = useRoute()
@@ -49,10 +50,14 @@ async function submitFeedback() {
 }
 
 onMounted(async () => {
-  resultDetail.value = await store.getResultDetail(resultId)
-  const ids = resultDetail.value.answers.map((a) => a.questionId)
-  const reported = await store.myFeedbackQuestionIds(ids)
-  submittedFeedbackIds.value = new Set(reported)
+  try {
+    resultDetail.value = await store.getResultDetail(resultId)
+    const ids = resultDetail.value.answers.map((a) => a.questionId)
+    const reported = await store.myFeedbackQuestionIds(ids)
+    submittedFeedbackIds.value = new Set(reported)
+  } catch {
+    ElMessage.error('加载成绩详情失败，请刷新重试')
+  }
 })
 </script>
 
@@ -62,36 +67,12 @@ onMounted(async () => {
     :subtitle="resultDetail ? `成绩 ${resultDetail.result.totalScore} / ${resultDetail.exam.totalScore}，正确率 ${scorePercent}%` : ''"
   >
     <section v-if="resultDetail">
-      <el-row :gutter="14">
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover" style="margin-bottom: 14px">
-            <el-statistic title="总分" :value="resultDetail.result.totalScore">
-              <template #suffix><span style="font-size: 14px; color: var(--muted)">分</span></template>
-            </el-statistic>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover" style="margin-bottom: 14px">
-            <el-statistic title="正确题数" :value="resultDetail.result.correctCount">
-              <template #suffix><span style="font-size: 14px; color: var(--muted)">道</span></template>
-            </el-statistic>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover" style="margin-bottom: 14px">
-            <el-statistic title="错误题数" :value="resultDetail.result.wrongCount">
-              <template #suffix><span style="font-size: 14px; color: var(--muted)">道</span></template>
-            </el-statistic>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover" style="margin-bottom: 14px">
-            <el-statistic title="正确率" :value="scorePercent">
-              <template #suffix><span style="font-size: 14px; color: var(--muted)">%</span></template>
-            </el-statistic>
-          </el-card>
-        </el-col>
-      </el-row>
+      <StatCards :items="[
+        { title: '总分', value: resultDetail.result.totalScore, suffix: '分' },
+        { title: '正确题数', value: resultDetail.result.correctCount, suffix: '道' },
+        { title: '错误题数', value: resultDetail.result.wrongCount, suffix: '道' },
+        { title: '正确率', value: scorePercent, suffix: '%' },
+      ]" />
     </section>
 
     <el-card v-if="resultDetail" style="margin-bottom: 14px">
@@ -127,22 +108,6 @@ onMounted(async () => {
           <el-tag type="success">正确答案：{{ answer.correctAnswer }}</el-tag>
           <el-tag>{{ answer.score }} 分</el-tag>
         </div>
-      </el-card>
-    </el-card>
-
-    <el-card v-if="resultDetail">
-      <template #header>
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <strong>考试历史记录</strong>
-          <span style="color: var(--muted); font-size: 13px">包含创建、发布、关闭和提交事件</span>
-        </div>
-      </template>
-      <el-card v-for="history in resultDetail.history" :key="history.historyId" shadow="hover" style="margin-bottom: 14px">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
-          <strong>{{ history.actionType }}</strong>
-          <span class="muted">{{ history.operatorName || `用户 #${history.operatorId ?? '-'}` }} · {{ new Date(history.createTime).toLocaleString() }}</span>
-        </div>
-        <p class="muted">{{ history.actionDetail }}</p>
       </el-card>
     </el-card>
 

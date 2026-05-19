@@ -2,7 +2,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AdminLayout from './AdminLayout.vue'
-import { useExamStore, type Exam, type ExamHistory, type Question } from '@/stores/exam'
+import StatCards from '@/views/components/StatCards.vue'
+import { useExamStore, type Exam, type ExamHistory, type Question, type QuestionScoreItem } from '@/stores/exam'
 
 const store = useExamStore()
 const previewVisible = ref(false)
@@ -15,6 +16,8 @@ const publishDialogVisible = ref(false)
 const publishExamTarget = ref<Exam | null>(null)
 const publishMode = ref<'all' | 'select'>('all')
 const publishStudentIds = ref<number[]>([])
+const creating = ref(false)
+const publishing = ref(false)
 const form = reactive({
   examName: '新建基础测试',
   description: '用于课堂快速测验',
@@ -24,16 +27,39 @@ const form = reactive({
   allowRetake: false,
   questionIds: [] as number[],
 })
+
+const QUESTION_TYPE_LABEL: Record<string, string> = {
+  single: '单选',
+  judge: '判断',
+  short_answer: '简答',
+  fill_blank: '填空',
+}
+
 const pickerCategory = ref('')
 const pickerSearch = ref('')
 const selectedSearch = ref('')
 
+const customScores = reactive<Record<number, number>>({})
 const selectedQuestions = computed(() => store.questions.filter((q) => form.questionIds.includes(q.questionId)))
 const filteredSelected = computed(() => {
   if (!selectedSearch.value) return selectedQuestions.value
   return selectedQuestions.value.filter((q) => q.questionContent.includes(selectedSearch.value))
 })
-const selectedScore = computed(() => selectedQuestions.value.reduce((sum, q) => sum + Number(q.score), 0))
+const selectedScore = computed(() => {
+  return selectedQuestions.value.reduce((sum, q) => sum + (customScores[q.questionId] ?? q.score), 0)
+})
+
+function getScore(question: Question) {
+  return customScores[question.questionId] ?? question.score
+}
+
+function setScore(questionId: number, value: number) {
+  if (value === store.questions.find((q) => q.questionId === questionId)?.score) {
+    delete customScores[questionId]
+  } else {
+    customScores[questionId] = value
+  }
+}
 const publishedCount = computed(() => store.exams.filter((e) => e.status === 'published').length)
 const draftCount = computed(() => store.exams.filter((e) => e.status === 'draft').length)
 const closedCount = computed(() => store.exams.filter((e) => e.status === 'closed').length)
@@ -50,8 +76,12 @@ const pickerQuestions = computed(() => {
 const studentOptions = computed(() => store.users.filter((u) => u.role === 'student'))
 
 onMounted(async () => {
-  await Promise.all([store.loadQuestions(), store.loadExams(), store.loadCategories(), store.loadUsers()])
-  form.questionIds = store.questions.map((q) => q.questionId)
+  try {
+    await Promise.all([store.loadQuestions(), store.loadExams(), store.loadCategories(), store.loadUsers()])
+  } catch {
+    ElMessage.error('加载数据失败，请刷新重试')
+  }
+  form.questionIds = []
 })
 
 function formatTime(value?: string | null) {
@@ -64,6 +94,10 @@ function openQuestionPicker() {
   questionPickerVisible.value = true
 }
 
+function clearCustomScores() {
+  Object.keys(customScores).forEach((key) => delete customScores[Number(key)])
+}
+
 function confirmQuestionSelection() {
   questionPickerVisible.value = false
 }
@@ -73,16 +107,26 @@ async function createExam() {
     ElMessage.warning('请填写考试名称并至少选择一道题')
     return
   }
-  await store.createExam({
-    examName: form.examName,
-    description: form.description,
-    duration: form.duration,
-    startTime: form.startTime || null,
-    endTime: form.endTime || null,
-    allowRetake: form.allowRetake,
-    questionIds: form.questionIds,
-  })
-  ElMessage.success('考试已保存为草稿')
+  creating.value = true
+  try {
+    const customScoreKeys = Object.keys(customScores)
+    const questionScores = customScoreKeys.length > 0
+      ? (customScoreKeys.map((id) => ({ questionId: Number(id), score: customScores[Number(id)] })) as QuestionScoreItem[])
+      : undefined
+    await store.createExam({
+      examName: form.examName,
+      description: form.description,
+      duration: form.duration,
+      startTime: form.startTime || null,
+      endTime: form.endTime || null,
+      allowRetake: form.allowRetake,
+      questionIds: form.questionIds,
+      questionScores,
+    })
+    ElMessage.success('考试已保存为草稿')
+  } finally {
+    creating.value = false
+  }
 }
 
 async function showPreview(row: Exam) {
@@ -107,6 +151,7 @@ function openPublishDialog(exam: Exam) {
 
 async function confirmPublish() {
   if (!publishExamTarget.value) return
+  publishing.value = true
   try {
     await store.publishExam(publishExamTarget.value.examId, {
       assignAll: publishMode.value === 'all',
@@ -114,8 +159,8 @@ async function confirmPublish() {
     })
     ElMessage.success(`「${publishExamTarget.value.examName}」已发布`)
     publishDialogVisible.value = false
-  } catch {
-    // handled by interceptor
+  } finally {
+    publishing.value = false
   }
 }
 
@@ -142,36 +187,12 @@ async function handleDelete(exam: Exam) {
 
 <template>
   <AdminLayout title="考试管理" subtitle="支持设置考试开放时间、重考策略，并查看每场考试的历史记录。">
-    <el-row :gutter="14">
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="全部考试" :value="store.exams.length">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="已发布" :value="publishedCount">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="草稿" :value="draftCount">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="已关闭" :value="closedCount">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">场</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-    </el-row>
+    <StatCards :items="[
+      { title: '全部考试', value: store.exams.length, suffix: '场' },
+      { title: '已发布', value: publishedCount, suffix: '场' },
+      { title: '草稿', value: draftCount, suffix: '场' },
+      { title: '已关闭', value: closedCount, suffix: '场' },
+    ]" />
 
     <!-- 创建考试 -->
     <el-card style="margin-bottom: 14px">
@@ -209,7 +230,7 @@ async function handleDelete(exam: Exam) {
           <el-descriptions-item label="试卷总分">{{ selectedScore }} 分</el-descriptions-item>
           <el-descriptions-item label="重考策略">{{ form.allowRetake ? '允许重考' : '仅一次提交' }}</el-descriptions-item>
         </el-descriptions>
-        <el-button type="primary" @click="createExam">保存考试</el-button>
+        <el-button type="primary" :loading="creating" @click="createExam">保存考试</el-button>
 
         <!-- 已选题目列表 -->
         <el-collapse style="margin-top: 16px" v-if="selectedQuestions.length > 0">
@@ -222,13 +243,24 @@ async function handleDelete(exam: Exam) {
                   <div class="picker-content">{{ question.questionContent }}</div>
                   <div class="picker-meta">
                     <el-tag size="small" :type="question.questionType === 'single' ? 'primary' : question.questionType === 'judge' ? 'warning' : 'success'">
-                      {{ ({ single: '单选', judge: '判断', short_answer: '简答', fill_blank: '填空' } as any)[question.questionType] || question.questionType }}
+                      {{ QUESTION_TYPE_LABEL[question.questionType] || question.questionType }}
                     </el-tag>
                     <el-tag v-if="question.category" size="small" effect="plain">{{ question.category }}</el-tag>
-                    <span>{{ question.score }} 分</span>
                   </div>
                 </div>
-                <el-button size="small" type="danger" link @click="form.questionIds = form.questionIds.filter((id) => id !== question.questionId)">移除</el-button>
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <el-input-number
+                    :model-value="getScore(question)"
+                    :min="0"
+                    :max="100"
+                    :step="1"
+                    size="small"
+                    style="width: 90px"
+                    @update:model-value="(val: number) => setScore(question.questionId, val)"
+                  />
+                  <span style="font-size: 12px; color: var(--muted)">分</span>
+                  <el-button size="small" type="danger" link @click="form.questionIds = form.questionIds.filter((id) => id !== question.questionId)">移除</el-button>
+                </div>
               </div>
             </div>
           </el-collapse-item>
@@ -288,7 +320,7 @@ async function handleDelete(exam: Exam) {
           <div style="flex: 1; min-width: 0">
             <div class="picker-content">{{ question.questionContent }}</div>
             <div class="picker-meta">
-              <el-tag size="small" :type="question.questionType === 'single' ? 'primary' : question.questionType === 'judge' ? 'warning' : 'success'">{{ ({ single: '单选', judge: '判断', short_answer: '简答', fill_blank: '填空' } as any)[question.questionType] || question.questionType }}</el-tag>
+              <el-tag size="small" :type="question.questionType === 'single' ? 'primary' : question.questionType === 'judge' ? 'warning' : 'success'">{{ QUESTION_TYPE_LABEL[question.questionType] || question.questionType }}</el-tag>
               <el-tag v-if="question.category" size="small" effect="plain">{{ question.category }}</el-tag>
               <span>{{ question.score }} 分</span>
             </div>
@@ -324,7 +356,7 @@ async function handleDelete(exam: Exam) {
       </template>
       <template #footer>
         <el-button @click="publishDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmPublish" :disabled="publishMode === 'select' && publishStudentIds.length === 0">确认发布</el-button>
+        <el-button type="primary" :loading="publishing" :disabled="publishMode === 'select' && publishStudentIds.length === 0" @click="confirmPublish">确认发布</el-button>
       </template>
     </el-dialog>
 

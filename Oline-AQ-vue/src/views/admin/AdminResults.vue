@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import AdminLayout from './AdminLayout.vue'
+import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type ResultDetail } from '@/stores/exam'
 
 const store = useExamStore()
@@ -21,9 +23,13 @@ const correctRate = computed(() => {
 })
 
 onMounted(async () => {
-  await store.loadExams()
-  examId.value = store.exams[0]?.examId
-  if (examId.value) await store.loadExamResults(examId.value)
+  try {
+    await store.loadExams()
+    examId.value = store.exams[0]?.examId
+    if (examId.value) await store.loadExamResults(examId.value)
+  } catch {
+    ElMessage.error('加载成绩数据失败，请刷新重试')
+  }
 })
 
 async function loadResults() {
@@ -38,36 +44,12 @@ async function openDetail(resultId: number) {
 
 <template>
   <AdminLayout title="成绩查看" subtitle="按考试查看学生成绩，并下钻到每次提交的答题详情和历史记录。">
-    <el-row :gutter="14">
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="提交人数" :value="store.results.length">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">人</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="平均分" :value="averageScore">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">分</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="最高分" :value="highestScore">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">分</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="hover" style="margin-bottom: 14px">
-          <el-statistic title="整体正确率" :value="correctRate">
-            <template #suffix><span style="font-size: 14px; color: var(--muted)">%</span></template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-    </el-row>
+    <StatCards :items="[
+      { title: '提交人数', value: store.results.length, suffix: '人' },
+      { title: '平均分', value: averageScore, suffix: '分' },
+      { title: '最高分', value: highestScore, suffix: '分' },
+      { title: '整体正确率', value: correctRate, suffix: '%' },
+    ]" />
 
     <el-card style="margin-bottom: 14px">
       <template #header>

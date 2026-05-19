@@ -6,12 +6,18 @@ import { useExamStore, type FeedbackListVO } from '@/stores/exam'
 
 const store = useExamStore()
 
+interface FeedbackDetail {
+  studentName: string
+  feedback: { feedbackType: string; description: string; createTime: string; status: string; rejectReason?: string }
+  question: { questionContent: string; questionType: string; optionA: string; optionB: string; optionC?: string; optionD?: string; correctAnswer: string; score: number; category?: string }
+}
+
 const activeTab = ref('')
 const feedbacks = ref<FeedbackListVO[]>([])
 const loading = ref(false)
 
 const detailDrawerVisible = ref(false)
-const detailData = ref<any>(null)
+const detailData = ref<FeedbackDetail | null>(null)
 
 const resolveDialogVisible = ref(false)
 const resolveTarget = ref<FeedbackListVO | null>(null)
@@ -61,7 +67,7 @@ function onTabChange(value: string) {
 
 async function openDetail(item: FeedbackListVO) {
   const data = await store.getFeedbackDetail(item.feedbackId)
-  detailData.value = data
+  detailData.value = data as FeedbackDetail
   detailDrawerVisible.value = true
 }
 
@@ -106,8 +112,8 @@ async function confirmResolve() {
   payload.score = editForm.value.score
   if (editForm.value.category) payload.category = editForm.value.category
   try {
-    const res: any = await store.resolveFeedback(resolveTarget.value.feedbackId, payload)
-    ElMessage.success(res.message || '题目已修改，反馈已采纳')
+    const res = await store.resolveFeedback(resolveTarget.value.feedbackId, payload)
+    ElMessage.success('题目已修改，反馈已采纳')
     resolveDialogVisible.value = false
     await loadData(activeTab.value)
   } catch {
@@ -130,8 +136,8 @@ async function confirmReject() {
     }
   }
   try {
-    const res: any = await store.rejectFeedback(rejectTarget.value.feedbackId, rejectReason.value || '无')
-    ElMessage.success(res.message || '反馈已驳回')
+    const res = await store.rejectFeedback(rejectTarget.value.feedbackId, rejectReason.value || '无')
+    ElMessage.success('反馈已驳回')
     rejectDialogVisible.value = false
     await loadData(activeTab.value)
   } catch {

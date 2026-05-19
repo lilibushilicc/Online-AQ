@@ -27,6 +27,12 @@ public class ResultController {
         return ApiResponse.ok("查询成功", resultService.myResults(userId));
     }
 
+    @GetMapping("/wrong-questions")
+    public ApiResponse<List<Map<String, Object>>> wrongQuestions(HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        return ApiResponse.ok("查询成功", resultService.wrongQuestions(userId));
+    }
+
     @GetMapping("/exam/{examId}")
     public ApiResponse<List<ExamResult>> examResults(@PathVariable Integer examId) {
         return ApiResponse.ok("查询成功", resultService.examResults(examId));

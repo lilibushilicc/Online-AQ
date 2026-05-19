@@ -4,27 +4,37 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.olineaqspring.dto.QuestionRequest;
 import com.example.olineaqspring.entity.Question;
 import com.example.olineaqspring.mapper.QuestionMapper;
+import com.example.olineaqspring.vo.PageResult;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.olineaqspring.utils.BeanUtils;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class QuestionService {
     private final QuestionMapper questionMapper;
 
-    public QuestionService(QuestionMapper questionMapper) {
-        this.questionMapper = questionMapper;
-    }
-
-    public List<Question> list(String category) {
-        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
+    public PageResult<Question> list(String category, Integer page, Integer pageSize) {
+        LambdaQueryWrapper<Question> countWrapper = new LambdaQueryWrapper<>();
         if (category != null && !category.isEmpty()) {
-            wrapper.eq(Question::getCategory, category);
+            countWrapper.eq(Question::getCategory, category);
         }
-        return questionMapper.selectList(wrapper);
+        long total = questionMapper.selectCount(countWrapper);
+
+        LambdaQueryWrapper<Question> listWrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
+        if (category != null && !category.isEmpty()) {
+            listWrapper.eq(Question::getCategory, category);
+        }
+        int offset = (page - 1) * pageSize;
+        listWrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
+        List<Question> list = questionMapper.selectList(listWrapper);
+
+        return new PageResult<>(list, total, page, pageSize);
     }
 
     public List<String> categories() {
@@ -40,7 +50,9 @@ public class QuestionService {
 
     public Question create(QuestionRequest request) {
         Question question = new Question();
-        copy(request, question);
+        question.setQuestionType("single");
+        question.setScore(BigDecimal.valueOf(5));
+        BeanUtils.copyQuestion(request, question);
         questionMapper.insert(question);
         return question;
     }
@@ -51,7 +63,7 @@ public class QuestionService {
             throw new RuntimeException("题目不存在");
         }
 
-        copy(request, question);
+        BeanUtils.copyQuestion(request, question);
         questionMapper.updateById(question);
         return question;
     }
@@ -69,11 +81,8 @@ public class QuestionService {
     @Transactional
     public void updateCategoryBatch(List<Integer> questionIds, String category) {
         validateQuestionIds(questionIds);
-        for (Integer questionId : questionIds) {
-            Question question = questionMapper.selectById(questionId);
-            if (question == null) {
-                continue;
-            }
+        List<Question> questions = questionMapper.selectBatchIds(questionIds);
+        for (Question question : questions) {
             question.setCategory(category);
             questionMapper.updateById(question);
         }
@@ -86,12 +95,8 @@ public class QuestionService {
             throw new RuntimeException("批量分值必须大于 0");
         }
 
-        for (Integer questionId : questionIds) {
-            Question question = questionMapper.selectById(questionId);
-            if (question == null) {
-                continue;
-            }
-
+        List<Question> questions = questionMapper.selectBatchIds(questionIds);
+        for (Question question : questions) {
             question.setScore(score);
             questionMapper.updateById(question);
         }
@@ -101,17 +106,5 @@ public class QuestionService {
         if (questionIds == null || questionIds.isEmpty()) {
             throw new RuntimeException("请至少选择一道题目");
         }
-    }
-
-    private void copy(QuestionRequest request, Question question) {
-        question.setQuestionContent(request.getQuestionContent());
-        question.setQuestionType(request.getQuestionType() == null ? "single" : request.getQuestionType());
-        question.setOptionA(request.getOptionA());
-        question.setOptionB(request.getOptionB());
-        question.setOptionC(request.getOptionC());
-        question.setOptionD(request.getOptionD());
-        question.setCorrectAnswer(request.getCorrectAnswer());
-        question.setScore(request.getScore() == null ? BigDecimal.valueOf(5) : request.getScore());
-        question.setCategory(request.getCategory());
     }
 }

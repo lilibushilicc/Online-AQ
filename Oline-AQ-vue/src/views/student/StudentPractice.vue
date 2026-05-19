@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import StudentLayout from './StudentLayout.vue'
+import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore } from '@/stores/exam'
 
 const store = useExamStore()
@@ -10,6 +11,7 @@ const answers = ref<Record<number, string>>({})
 const submitted = ref(false)
 const score = ref(0)
 const practiceCategory = ref('')
+const submitting = ref(false)
 
 const categoryOptions = computed(() => {
   const cats = new Set(store.questions.map((q) => q.category).filter(Boolean))
@@ -24,12 +26,12 @@ const progress = computed(() =>
   questions.value.length === 0 ? 0 : Math.round((answeredCount.value / questions.value.length) * 100),
 )
 
-function handleSubmit() {
+async function handleSubmit() {
   if (answeredCount.value < questions.value.length) {
     ElMessage.warning('请完成所有题目后再提交')
     return
   }
-
+  submitting.value = true
   let correctCount = 0
   for (const q of questions.value) {
     if (answers.value[q.questionId] === q.correctAnswer) {
@@ -38,6 +40,7 @@ function handleSubmit() {
   }
   score.value = correctCount
   submitted.value = true
+  submitting.value = false
   ElMessage.success(`练习完成！正确 ${correctCount} / ${questions.value.length}`)
 }
 
@@ -63,7 +66,11 @@ function handleCategoryChange() {
 }
 
 onMounted(async () => {
-  await Promise.all([store.loadQuestions(), store.loadCategories()])
+  try {
+    await Promise.all([store.loadQuestions(), store.loadCategories()])
+  } catch {
+    ElMessage.error('加载题库失败，请刷新重试')
+  }
 })
 </script>
 
@@ -76,35 +83,15 @@ onMounted(async () => {
         </el-select>
         <span class="muted" style="margin-left: 12px; font-size: 13px">显示 {{ questions.length }} / {{ store.questions.length }} 道题</span>
       </div>
-      <el-row :gutter="14" style="margin-bottom: 16px">
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover">
-            <el-statistic title="题目总数" :value="questions.length">
-              <template #suffix><span style="font-size: 14px; color: var(--muted)">题</span></template>
-            </el-statistic>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover">
-            <el-statistic title="已作答" :value="answeredCount">
-              <template #suffix><span style="font-size: 14px; color: var(--muted)">题</span></template>
-            </el-statistic>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover">
-            <el-statistic title="完成进度" :value="`${progress}%`" />
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="6">
-          <el-card shadow="hover">
-            <el-statistic v-if="submitted" title="正确数量" :value="score">
-              <template #suffix><span style="font-size: 14px; color: var(--muted)">题</span></template>
-            </el-statistic>
-            <el-statistic v-else title="状态" value="作答中" />
-          </el-card>
-        </el-col>
-      </el-row>
+      <StatCards :items="[
+        { title: '题目总数', value: questions.length, suffix: '题' },
+        { title: '已作答', value: answeredCount, suffix: '题' },
+        { title: '完成进度', value: `${progress}%` },
+        ...(submitted
+          ? [{ title: '正确数量', value: score, suffix: '题' as string }]
+          : [{ title: '状态', value: '作答中' as string }]
+        ),
+      ]" />
 
       <el-card v-for="(question, index) in questions" :key="question.questionId" shadow="hover" style="margin-bottom: 14px">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
@@ -140,12 +127,12 @@ onMounted(async () => {
 
       <div style="display: flex; justify-content: center; gap: 14px; margin-top: 20px">
         <el-button v-if="submitted" type="primary" size="large" @click="handleRetry">重新练习</el-button>
-        <el-button v-else type="primary" size="large" :disabled="answeredCount < questions.length" @click="handleSubmit">
+        <el-button v-else type="primary" size="large" :loading="submitting" :disabled="answeredCount < questions.length" @click="handleSubmit">
           提交答案
         </el-button>
       </div>
     </section>
     <el-empty v-if="store.questions.length === 0" description="题库暂无题目，请联系管理员上传题目" />
-    <el-empty v-else description="当前分类下暂无题目，请选择其他分类" />
+    <el-empty v-else-if="questions.length === 0" description="当前分类下暂无题目，请选择其他分类" />
   </StudentLayout>
 </template>

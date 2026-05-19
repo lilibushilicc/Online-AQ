@@ -20,6 +20,8 @@ const StudentExamDetail = () => import('@/views/student/StudentExamDetail.vue')
 const StudentResults = () => import('@/views/student/StudentResults.vue')
 const StudentResultDetail = () => import('@/views/student/StudentResultDetail.vue')
 const StudentPractice = () => import('@/views/student/StudentPractice.vue')
+const StudentWrongBook = () => import('@/views/student/StudentWrongBook.vue')
+const StudentWrongBookDetail = () => import('@/views/student/StudentWrongBookDetail.vue')
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -38,6 +40,9 @@ const routes: RouteRecordRaw[] = [
   { path: '/student/results', component: StudentResults, meta: { requiresAuth: true, role: 'student' } },
   { path: '/student/results/:resultId', component: StudentResultDetail, meta: { requiresAuth: true, role: 'student' } },
   { path: '/student/practice', component: StudentPractice, meta: { requiresAuth: true, role: 'student' } },
+  { path: '/student/wrong-book', component: StudentWrongBook, meta: { requiresAuth: true, role: 'student' } },
+  { path: '/student/wrong-book/:notebookId', component: StudentWrongBookDetail, meta: { requiresAuth: true, role: 'student' } },
+  { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 function getDefaultRoute(role?: Role) {
@@ -47,6 +52,9 @@ function getDefaultRoute(role?: Role) {
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior() {
+    return { top: 0, behavior: 'instant' as const }
+  },
 })
 
 router.beforeEach((to) => {
@@ -62,6 +70,33 @@ router.beforeEach((to) => {
   }
 
   return true
+})
+
+const TITLE_MAP: Record<string, string> = {
+  login: '登录',
+  dashboard: '教学控制台',
+  upload: '上传试题',
+  questions: '题库管理',
+  exams: '考试管理',
+  results: '成绩查看',
+  students: '学生管理',
+  config: '系统配置',
+  feedbacks: '反馈管理',
+  practice: '在线做题',
+  'wrong-book': '错题本',
+}
+
+router.afterEach((to) => {
+  const segments = to.path.split('/').filter(Boolean)
+  let title = '智能在线答题系统'
+  for (const segment of segments) {
+    if (segment !== 'admin' && segment !== 'student') {
+      const label = TITLE_MAP[segment] || segment
+      title = `${label} - 智能在线答题系统`
+      break
+    }
+  }
+  document.title = title
 })
 
 export default router

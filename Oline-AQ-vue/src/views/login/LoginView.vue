@@ -22,6 +22,14 @@ const features = [
 ]
 
 async function submit() {
+  if (!form.username.trim()) {
+    ElMessage.warning('请输入账号')
+    return
+  }
+  if (!form.password) {
+    ElMessage.warning('请输入密码')
+    return
+  }
   try {
     const user = await store.login(form.username, form.password, form.role)
     router.push(user.role === 'admin' ? '/admin/dashboard' : '/student/exams')
