@@ -53,7 +53,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div v-loading="loading" style="min-height: 200px">
+  <div v-loading="loading" class="exam-page">
     <StatCards :items="[
       { title: '当前可参加', value: availableExams.length, suffix: '场' },
       { title: '已发布考试', value: store.publishedExams.length, suffix: '场' },
@@ -62,67 +62,276 @@ onMounted(async () => {
     ]" />
 
     <!-- 可参加的考试 -->
-    <h3 style="margin-bottom: 12px">📋 可参加考试</h3>
-    <el-row :gutter="14" v-if="store.publishedExams.length > 0">
-      <el-col v-for="exam in store.publishedExams" :key="exam.examId" :xs="24" :md="12" style="margin-bottom: 14px">
-        <el-card shadow="hover">
-          <template #header>
-            <div style="display: flex; align-items: center; justify-content: space-between">
-              <strong>{{ exam.examName }}</strong>
-              <el-tag :type="getAvailability(exam).type">{{ getAvailability(exam).label }}</el-tag>
+    <div class="exam-section">
+      <div class="exam-section__header">
+        <h3 class="exam-section__title">可参加考试</h3>
+        <span class="exam-section__count">{{ store.publishedExams.length }} 场</span>
+      </div>
+
+      <el-row :gutter="16" v-if="store.publishedExams.length > 0">
+        <el-col v-for="exam in store.publishedExams" :key="exam.examId" :xs="24" :md="12" class="exam-col">
+          <el-card shadow="never" class="exam-card">
+            <template #header>
+              <div class="exam-card__header">
+                <strong class="exam-card__name">{{ exam.examName }}</strong>
+                <el-tag :type="getAvailability(exam).type" size="small" effect="plain">
+                  {{ getAvailability(exam).label }}
+                </el-tag>
+              </div>
+            </template>
+
+            <p class="exam-card__desc">{{ exam.description || '暂无考试说明' }}</p>
+
+            <div class="exam-meta">
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">时长</span>
+                <span class="exam-meta__value">{{ exam.duration }} 分钟</span>
+              </div>
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">总分</span>
+                <span class="exam-meta__value">{{ exam.totalScore }} 分</span>
+              </div>
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">重考</span>
+                <span class="exam-meta__value">{{ exam.allowRetake ? '允许' : '仅一次' }}</span>
+              </div>
             </div>
-          </template>
-          <p style="color: var(--muted); font-size: 13px; margin: 0 0 12px">{{ exam.description || '暂无考试说明' }}</p>
-          <el-descriptions :column="3" border size="small">
-            <el-descriptions-item label="考试时长">{{ exam.duration }} 分钟</el-descriptions-item>
-            <el-descriptions-item label="总分">{{ exam.totalScore }} 分</el-descriptions-item>
-            <el-descriptions-item label="重考策略">{{ exam.allowRetake ? '允许重考' : '仅限一次' }}</el-descriptions-item>
-            <el-descriptions-item label="开始时间">{{ formatTime(exam.startTime) }}</el-descriptions-item>
-            <el-descriptions-item label="结束时间">{{ formatTime(exam.endTime) }}</el-descriptions-item>
-            <el-descriptions-item label="历史记录">{{ getExamHistory(exam.examId).length }} 次</el-descriptions-item>
-          </el-descriptions>
-          <div v-if="getExamHistory(exam.examId).length > 0" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px">
-            <el-tag v-for="item in getExamHistory(exam.examId).slice(0, 3)" :key="item.resultId" type="info">
-              {{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
-            </el-tag>
-          </div>
-          <div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between">
-            <span style="color: var(--muted); font-size: 13px">
-              {{ !exam.allowRetake && store.hasSubmittedExam(exam.examId) ? '该考试已提交过，当前不可再次作答。' : '请在开放时间内完成作答。' }}
-            </span>
-            <el-button type="primary" :disabled="!canStartExam(exam)" @click="$router.push(`/student/exams/${exam.examId}`)">
-              开始答题
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    <el-empty v-if="store.publishedExams.length === 0" description="暂无已发布考试" />
+
+            <div class="exam-meta">
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">开始</span>
+                <span class="exam-meta__value">{{ formatTime(exam.startTime) }}</span>
+              </div>
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">结束</span>
+                <span class="exam-meta__value">{{ formatTime(exam.endTime) }}</span>
+              </div>
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">历史</span>
+                <span class="exam-meta__value">{{ getExamHistory(exam.examId).length }} 次</span>
+              </div>
+            </div>
+
+            <div v-if="getExamHistory(exam.examId).length > 0" class="exam-history-tags">
+              <el-tag
+                v-for="item in getExamHistory(exam.examId).slice(0, 3)"
+                :key="item.resultId"
+                type="info"
+                effect="plain"
+                size="small"
+              >
+                {{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
+              </el-tag>
+            </div>
+
+            <div class="exam-card__footer">
+              <span class="exam-card__hint">
+                {{ !exam.allowRetake && store.hasSubmittedExam(exam.examId) ? '已提交过，不可再次作答' : '请在开放时间内完成作答' }}
+              </span>
+              <el-button
+                type="primary"
+                :disabled="!canStartExam(exam)"
+                @click="$router.push(`/student/exams/${exam.examId}`)"
+              >
+                开始答题
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <el-empty v-if="store.publishedExams.length === 0" description="暂无已发布考试" />
+    </div>
 
     <!-- 历史试卷 -->
-    <h3 v-if="historyExams.length > 0" style="margin: 24px 0 12px">📝 历史试卷</h3>
-    <el-row :gutter="14" v-if="historyExams.length > 0">
-      <el-col v-for="exam in historyExams" :key="exam.examId" :xs="24" :md="12" style="margin-bottom: 14px">
-        <el-card shadow="hover">
-          <template #header>
-            <div style="display: flex; align-items: center; justify-content: space-between">
-              <strong>{{ exam.examName }}</strong>
-              <el-tag :type="exam.status === 'published' ? 'success' : 'info'">{{ exam.status === 'published' ? '已发布' : '已关闭' }}</el-tag>
+    <div v-if="historyExams.length > 0" class="exam-section">
+      <div class="exam-section__header">
+        <h3 class="exam-section__title">历史试卷</h3>
+        <span class="exam-section__count">{{ historyExams.length }} 场</span>
+      </div>
+
+      <el-row :gutter="16">
+        <el-col v-for="exam in historyExams" :key="exam.examId" :xs="24" :md="12" class="exam-col">
+          <el-card shadow="never" class="exam-card">
+            <template #header>
+              <div class="exam-card__header">
+                <strong class="exam-card__name">{{ exam.examName }}</strong>
+                <el-tag :type="exam.status === 'published' ? 'success' : 'info'" size="small" effect="plain">
+                  {{ exam.status === 'published' ? '已发布' : '已关闭' }}
+                </el-tag>
+              </div>
+            </template>
+
+            <p class="exam-card__desc">{{ exam.description || '暂无考试说明' }}</p>
+
+            <div class="exam-meta">
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">时长</span>
+                <span class="exam-meta__value">{{ exam.duration }} 分钟</span>
+              </div>
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">总分</span>
+                <span class="exam-meta__value">{{ exam.totalScore }} 分</span>
+              </div>
+              <div class="exam-meta__item">
+                <span class="exam-meta__label">提交</span>
+                <span class="exam-meta__value">{{ getExamHistory(exam.examId).length }} 次</span>
+              </div>
             </div>
-          </template>
-          <p style="color: var(--muted); font-size: 13px; margin: 0 0 12px">{{ exam.description || '暂无考试说明' }}</p>
-          <el-descriptions :column="3" border size="small">
-            <el-descriptions-item label="考试时长">{{ exam.duration }} 分钟</el-descriptions-item>
-            <el-descriptions-item label="总分">{{ exam.totalScore }} 分</el-descriptions-item>
-            <el-descriptions-item label="历史提交">{{ getExamHistory(exam.examId).length }} 次</el-descriptions-item>
-          </el-descriptions>
-          <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px">
-            <el-tag v-for="item in getExamHistory(exam.examId)" :key="item.resultId" type="info" style="cursor: pointer" @click="$router.push(`/student/results/${item.resultId}`)">
-              {{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+
+            <div class="exam-history-tags">
+              <el-tag
+                v-for="item in getExamHistory(exam.examId)"
+                :key="item.resultId"
+                type="info"
+                effect="plain"
+                size="small"
+                class="exam-history-tag--clickable"
+                @click="$router.push(`/student/results/${item.resultId}`)"
+              >
+                {{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
+              </el-tag>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
     </div>
+  </div>
 </template>
+
+<style scoped>
+.exam-page {
+  min-height: 200px;
+}
+
+.exam-section {
+  margin-top: 28px;
+}
+
+.exam-section__header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-light);
+}
+
+.exam-section__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-serif);
+}
+
+.exam-section__count {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.exam-col {
+  margin-bottom: 16px;
+}
+
+.exam-card {
+  height: 100%;
+}
+
+.exam-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exam-card__name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exam-card__desc {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.exam-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-light);
+}
+
+.exam-meta + .exam-meta {
+  border-top: none;
+  padding-top: 0;
+}
+
+.exam-meta__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exam-meta__label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.exam-meta__value {
+  font-size: 13px;
+  color: var(--ink-secondary);
+  font-weight: 500;
+}
+
+.exam-history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-light);
+}
+
+.exam-history-tag--clickable {
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.exam-history-tag--clickable:hover {
+  background: var(--accent-light) !important;
+  border-color: rgba(45, 90, 71, 0.2) !important;
+  color: var(--ink-green) !important;
+}
+
+.exam-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-light);
+}
+
+.exam-card__hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+</style>

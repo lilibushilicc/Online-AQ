@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElDialog } from 'element-plus'
-import { UploadFilled, Document, EditPen, Trophy } from '@element-plus/icons-vue'
+import { UploadFilled, Document, EditPen, Trophy, User } from '@element-plus/icons-vue'
 import { useExamStore, type Role } from '@/stores/exam'
+import { loadPublicLoginConfigApi } from '@/api'
 
 const router = useRouter()
 const store = useExamStore()
@@ -29,8 +30,25 @@ const features = [
 const logoClickCount = ref(0)
 let logoTimer: ReturnType<typeof setTimeout> | null = null
 const adminDialogVisible = ref(false)
+const requiredClickCount = ref(3)
+const loginAdminMethod = ref('both')
+const logoClickCountLoading = ref(true)
+
+async function loadClickConfig() {
+  try {
+    const data = await loadPublicLoginConfigApi()
+    const val = parseInt(data['login.logo.click.count'] ?? '3', 10)
+    if (!isNaN(val) && val > 0) {
+      requiredClickCount.value = val
+    }
+    loginAdminMethod.value = data['login.admin.method'] ?? 'both'
+  } catch { }
+  logoClickCountLoading.value = false
+}
 
 function handleLogoClick() {
+  if (logoClickCountLoading.value) return
+  if (loginAdminMethod.value === 'direct') return
   logoClickCount.value++
   if (logoTimer) {
     clearTimeout(logoTimer)
@@ -38,11 +56,24 @@ function handleLogoClick() {
   logoTimer = setTimeout(() => {
     logoClickCount.value = 0
   }, 2000)
-  if (logoClickCount.value >= 3) {
+  if (logoClickCount.value >= requiredClickCount.value) {
     logoClickCount.value = 0
     adminDialogVisible.value = true
+  } else {
+    const remain = requiredClickCount.value - logoClickCount.value
+    ElMessage.info(`还需要点击 ${remain} 次进入管理员登录`)
   }
 }
+
+function openAdminDialog() {
+  logoClickCount.value = 0
+  if (logoTimer) clearTimeout(logoTimer)
+  adminDialogVisible.value = true
+}
+
+onMounted(() => {
+  loadClickConfig()
+})
 
 async function submit() {
   if (!form.username.trim()) {
@@ -85,7 +116,7 @@ async function adminLogin() {
 <template>
   <main class="login-page">
     <div class="login-logo" @click="handleLogoClick">
-      <div class="login-logo-icon">O◈AQ</div>
+      <img src="/loginlogo.png" alt="Online-AQ" class="login-logo-icon" />
     </div>
 
     <section class="login-hero">
@@ -118,6 +149,9 @@ async function adminLogin() {
 
       <div class="login-footer">
         <el-button link type="primary" @click="router.push('/register')">没有账号？邮箱注册</el-button>
+        <el-button v-if="loginAdminMethod !== 'click_logo'" link @click="openAdminDialog">
+          <el-icon style="margin-right: 4px;"><User /></el-icon>管理员登录
+        </el-button>
       </div>
     </section>
 

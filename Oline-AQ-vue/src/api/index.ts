@@ -192,6 +192,10 @@ export function saveConfigApi(config: Record<string, string>) {
   return apiPut('/config', config)
 }
 
+export function loadPublicLoginConfigApi() {
+  return apiGet<Record<string, string>>('/config/public/login')
+}
+
 export function testR2Api() {
   return apiPost<{ result: string }>('/config/test-r2')
 }

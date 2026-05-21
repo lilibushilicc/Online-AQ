@@ -42,6 +42,16 @@ public class ConfigController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @GetMapping("/public/login")
+    public ApiResponse<Map<String, String>> getPublicLoginConfig() {
+        Map<String, String> result = new HashMap<>();
+        String count = configService.get("login.logo.click.count");
+        result.put("login.logo.click.count", count != null ? count : "3");
+        String method = configService.get("login.admin.method");
+        result.put("login.admin.method", method != null ? method : "both");
+        return ApiResponse.ok(result);
+    }
+
     @GetMapping
     public ApiResponse<Map<String, String>> getAll(HttpServletRequest request) {
         checkAdmin(request);

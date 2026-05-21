@@ -160,14 +160,14 @@ async function handleDelete(user: UserType) {
 
       <!-- 骨架加载 -->
       <template v-if="loading">
-        <div style="padding: 8px 0;">
-          <div v-for="n in 6" :key="n" style="display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line-light); gap: 16px;">
-            <div class="skeleton-block" style="width: 50px; height: 14px;"></div>
-            <div class="skeleton-block" style="width: 100px; height: 14px;"></div>
-            <div class="skeleton-block" style="width: 80px; height: 14px;"></div>
-            <div class="skeleton-block" style="width: 160px; height: 14px;"></div>
-            <div class="skeleton-block" style="width: 120px; height: 14px;"></div>
-            <div class="skeleton-block" style="width: 200px; height: 14px; margin-left: auto;"></div>
+        <div class="skeleton-table">
+          <div v-for="n in 6" :key="n" class="skeleton-table-row">
+            <div class="skeleton-block skeleton-col-id"></div>
+            <div class="skeleton-block skeleton-col-username"></div>
+            <div class="skeleton-block skeleton-col-name"></div>
+            <div class="skeleton-block skeleton-col-email"></div>
+            <div class="skeleton-block skeleton-col-time"></div>
+            <div class="skeleton-block skeleton-col-actions"></div>
           </div>
         </div>
       </template>
@@ -290,35 +290,153 @@ async function handleDelete(user: UserType) {
 </template>
 
 <style scoped>
-.students-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.students-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
 
 /* 同款个人中心布局 */
 .student-profile-card {
-  background: var(--paper); border-radius: 12px; padding: 28px 32px;
+  background: var(--paper);
+  border-radius: 12px;
+  padding: 28px 32px;
 }
-.sp-hero { display: flex; align-items: center; gap: 20px; }
-.sp-avatar {
-  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #529b2e, #85ce61);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; font-weight: 700; color: #fff;
-}
-.sp-hero-text { min-width: 0; }
-.sp-name { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1.4; }
-.sp-account { font-size: 14px; color: var(--muted); margin-top: 4px; }
 
-.sp-info-grid { display: flex; flex-direction: column; }
+.sp-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.sp-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #529b2e, #85ce61);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sp-hero-text {
+  min-width: 0;
+}
+
+.sp-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.sp-account {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.sp-info-grid {
+  display: flex;
+  flex-direction: column;
+}
+
 .sp-info-row {
-  display: flex; align-items: center; padding: 14px 0;
-  border-bottom: 1px solid var(--line-light); min-height: 48px; flex-wrap: wrap; gap: 8px;
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-light);
+  min-height: 48px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.sp-info-row:last-child { border-bottom: none; }
+
+.sp-info-row:last-child {
+  border-bottom: none;
+}
+
 .sp-label {
-  width: 80px; flex-shrink: 0; font-size: 14px; color: var(--ink-tertiary); font-weight: 500;
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 14px;
+  color: var(--ink-tertiary);
+  font-weight: 500;
 }
-.sp-value { font-size: 14px; color: var(--ink); }
-.sp-value.readonly { color: var(--ink-tertiary); }
-.sp-info-row .el-input { flex: 1; min-width: 180px; }
-.sp-field-error { width: 100%; font-size: 12px; color: var(--red); margin-top: -4px; }
-.sp-field-hint { width: 100%; font-size: 12px; color: var(--muted); margin-top: -4px; }
+
+.sp-value {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.sp-value.readonly {
+  color: var(--ink-tertiary);
+}
+
+.sp-info-row .el-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.sp-field-error {
+  width: 100%;
+  font-size: 12px;
+  color: var(--red);
+  margin-top: -4px;
+}
+
+.sp-field-hint {
+  width: 100%;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: -4px;
+}
+
+/* Skeleton */
+.skeleton-table {
+  padding: 8px 0;
+}
+
+.skeleton-table-row {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line-light);
+  gap: 16px;
+}
+
+.skeleton-col-id {
+  width: 50px;
+  height: 14px;
+}
+
+.skeleton-col-username {
+  width: 100px;
+  height: 14px;
+}
+
+.skeleton-col-name {
+  width: 80px;
+  height: 14px;
+}
+
+.skeleton-col-email {
+  width: 160px;
+  height: 14px;
+}
+
+.skeleton-col-time {
+  width: 120px;
+  height: 14px;
+}
+
+.skeleton-col-actions {
+  width: 200px;
+  height: 14px;
+  margin-left: auto;
+}
 </style>

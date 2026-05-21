@@ -214,26 +214,4 @@ onMounted(async () => {
   top: 6px;
   right: 6px;
 }
-.announce-item {
-  padding: 8px 0;
-}
-.announce-item--unread {
-  background: #f0f9ff;
-  margin: 0 -16px;
-  padding: 8px 16px;
-  border-radius: 6px;
-}
-.announce-item__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-.announce-item__content {
-  margin: 0;
-  white-space: pre-wrap;
-  line-height: 1.7;
-  color: var(--ink-secondary);
-  font-size: 14px;
-}
 </style>

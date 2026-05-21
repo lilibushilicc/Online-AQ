@@ -147,6 +147,8 @@ const config = ref<Record<string, string>>({
   'smtp.subject': '',
   'smtp.system_name': '',
   'smtp.email_template': '',
+  'login.logo.click.count': '3',
+  'login.admin.method': 'both',
 })
 
 const emailEnabled = computed(() => config.value['register.email.enabled'] === 'true')
@@ -158,6 +160,7 @@ const activeTab = computed(() => route.path)
 const tabs = [
   { label: '存储设置', name: '/admin/config/storage' },
   { label: 'AI 智能解析', name: '/admin/config/ai' },
+  { label: '登录设置', name: '/admin/config/login' },
   { label: '邮箱注册设置', name: '/admin/config/email' },
 ]
 
@@ -311,6 +314,42 @@ onMounted(() => {
       </el-form-item>
       <el-form-item label=" ">
         <el-button :loading="testingAi" @click="testAiConnection">保存并测试连接</el-button>
+      </el-form-item>
+    </el-form>
+  </el-card>
+
+  <el-card v-if="activeTab === '/admin/config/login'" v-loading="loading" style="max-width: 640px">
+    <el-form label-width="160px" label-position="left">
+      <el-form-item label="管理员登录方式">
+        <el-radio-group v-model="config['login.admin.method']">
+          <el-radio value="direct">
+            <span style="font-weight: 600;">首页直接登录</span>
+            <span class="muted" style="display: block; font-size: 12px; margin-top: 2px;">登录页底部显示"管理员登录"按钮，隐藏 Logo 点击入口</span>
+          </el-radio>
+          <el-radio value="click_logo" style="margin-top: 12px;">
+            <span style="font-weight: 600;">点击 Logo 登录</span>
+            <span class="muted" style="display: block; font-size: 12px; margin-top: 2px;">隐藏"管理员登录"按钮，需连续点击左上角 Logo 进入</span>
+          </el-radio>
+          <el-radio value="both" style="margin-top: 12px;">
+            <span style="font-weight: 600;">两种方式都支持</span>
+            <span class="muted" style="display: block; font-size: 12px; margin-top: 2px;">按钮和 Logo 点击均可用（默认）</span>
+          </el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item v-if="config['login.admin.method'] !== 'direct'" label="Logo 点击触发次数">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <el-input-number v-model="config['login.logo.click.count']" :min="1" :max="20" />
+          <span class="muted" style="font-size: 13px;">次连续点击（2 秒内）</span>
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 4px;">
+          设置连续点击左上角 Logo 多少次后弹出管理员登录弹窗，默认 3 次。
+        </div>
+      </el-form-item>
+      <div v-if="config['login.admin.method'] === 'direct'" class="muted" style="font-size: 13px; padding: 12px 16px; background: var(--paper-warm); border-radius: var(--radius);">
+        当前为"首页直接登录"模式，左上角 Logo 点击不会触发管理员登录弹窗。
+      </div>
+      <el-form-item>
+        <el-button type="primary" :loading="loading" @click="save">保存登录设置</el-button>
       </el-form-item>
     </el-form>
   </el-card>

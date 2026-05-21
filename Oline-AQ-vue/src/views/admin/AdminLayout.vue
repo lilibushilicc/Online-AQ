@@ -132,6 +132,10 @@ watch(() => route.path, () => {
               <el-icon><MagicStick /></el-icon>
               <span>AI 解析</span>
             </el-menu-item>
+            <el-menu-item index="/admin/config/login">
+              <el-icon><User /></el-icon>
+              <span>登录设置</span>
+            </el-menu-item>
             <el-menu-item index="/admin/config/email">
               <el-icon><Message /></el-icon>
               <span>邮箱注册</span>

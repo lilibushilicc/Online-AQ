@@ -124,25 +124,25 @@ async function changePassword() {
   <div class="profile-page">
     <!-- 骨架加载 -->
     <template v-if="loading">
-      <div class="skeleton-page-title skeleton-block" style="width: 120px; height: 28px; margin-bottom: 24px;"></div>
+      <div class="skeleton-page-title skeleton-block"></div>
       <div class="profile-card">
         <div class="profile-hero">
           <div class="skeleton-avatar"></div>
-          <div style="flex: 1;">
-            <div class="skeleton-block skeleton-line" style="width: 160px;"></div>
-            <div class="skeleton-block skeleton-line--short" style="margin-top: 8px;"></div>
+          <div class="skeleton-hero-info">
+            <div class="skeleton-block skeleton-line"></div>
+            <div class="skeleton-block skeleton-line--short"></div>
           </div>
         </div>
         <el-divider style="margin: 24px 0 20px" />
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <div v-for="n in 5" :key="n" style="display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line-light);">
-            <div class="skeleton-block" style="width: 80px; height: 14px; margin-right: 16px;"></div>
-            <div class="skeleton-block skeleton-line" style="width: 40%;"></div>
+        <div class="skeleton-info-grid">
+          <div v-for="n in 5" :key="n" class="skeleton-info-row">
+            <div class="skeleton-block skeleton-label"></div>
+            <div class="skeleton-block skeleton-line"></div>
           </div>
         </div>
-        <div style="display: flex; gap: 12px; margin-top: 28px;">
-          <div class="skeleton-block" style="width: 100px; height: 36px; border-radius: 10px;"></div>
-          <div class="skeleton-block" style="width: 120px; height: 36px; border-radius: 10px;"></div>
+        <div class="skeleton-actions">
+          <div class="skeleton-block skeleton-btn"></div>
+          <div class="skeleton-block skeleton-btn skeleton-btn--wide"></div>
         </div>
       </div>
     </template>
@@ -344,5 +344,54 @@ async function changePassword() {
   .profile-card::before { left: 20px; right: 20px; }
   .profile-hero { flex-direction: column; text-align: center; }
   .profile-actions { flex-direction: column; }
+}
+
+/* Skeleton */
+.skeleton-page-title {
+  width: 120px;
+  height: 28px;
+  margin-bottom: 24px;
+}
+
+.skeleton-hero-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.skeleton-info-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-light);
+}
+
+.skeleton-label {
+  width: 80px;
+  height: 14px;
+  margin-right: 16px;
+}
+
+.skeleton-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.skeleton-btn {
+  width: 100px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.skeleton-btn--wide {
+  width: 120px;
 }
 </style>

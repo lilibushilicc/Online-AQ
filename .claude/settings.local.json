@@ -16,7 +16,8 @@
       "Bash(echo \"Started PID: $!\")",
       "Read(//tmp/**)",
       "Bash(./mvnw compile *\r\r● 需要把所有缺失的表都加上。让我更新 SchemaInitializer。\r\r  Read 1 file \\(ctrl+o to expand\\)\r\r● Write\\(src\\\\main\\\\java\\\\com\\\\example\\\\olineaqspring\\\\config\\\\SchemaInitializer.java\\)\r  ⎿  Added 50 lines\r      14)",
-      "Bash(./mvnw compile *)"
+      "Bash(./mvnw compile *)",
+      "Skill(impeccable)"
     ]
   }
 }
