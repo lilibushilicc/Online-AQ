@@ -353,15 +353,15 @@ onMounted(loadFiles)
 }
 
 .section-title {
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
 }
 
 .section-subtitle {
   margin-top: 4px;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
   line-height: 1.5;
 }
 
@@ -373,7 +373,7 @@ onMounted(loadFiles)
   gap: 10px;
   min-height: 220px;
   padding: 28px 24px;
-  border: 1.5px dashed var(--line);
+  border: 1.5px dashed var(--border-default);
   border-radius: var(--radius);
   background:
     linear-gradient(180deg, rgba(255,255,255,0.72), rgba(245,243,238,0.96)),
@@ -384,7 +384,7 @@ onMounted(loadFiles)
 
 .drop-zone:hover,
 .drop-zone--over {
-  border-color: var(--ink-green);
+  border-color: var(--accent-blue);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
@@ -397,20 +397,20 @@ onMounted(loadFiles)
 
 .drop-icon {
   font-size: 42px;
-  color: var(--ink-green);
+  color: var(--accent-blue);
 }
 
 .drop-text {
-  font-size: 15px;
+  font-size: var(--text-card-title);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
   text-align: center;
 }
 
 .drop-hint {
   max-width: 440px;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
   text-align: center;
   line-height: 1.7;
 }
@@ -426,9 +426,9 @@ onMounted(loadFiles)
   gap: 12px;
   margin-top: 14px;
   padding: 14px 16px;
-  border: 1px solid var(--line-light);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: var(--paper-warm);
+  background: var(--bg-surface);
 }
 
 .file-preview__main {
@@ -445,22 +445,22 @@ onMounted(loadFiles)
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  background: var(--accent-light);
-  color: var(--ink-green);
+  background: rgba(59,130,246,0.1);
+  color: var(--accent-blue);
   flex-shrink: 0;
 }
 
 .file-preview__name {
-  font-size: 13px;
+  font-size: var(--text-caption);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
   word-break: break-all;
 }
 
 .file-preview__meta {
   margin-top: 2px;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
 }
 
 .form-grid {
@@ -487,8 +487,8 @@ onMounted(loadFiles)
   display: flex;
   flex-wrap: wrap;
   gap: 8px 18px;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
 }
 
 .status-panel {
@@ -504,22 +504,22 @@ onMounted(loadFiles)
   width: fit-content;
   padding: 6px 12px;
   border-radius: 999px;
-  background: var(--paper-dark);
-  color: var(--ink-secondary);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
 
 .status-badge--ai {
-  background: var(--accent-light);
-  color: var(--ink-green);
+  background: rgba(59,130,246,0.1);
+  color: var(--accent-blue);
 }
 
 .status-copy {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-caption);
   line-height: 1.8;
-  color: var(--ink-secondary);
+  color: var(--text-secondary);
 }
 
 .stats-grid {
@@ -530,9 +530,9 @@ onMounted(loadFiles)
 
 .stat-box {
   padding: 14px;
-  border: 1px solid var(--line-light);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-warm) 100%);
+  background: linear-gradient(180deg, var(--bg-base) 0%, var(--bg-surface) 100%);
 }
 
 .stat-box strong {
@@ -540,14 +540,14 @@ onMounted(loadFiles)
   margin-top: 6px;
   font-size: 18px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--text-primary);
   line-height: 1.2;
   word-break: break-word;
 }
 
 .stat-label {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-label);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -560,8 +560,8 @@ onMounted(loadFiles)
 .checklist-item {
   position: relative;
   padding-left: 14px;
-  font-size: 13px;
-  color: var(--ink-secondary);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -573,14 +573,14 @@ onMounted(loadFiles)
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ink-green);
+  background: var(--accent-blue);
 }
 
 .table-placeholder {
   padding: 28px 12px;
   text-align: center;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: var(--text-caption);
+  color: var(--text-tertiary);
 }
 
 .guide-grid {
@@ -594,21 +594,21 @@ onMounted(loadFiles)
   flex-direction: column;
   gap: 10px;
   padding: 18px;
-  border: 1px solid var(--line-light);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-warm) 100%);
+  background: linear-gradient(180deg, var(--bg-base) 0%, var(--bg-surface) 100%);
 }
 
 .guide-card__title {
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
 }
 
 .guide-card__desc {
   margin: 0;
-  font-size: 12px;
-  color: var(--ink-secondary);
+  font-size: var(--text-small);
+  color: var(--text-secondary);
   line-height: 1.7;
 }
 
@@ -616,33 +616,22 @@ onMounted(loadFiles)
   margin: 0;
   padding: 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--paper) 70%, transparent);
-  font-size: 12px;
+  border: 1px solid var(--border-default);
+  background: color-mix(in srgb, var(--bg-base) 70%, transparent);
+  font-size: var(--text-small);
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: var(--font-mono);
 }
 
-/* 深色模式覆写（上传页面特有样式） */
-html.dark .drop-zone {
-  background:
-    linear-gradient(180deg, rgba(34,32,30,0.96), rgba(26,25,23,0.98)),
-    repeating-linear-gradient(135deg, rgba(61,160,110,0.05), rgba(61,160,110,0.05) 12px, transparent 12px, transparent 24px);
-}
-html.dark .drop-zone--ready {
-  background:
-    linear-gradient(180deg, rgba(15,40,30,0.96), rgba(26,25,23,0.98)),
-    repeating-linear-gradient(135deg, rgba(61,160,110,0.08), rgba(61,160,110,0.08) 12px, transparent 12px, transparent 24px);
-}
 
 .guide-card__tip {
   padding-left: 10px;
-  border-left: 3px solid var(--ink-green);
-  font-size: 12px;
+  border-left: 3px solid var(--accent-blue);
+  font-size: var(--text-small);
   line-height: 1.7;
-  color: var(--muted);
+  color: var(--text-tertiary);
 }
 
 @media (max-width: 1080px) {

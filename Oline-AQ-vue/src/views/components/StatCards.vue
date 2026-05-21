@@ -36,23 +36,23 @@ withDefaults(defineProps<{
 }
 
 .stat-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(247, 245, 240, 0.96));
-  border: 1px solid rgba(215, 208, 197, 0.92);
-  border-radius: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
   padding: 18px 20px;
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--duration), border-color var(--duration);
 }
 
 .stat-card:hover {
-  border-color: var(--paper-dark);
-  box-shadow: var(--shadow-md);
+  border-color: rgba(59,130,246,0.2);
+  box-shadow: 0 0 20px rgba(59,130,246,0.06);
 }
 
 .stat-card__label {
-  font-size: 11px;
+  font-size: var(--text-label);
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 6px;
@@ -62,27 +62,17 @@ withDefaults(defineProps<{
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.5px;
-  color: var(--ink);
+  color: var(--text-primary);
   line-height: 1.1;
-  font-family: var(--font-serif);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-card__suffix {
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 400;
-  color: var(--muted);
+  color: var(--text-tertiary);
   letter-spacing: 0;
   margin-left: 2px;
-}
-
-/* Dark mode */
-:root(html.dark) .stat-card {
-  background: linear-gradient(180deg, rgba(34, 32, 30, 0.96), rgba(22, 21, 20, 0.98));
-  border-color: var(--line);
-}
-
-:root(html.dark) .stat-card:hover {
-  border-color: var(--line);
 }
 
 @media (max-width: 980px) {

@@ -133,7 +133,7 @@ async function handleDeleteNotebook() {
                   移出
                 </el-button>
               </div>
-              <div style="margin-top: 4px; font-size: 12px; color: var(--muted)">
+              <div style="margin-top: 4px; font-size: 12px; color: var(--text-tertiary)">
                 提交时间：{{ new Date(item.submitTime).toLocaleString() }}
               </div>
             </div>
@@ -143,7 +143,7 @@ async function handleDeleteNotebook() {
 
       <!-- Add to Notebook Dialog -->
       <el-dialog v-model="addDialogVisible" title="添加到错题本" width="420px">
-        <p style="margin-bottom: 12px; font-size: 13px; color: var(--ink-secondary)">选择目标错题本：</p>
+        <p style="margin-bottom: 12px; font-size: 13px; color: var(--text-secondary)">选择目标错题本：</p>
         <el-select v-model="addNotebookId" placeholder="选择错题本" style="width: 100%">
           <el-option v-for="nb in notebooks" :key="nb.notebookId" :label="`${nb.notebookName} (${nb.itemCount}道)`" :value="nb.notebookId" />
         </el-select>
@@ -156,7 +156,7 @@ async function handleDeleteNotebook() {
 
     <div v-else style="text-align: center; padding: 60px 0">
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
-      <p style="margin-top: 12px; color: var(--muted)">加载中...</p>
+      <p style="margin-top: 12px; color: var(--text-tertiary)">加载中...</p>
     </div>
 </template>
 

@@ -177,12 +177,12 @@ onMounted(async () => {
 
         <!-- 公告列表弹窗 -->
         <el-dialog v-model="announceDialogVisible" title="系统公告" width="560px" @close="markAllRead">
-          <div v-if="announcements.length === 0" style="text-align: center; padding: 40px 0; color: var(--muted)">暂无公告</div>
+          <div v-if="announcements.length === 0" style="text-align: center; padding: 40px 0; color: var(--text-tertiary)">暂无公告</div>
           <div v-for="ann in announcements" :key="ann.announcementId" class="announce-item" :class="{ 'announce-item--unread': !ann.read }">
             <div class="announce-item__header">
               <strong>{{ ann.title }}</strong>
               <div style="display: flex; align-items: center; gap: 6px">
-                <span style="font-size: 12px; color: var(--muted)">{{ ann.createTime }}</span>
+                <span style="font-size: 12px; color: var(--text-tertiary)">{{ ann.createTime }}</span>
                 <el-tag v-if="!ann.read" size="small" type="danger">未读</el-tag>
               </div>
             </div>
@@ -198,7 +198,7 @@ onMounted(async () => {
         <el-dialog v-model="loginDialogVisible" title="📢 系统公告" width="520px" :close-on-click-modal="false" @close="closeLoginDialog">
           <div v-for="ann in announcements.filter(a => !a.read)" :key="ann.announcementId" style="margin-bottom: 18px">
             <strong style="font-size: 15px">{{ ann.title }}</strong>
-            <p style="margin-top: 8px; white-space: pre-wrap; line-height: 1.7; color: var(--ink-secondary)">{{ ann.content }}</p>
+            <p style="margin-top: 8px; white-space: pre-wrap; line-height: 1.7; color: var(--text-secondary)">{{ ann.content }}</p>
           </div>
           <template #footer>
             <el-button type="primary" @click="closeLoginDialog">我知道了</el-button>

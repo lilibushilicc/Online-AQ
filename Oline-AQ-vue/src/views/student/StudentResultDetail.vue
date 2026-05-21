@@ -115,7 +115,7 @@ async function pdfExport() {
             <el-button size="small" plain :icon="Download" @click="pdfExport">导出 PDF</el-button>
             <el-button size="small" plain :icon="Document" @click="wordExport">导出 Word</el-button>
             <el-button size="small" plain @click="excelExport">导出 Excel</el-button>
-            <span style="color: var(--muted); font-size: 13px">记录 ID：{{ resultDetail.result.resultId }}</span>
+            <span style="color: var(--text-tertiary); font-size: 13px">记录 ID：{{ resultDetail.result.resultId }}</span>
           </div>
         </div>
       </template>
@@ -145,7 +145,7 @@ async function pdfExport() {
 
     <el-dialog v-model="feedbackVisible" title="题目纠错反馈" width="500px">
       <template v-if="feedbackTarget">
-        <p style="margin-bottom: 12px; color: var(--ink);"><strong>{{ feedbackTarget.questionContent }}</strong></p>
+        <p style="margin-bottom: 12px; color: var(--text-primary);"><strong>{{ feedbackTarget.questionContent }}</strong></p>
         <el-form label-position="top">
           <el-form-item label="反馈类型">
             <el-select v-model="feedbackForm.feedbackType">

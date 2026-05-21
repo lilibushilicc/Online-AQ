@@ -29,10 +29,10 @@ defineProps<{
   gap: 6px 24px;
   margin: 8px 0;
   font-size: 14px;
-  color: var(--ink-secondary);
+  color: var(--text-secondary);
 }
 .correct-option {
-  color: var(--el-color-success);
+  color: var(--accent-green);
   font-weight: 600;
 }
 </style>

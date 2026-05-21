@@ -152,7 +152,7 @@ async function handleDelete(user: UserType) {
     <el-card>
       <div class="students-header">
         <div style="display: flex; align-items: center; gap: 12px">
-          <span style="color: var(--muted)">共 {{ students.length }} 名学生</span>
+          <span style="color: var(--text-tertiary)">共 {{ students.length }} 名学生</span>
           <el-input v-model="studentSearch" placeholder="搜索姓名或账号..." clearable style="max-width: 220px" :prefix-icon="Search" />
         </div>
         <el-button type="primary" @click="openCreate">新增学生</el-button>
@@ -299,7 +299,7 @@ async function handleDelete(user: UserType) {
 
 /* 同款个人中心布局 */
 .student-profile-card {
-  background: var(--paper);
+  background: var(--bg-base);
   border-radius: 12px;
   padding: 28px 32px;
 }
@@ -331,13 +331,13 @@ async function handleDelete(user: UserType) {
 .sp-name {
   font-size: 22px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
 .sp-account {
-  font-size: 14px;
-  color: var(--muted);
+  font-size: var(--text-body);
+  color: var(--text-tertiary);
   margin-top: 4px;
 }
 
@@ -350,7 +350,7 @@ async function handleDelete(user: UserType) {
   display: flex;
   align-items: center;
   padding: 14px 0;
-  border-bottom: 1px solid var(--line-light);
+  border-bottom: 1px solid var(--border-subtle);
   min-height: 48px;
   flex-wrap: wrap;
   gap: 8px;
@@ -363,18 +363,18 @@ async function handleDelete(user: UserType) {
 .sp-label {
   width: 80px;
   flex-shrink: 0;
-  font-size: 14px;
-  color: var(--ink-tertiary);
+  font-size: var(--text-body);
+  color: var(--text-tertiary);
   font-weight: 500;
 }
 
 .sp-value {
-  font-size: 14px;
-  color: var(--ink);
+  font-size: var(--text-body);
+  color: var(--text-primary);
 }
 
 .sp-value.readonly {
-  color: var(--ink-tertiary);
+  color: var(--text-tertiary);
 }
 
 .sp-info-row .el-input {
@@ -384,15 +384,15 @@ async function handleDelete(user: UserType) {
 
 .sp-field-error {
   width: 100%;
-  font-size: 12px;
-  color: var(--red);
+  font-size: var(--text-small);
+  color: var(--accent-red);
   margin-top: -4px;
 }
 
 .sp-field-hint {
   width: 100%;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
   margin-top: -4px;
 }
 
@@ -405,7 +405,7 @@ async function handleDelete(user: UserType) {
   display: flex;
   align-items: center;
   padding: 15px 0;
-  border-bottom: 1px solid var(--line-light);
+  border-bottom: 1px solid var(--border-subtle);
   gap: 16px;
 }
 

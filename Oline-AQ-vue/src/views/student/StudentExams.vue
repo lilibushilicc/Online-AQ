@@ -214,20 +214,20 @@ onMounted(async () => {
   gap: 10px;
   margin-bottom: 16px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--line-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .exam-section__title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--text-section-title);
   font-weight: 700;
-  color: var(--ink);
-  font-family: var(--font-serif);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 .exam-section__count {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
   font-weight: 500;
 }
 
@@ -247,9 +247,9 @@ onMounted(async () => {
 }
 
 .exam-card__name {
-  font-size: 15px;
+  font-size: var(--text-card-title);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -257,8 +257,8 @@ onMounted(async () => {
 
 .exam-card__desc {
   margin: 0 0 16px;
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -271,7 +271,7 @@ onMounted(async () => {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding: 10px 0;
-  border-top: 1px solid var(--line-light);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .exam-meta + .exam-meta {
@@ -286,16 +286,16 @@ onMounted(async () => {
 }
 
 .exam-meta__label {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-label);
+  color: var(--text-tertiary);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .exam-meta__value {
-  font-size: 13px;
-  color: var(--ink-secondary);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -305,7 +305,7 @@ onMounted(async () => {
   gap: 6px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--line-light);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .exam-history-tag--clickable {
@@ -314,9 +314,9 @@ onMounted(async () => {
 }
 
 .exam-history-tag--clickable:hover {
-  background: var(--accent-light) !important;
+  background: rgba(59,130,246,0.1) !important;
   border-color: rgba(45, 90, 71, 0.2) !important;
-  color: var(--ink-green) !important;
+  color: var(--accent-blue) !important;
 }
 
 .exam-card__footer {
@@ -326,12 +326,12 @@ onMounted(async () => {
   gap: 12px;
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid var(--line-light);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .exam-card__hint {
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 </style>

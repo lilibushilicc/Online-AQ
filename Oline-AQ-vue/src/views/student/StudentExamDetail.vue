@@ -280,7 +280,7 @@ onUnmounted(() => {
           :id="`question-${index}`"
           shadow="hover"
           style="margin-bottom: 14px"
-          :body-style="index === activeQuestionIndex ? { borderLeft: '3px solid var(--ink-green)' } : {}"
+          :body-style="index === activeQuestionIndex ? { borderLeft: '3px solid var(--accent-blue)' } : {}"
         >
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
             <strong>{{ index + 1 }}. {{ question.questionContent }}</strong>
@@ -316,7 +316,7 @@ onUnmounted(() => {
           <el-statistic title="已用时间" :value="`${elapsedSeconds} 秒`" />
         </el-card>
         <div style="margin: 16px 0 18px">
-          <div style="font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px">题目导航</div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px">题目导航</div>
           <div style="display: flex; flex-wrap: wrap; gap: 5px;">
             <button
               v-for="(q, idx) in questions"
@@ -330,7 +330,7 @@ onUnmounted(() => {
             >{{ idx + 1 }}</button>
           </div>
         </div>
-        <div v-if="hasDraft" style="font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 8px">
+        <div v-if="hasDraft" style="font-size: 12px; color: var(--text-tertiary); text-align: center; margin-bottom: 8px">
           草稿已自动保存
         </div>
         <el-button type="primary" size="large" style="width: 100%" :loading="submitting" @click="handleSubmit()">
@@ -348,10 +348,10 @@ onUnmounted(() => {
       <!-- 空白提交确认弹窗 -->
       <el-dialog v-model="blankDialogVisible" title="查看答案" width="440px" :close-on-click-modal="false">
         <div style="margin-bottom: 20px;">
-          <p style="margin: 0 0 8px; color: var(--ink); font-size: 14px; line-height: 1.7;">
+          <p style="margin: 0 0 8px; color: var(--text-primary); font-size: 14px; line-height: 1.7;">
             提交空白试卷后可查看全部正确答案，本次得分为 0。
           </p>
-          <p v-if="exam && !exam.allowRetake" style="margin: 0; color: var(--red); font-size: 13px; font-weight: 600;">
+          <p v-if="exam && !exam.allowRetake" style="margin: 0; color: var(--accent-red); font-size: 13px; font-weight: 600;">
             ⚠ 该考试禁止重考，提交后无法再次作答。
           </p>
         </div>
@@ -408,9 +408,9 @@ onUnmounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 4px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink-secondary);
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -420,18 +420,18 @@ onUnmounted(() => {
   justify-content: center;
 }
 .q-nav-btn:hover {
-  border-color: var(--ink-green-light);
-  background: var(--accent-light);
-  color: var(--ink-green);
+  border-color: var(--accent-blue);
+  background: rgba(59,130,246,0.1);
+  color: var(--accent-blue);
 }
 .q-nav-btn--done {
-  background: var(--accent-light);
-  border-color: color-mix(in srgb, var(--ink-green) 25%, transparent);
-  color: var(--ink-green);
+  background: rgba(59,130,246,0.1);
+  border-color: color-mix(in srgb, var(--accent-blue) 25%, transparent);
+  color: var(--accent-blue);
 }
 .q-nav-btn--active {
-  border-color: var(--ink-green);
-  background: var(--ink-green);
+  border-color: var(--accent-blue);
+  background: var(--accent-blue);
   color: #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.18);
 }

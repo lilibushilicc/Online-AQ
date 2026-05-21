@@ -21,7 +21,7 @@ function progressColor(sent: number, limit: number) {
   const pct = limit > 0 ? sent / limit : 0
   if (pct >= 1) return ['#c0392b', '#e74c3c']
   if (pct >= 0.8) return ['#e67e22', '#f39c12']
-  return ['var(--ink-green-light)', 'var(--ink-green)']
+  return ['var(--accent-blue)', 'var(--accent-purple)']
 }
 
 const emailStats = ref<{ todayCount: number; weekCount: number; totalCount: number; lastSendTime: string | null }>({
@@ -345,7 +345,7 @@ onMounted(() => {
           设置连续点击左上角 Logo 多少次后弹出管理员登录弹窗，默认 3 次。
         </div>
       </el-form-item>
-      <div v-if="config['login.admin.method'] === 'direct'" class="muted" style="font-size: 13px; padding: 12px 16px; background: var(--paper-warm); border-radius: var(--radius);">
+      <div v-if="config['login.admin.method'] === 'direct'" class="muted" style="font-size: 13px; padding: 12px 16px; background: var(--bg-surface); border-radius: var(--radius);">
         当前为"首页直接登录"模式，左上角 Logo 点击不会触发管理员登录弹窗。
       </div>
       <el-form-item>
@@ -467,7 +467,7 @@ onMounted(() => {
       <el-form-item label="系统名称">
         <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
           <el-input v-model="config['smtp.system_name']" placeholder="Online-AQ 智能在线答题系统" style="flex: 1;" clearable />
-          <span style="color: var(--muted); flex-shrink: 0;">标题</span>
+          <span style="color: var(--text-tertiary); flex-shrink: 0;">标题</span>
           <el-input v-model="config['smtp.subject']" placeholder="${systemName} - 邮箱验证" style="flex: 1;" clearable />
         </div>
         <span class="muted" style="font-size: 12px; margin-top: 4px; display: block;">可用占位符：${systemName}（系统名称）${code}（验证码）</span>
@@ -487,7 +487,7 @@ onMounted(() => {
       <el-form-item label="SMTP 服务器">
         <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
           <el-input v-model="editingAccount.host" placeholder="smtp.qq.com" style="flex: 1;" clearable />
-          <span style="color: var(--muted); flex-shrink: 0;">端口</span>
+          <span style="color: var(--text-tertiary); flex-shrink: 0;">端口</span>
           <el-input-number v-model="editingAccount.port" :min="1" :max="65535" style="width: 130px;" />
         </div>
       </el-form-item>
@@ -520,7 +520,7 @@ onMounted(() => {
 /* 禁用行 */
 :deep(.disabled-row) {
   opacity: 0.45;
-  background: var(--paper-dark);
+  background: var(--bg-elevated);
 }
 
 /* 邮箱统计栏 */
@@ -529,10 +529,10 @@ onMounted(() => {
   align-items: center;
   gap: 0;
   padding: 16px 20px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), var(--paper-warm));
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), var(--bg-surface));
   border-radius: var(--radius-lg);
   margin-bottom: 18px;
-  border: 1px solid var(--line-light);
+  border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
 }
 
@@ -546,8 +546,8 @@ onMounted(() => {
 .stat-item:first-child { padding-left: 0; }
 
 .stat-label {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-label);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.4px;
   font-weight: 600;
@@ -556,21 +556,21 @@ onMounted(() => {
 .stat-value {
   font-size: 22px;
   font-weight: 700;
-  color: var(--ink-green);
-  font-family: var(--font-serif);
+  color: var(--accent-blue);
+  font-family: var(--font-sans);
   line-height: 1.2;
 }
 
 .stat-time {
-  font-size: 13px;
-  color: var(--ink-secondary);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
   line-height: 1.2;
 }
 
 .stat-divider {
   width: 1px;
   height: 36px;
-  background: var(--line-light);
+  background: var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -582,8 +582,8 @@ onMounted(() => {
 }
 
 .smtp-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), var(--paper-warm));
-  border: 1px solid var(--line-light);
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), var(--bg-surface));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
   box-shadow: var(--shadow-sm);
@@ -592,7 +592,7 @@ onMounted(() => {
 
 .smtp-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--line-medium);
+  border-color: var(--border-default);
 }
 
 .smtp-card--disabled {
@@ -608,9 +608,9 @@ onMounted(() => {
 
 .smtp-card-from {
   font-weight: 700;
-  font-size: 15px;
-  color: var(--ink-primary);
-  font-family: var(--font-serif);
+  font-size: var(--text-card-title);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   letter-spacing: -0.3px;
 }
 
@@ -619,8 +619,8 @@ onMounted(() => {
 }
 
 .smtp-card-server {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
   font-family: var(--font-mono);
   margin-bottom: 14px;
 }
@@ -642,8 +642,8 @@ onMounted(() => {
 }
 
 .smtp-card-limit-label {
-  font-size: 11px;
-  color: var(--ink-tertiary);
+  font-size: var(--text-label);
+  color: var(--text-tertiary);
   font-weight: 500;
 }
 
@@ -655,7 +655,7 @@ onMounted(() => {
 }
 .smtp-card-limit-row :deep(.el-progress-bar__outer) {
   border-radius: 99px !important;
-  background: var(--paper-dark) !important;
+  background: var(--bg-elevated) !important;
 }
 
 .smtp-card-actions {
@@ -671,8 +671,8 @@ onMounted(() => {
 }
 
 .smtp-toggle-label {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-label);
+  color: var(--text-tertiary);
   font-weight: 500;
 }
 
@@ -684,10 +684,10 @@ onMounted(() => {
 .smtp-empty {
   padding: 32px 16px;
   text-align: center;
-  font-size: 13px;
-  color: var(--muted);
-  background: var(--paper-warm);
-  border: 1px dashed var(--line-medium);
+  font-size: var(--text-caption);
+  color: var(--text-tertiary);
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-default);
   border-radius: var(--radius-lg);
 }
 
@@ -700,17 +700,4 @@ onMounted(() => {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 深色模式覆写（邮箱设置页特有样式） */
-html.dark .email-stats-bar {
-  background: linear-gradient(180deg, rgba(34,32,30,0.96), rgba(26,25,23,0.98));
-}
-html.dark .smtp-card {
-  background: linear-gradient(180deg, rgba(34,32,30,0.96), rgba(26,25,23,0.98));
-}
-html.dark .smtp-card-limits {
-  background: rgba(255,255,255,0.03);
-}
-html.dark .smtp-empty {
-  border-color: var(--line);
-}
 </style>

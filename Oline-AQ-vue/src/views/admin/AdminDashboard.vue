@@ -62,12 +62,12 @@ onMounted(async () => {
       <div class="asset-bars">
         <div class="asset-bar">
           <span class="asset-bar__label">已发布</span>
-          <el-progress :percentage="publishedRate" :stroke-width="8" :show-text="false" color="var(--ink-green)" />
+          <el-progress :percentage="publishedRate" :stroke-width="8" :show-text="false" color="var(--accent-blue)" />
           <strong class="asset-bar__value">{{ publishedRate }}%</strong>
         </div>
         <div class="asset-bar">
           <span class="asset-bar__label">草稿</span>
-          <el-progress :percentage="draftRate" :stroke-width="8" :show-text="false" color="var(--amber)" />
+          <el-progress :percentage="draftRate" :stroke-width="8" :show-text="false" color="var(--accent-amber)" />
           <strong class="asset-bar__value">{{ draftCount }}</strong>
         </div>
         <div class="asset-bar">
@@ -86,7 +86,7 @@ onMounted(async () => {
       <div class="bento-label">快捷操作</div>
       <div class="quick-actions">
         <div class="quick-action-item" @click="$router.push('/admin/upload')">
-          <div class="qa-icon" style="background: var(--accent-light); color: var(--ink-green)">
+          <div class="qa-icon" style="background: rgba(59,130,246,0.1); color: var(--accent-blue)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
           <div>
@@ -95,7 +95,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="quick-action-item" @click="$router.push('/admin/exams')">
-          <div class="qa-icon" style="background: var(--green-light); color: var(--green)">
+          <div class="qa-icon" style="background: rgba(16,185,129,0.1); color: var(--accent-green)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           </div>
           <div>
@@ -104,7 +104,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="quick-action-item" @click="$router.push('/admin/results')">
-          <div class="qa-icon" style="background: var(--amber-light); color: var(--amber)">
+          <div class="qa-icon" style="background: rgba(245,158,11,0.1); color: var(--accent-amber)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           </div>
           <div>
@@ -155,9 +155,9 @@ onMounted(async () => {
 
 <style scoped>
 .bento-value__unit {
-  font-size: 15px;
+  font-size: var(--text-card-title);
   font-weight: 400;
-  color: var(--muted);
+  color: var(--text-tertiary);
   letter-spacing: 0;
 }
 
@@ -175,12 +175,12 @@ onMounted(async () => {
 }
 
 .asset-bar__label {
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-small);
 }
 
 .asset-bar__value {
-  font-size: 13px;
+  font-size: var(--text-caption);
 }
 
 .asset-summary {
@@ -197,13 +197,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--line-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .bento-section-title {
-  font-size: 11px;
+  font-size: var(--text-label);
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }

@@ -115,7 +115,7 @@ onMounted(async () => {
 .result-progress__score {
   font-size: 22px;
   font-weight: 800;
-  color: var(--ink-green);
+  color: var(--accent-blue);
 }
 
 .result-card__body {
@@ -124,9 +124,9 @@ onMounted(async () => {
 }
 
 .result-card__name {
-  font-size: 15px;
+  font-size: var(--text-card-title);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -134,8 +134,8 @@ onMounted(async () => {
 }
 
 .result-card__time {
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
   margin: 4px 0 0;
 }
 
@@ -152,11 +152,11 @@ onMounted(async () => {
   justify-content: space-between;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--line-light);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .result-card__id {
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-small);
 }
 </style>

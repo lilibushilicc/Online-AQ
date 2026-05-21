@@ -254,15 +254,15 @@ async function changePassword() {
 .profile-page { max-width: 780px; margin: 0 auto; padding: 28px; }
 
 .page-title {
-  font-size: 26px; font-weight: 700;
-  color: var(--ink); margin: 0 0 28px;
-  font-family: var(--font-serif);
+  font-size: var(--text-page-title); font-weight: 700;
+  color: var(--text-primary); margin: 0 0 28px;
+  font-family: var(--font-sans);
 }
 
 .profile-card {
-  background: var(--paper); border-radius: 16px; padding: 40px 48px;
+  background: var(--bg-base); border-radius: 16px; padding: 40px 48px;
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--line-light);
+  border: 1px solid var(--border-subtle);
   position: relative;
   transition: box-shadow var(--duration) var(--ease-out), transform var(--duration) var(--ease-out);
 }
@@ -278,7 +278,7 @@ async function changePassword() {
   top: 0; left: 48px; right: 48px;
   height: 3px;
   border-radius: 0 0 3px 3px;
-  background: linear-gradient(90deg, var(--ink-green), var(--ink-green-light), transparent);
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-blue), transparent);
 }
 
 .profile-hero { display: flex; align-items: center; gap: 28px; }
@@ -287,7 +287,7 @@ async function changePassword() {
   width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   position: relative;
-  box-shadow: 0 0 0 3px var(--paper), var(--shadow-sm);
+  box-shadow: 0 0 0 3px var(--bg-base), var(--shadow-sm);
   will-change: transform;
   transition: transform var(--duration-fast) var(--ease-out);
 }
@@ -302,19 +302,19 @@ async function changePassword() {
 
 .hero-text { min-width: 0; }
 .hero-name {
-  font-size: 26px; font-weight: 700;
-  color: var(--ink); line-height: 1.4;
+  font-size: 24px; font-weight: 700;
+  color: var(--text-primary); line-height: 1.4;
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
 }
 .hero-account {
-  font-size: 14px; color: var(--muted); margin-top: 5px;
+  font-size: var(--text-body); color: var(--text-tertiary); margin-top: 5px;
 }
 
 .info-grid { display: flex; flex-direction: column; }
 
 .info-row {
   display: flex; align-items: center; padding: 16px 0;
-  border-bottom: 1px solid var(--line-light); min-height: 52px;
+  border-bottom: 1px solid var(--border-subtle); min-height: 52px;
   transition: padding var(--duration-fast), border-color var(--duration-fast);
 }
 
@@ -322,16 +322,16 @@ async function changePassword() {
 .info-row.editing { flex-wrap: wrap; gap: 10px; padding: 18px 0; }
 
 .info-label {
-  width: 110px; flex-shrink: 0; font-size: 14px;
-  color: var(--ink-secondary); font-weight: 600;
+  width: 110px; flex-shrink: 0; font-size: var(--text-body);
+  color: var(--text-secondary); font-weight: 600;
   letter-spacing: 0.1px;
 }
 
-.info-value { font-size: 14px; color: var(--ink); }
-.info-value.readonly { color: var(--ink-tertiary); }
+.info-value { font-size: var(--text-body); color: var(--text-primary); }
+.info-value.readonly { color: var(--text-tertiary); }
 .info-row.editing .el-input { flex: 1; min-width: 220px; }
-.field-error { width: 100%; font-size: 12px; color: var(--red); margin-top: -4px; }
-.field-hint { width: 100%; font-size: 12px; color: var(--muted); margin-top: -4px; }
+.field-error { width: 100%; font-size: var(--text-small); color: var(--accent-red); margin-top: -4px; }
+.field-hint { width: 100%; font-size: var(--text-small); color: var(--text-tertiary); margin-top: -4px; }
 
 .profile-actions {
   display: flex; gap: 12px; margin-top: 32px;
@@ -370,7 +370,7 @@ async function changePassword() {
   display: flex;
   align-items: center;
   padding: 14px 0;
-  border-bottom: 1px solid var(--line-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .skeleton-label {

@@ -171,7 +171,7 @@ async function deletePaper(exam: Exam) {
         <strong>{{ editingPaperId ? '编辑试卷' : '新建试卷' }}</strong>
         <span style="display: flex; align-items: center; gap: 12px">
           <el-tag v-if="editingPaperId" type="warning" size="small">编辑模式</el-tag>
-          <span style="color: var(--muted); font-size: 13px">已选 {{ form.questionIds.length }} 道题，预计 {{ selectedScore }} 分</span>
+          <span style="color: var(--text-tertiary); font-size: 13px">已选 {{ form.questionIds.length }} 道题，预计 {{ selectedScore }} 分</span>
         </span>
       </div>
     </template>
@@ -225,7 +225,7 @@ async function deletePaper(exam: Exam) {
               </div>
               <div style="display: flex; align-items: center; gap: 6px">
                 <el-input-number :model-value="getScore(question)" :min="0" :max="100" :step="1" size="small" style="width: 90px" @update:model-value="(val: number) => setScore(question.questionId, val)" />
-                <span style="font-size: 12px; color: var(--muted)">分</span>
+                <span style="font-size: 12px; color: var(--text-tertiary)">分</span>
                 <el-button size="small" type="danger" link @click="form.questionIds = form.questionIds.filter((id) => id !== question.questionId)">移除</el-button>
               </div>
             </div>
@@ -272,7 +272,7 @@ async function deletePaper(exam: Exam) {
       </div>
     </div>
     <template #footer>
-      <span style="color: var(--muted); font-size: 13px">已选 {{ form.questionIds.length }} 道题</span>
+      <span style="color: var(--text-tertiary); font-size: 13px">已选 {{ form.questionIds.length }} 道题</span>
       <el-button type="primary" @click="confirmQuestionSelection">确认选择</el-button>
     </template>
   </el-dialog>
@@ -346,7 +346,7 @@ async function deletePaper(exam: Exam) {
   flex-shrink: 0;
 }
 .picker-content {
-  font-size: 14px;
+  font-size: var(--text-body);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -356,7 +356,7 @@ async function deletePaper(exam: Exam) {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--text-small);
   color: var(--el-text-color-secondary);
 }
 .form-grid {

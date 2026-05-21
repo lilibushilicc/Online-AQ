@@ -124,7 +124,7 @@ async function handleDelete(notebook: WrongNotebook) {
         </el-col>
       </el-row>
 
-      <div v-if="notebooks.length === 0" style="text-align: center; padding: 40px 0; color: var(--muted)">
+      <div v-if="notebooks.length === 0" style="text-align: center; padding: 40px 0; color: var(--text-tertiary)">
         还没有创建错题本，点击"新建错题本"开始整理错题
       </div>
 
@@ -163,7 +163,7 @@ async function handleDelete(notebook: WrongNotebook) {
 
     <div v-else style="text-align: center; padding: 60px 0">
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
-      <p style="margin-top: 12px; color: var(--muted)">加载中...</p>
+      <p style="margin-top: 12px; color: var(--text-tertiary)">加载中...</p>
     </div>
 </template>
 
@@ -180,33 +180,33 @@ async function handleDelete(notebook: WrongNotebook) {
   box-shadow: var(--shadow-lg) !important;
 }
 .all-wrong-card {
-  border: 1px solid var(--ink-green-light) !important;
+  border: 1px solid var(--accent-blue) !important;
 }
 .nb-icon-wrap {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-sm);
-  background: var(--accent-light);
-  color: var(--ink-green);
+  background: rgba(59,130,246,0.1);
+  color: var(--accent-blue);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
 }
 .all-icon {
-  background: var(--accent-light);
-  color: var(--ink-green);
+  background: rgba(59,130,246,0.1);
+  color: var(--accent-blue);
 }
 .notebook-card h3 {
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: var(--text-card-title);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
 }
 .notebook-card p {
   margin: 0;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: var(--text-caption);
+  color: var(--text-tertiary);
   flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -219,12 +219,12 @@ async function handleDelete(notebook: WrongNotebook) {
   justify-content: space-between;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid var(--line-light);
+  border-top: 1px solid var(--border-subtle);
 }
 .nb-count {
-  font-size: 13px;
+  font-size: var(--text-caption);
   font-weight: 600;
-  color: var(--ink-green);
+  color: var(--accent-blue);
 }
 .nb-actions {
   display: flex;

@@ -65,20 +65,20 @@ async function openDetail(resultId: number) {
       <template #header>
         <strong>成绩分布解读</strong>
       </template>
-      <p style="color: var(--muted); font-size: 13px; margin: 0 0 16px">如果平均分偏低，可以回到题库或考试配置页面调整难度、开放时间和重考策略。</p>
+      <p style="color: var(--text-tertiary); font-size: 13px; margin: 0 0 16px">如果平均分偏低，可以回到题库或考试配置页面调整难度、开放时间和重考策略。</p>
       <div style="display: grid; gap: 16px">
         <div style="display: grid; grid-template-columns: 80px 1fr 60px; gap: 12px; align-items: center">
-          <span style="color: var(--muted); font-size: 13px">正确率</span>
+          <span style="color: var(--text-tertiary); font-size: 13px">正确率</span>
           <el-progress :percentage="correctRate" :stroke-width="10" :show-text="false" />
           <strong>{{ correctRate }}%</strong>
         </div>
         <div style="display: grid; grid-template-columns: 80px 1fr 60px; gap: 12px; align-items: center">
-          <span style="color: var(--muted); font-size: 13px">平均分</span>
+          <span style="color: var(--text-tertiary); font-size: 13px">平均分</span>
           <el-progress :percentage="Math.min(100, averageScore)" :stroke-width="10" :show-text="false" color="#b56b12" />
           <strong>{{ averageScore }}</strong>
         </div>
         <div style="display: grid; grid-template-columns: 80px 1fr 60px; gap: 12px; align-items: center">
-          <span style="color: var(--muted); font-size: 13px">最高分</span>
+          <span style="color: var(--text-tertiary); font-size: 13px">最高分</span>
           <el-progress :percentage="Math.min(100, highestScore)" :stroke-width="10" :show-text="false" color="#138a5b" />
           <strong>{{ highestScore }}</strong>
         </div>

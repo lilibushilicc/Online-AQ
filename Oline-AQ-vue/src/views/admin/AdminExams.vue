@@ -342,9 +342,9 @@ async function confirmSettings() {
 }
 
 .exam-card__name {
-  font-size: 15px;
+  font-size: var(--text-card-title);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -352,8 +352,8 @@ async function confirmSettings() {
 
 .exam-card__desc {
   margin: 0 0 16px;
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -366,7 +366,7 @@ async function confirmSettings() {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding: 10px 0;
-  border-top: 1px solid var(--line-light);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .exam-meta + .exam-meta {
@@ -381,23 +381,23 @@ async function confirmSettings() {
 }
 
 .exam-meta__label {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-label);
+  color: var(--text-tertiary);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .exam-meta__value {
-  font-size: 13px;
-  color: var(--ink-secondary);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .exam-actions {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid var(--line-light);
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -414,7 +414,7 @@ async function confirmSettings() {
 .exam-action-divider {
   width: 1px;
   height: 24px;
-  background: var(--line-light);
+  background: var(--border-subtle);
   flex-shrink: 0;
 }
 
