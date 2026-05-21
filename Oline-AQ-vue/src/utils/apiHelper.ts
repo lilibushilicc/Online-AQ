@@ -1,8 +1,13 @@
 import request from './request'
 
+export function cleanParams<T extends Record<string, any>>(params?: T) {
+  return params
+    ? (Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '')) as Partial<T>)
+    : undefined
+}
+
 export function apiGet<T>(url: string, params?: Record<string, string | number | undefined>) {
-  const clean = params ? Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined)) : params
-  return request.get<unknown, { code: number; message: string; data: T }>(url, { params: clean }).then((res) => res.data)
+  return request.get<unknown, { code: number; message: string; data: T }>(url, { params: cleanParams(params) }).then((res) => res.data)
 }
 
 export function apiPost<T>(url: string, data?: unknown) {

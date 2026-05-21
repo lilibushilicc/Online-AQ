@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useExamStore, type FeedbackListVO } from '@/stores/exam'
-
-const store = useExamStore()
+import * as api from '@/api'
+import type { FeedbackListVO } from '@/types'
 
 interface FeedbackDetail {
   studentName: string
@@ -53,7 +52,7 @@ const feedbackTypeMap: Record<string, string> = {
 async function loadData(status?: string) {
   loading.value = true
   try {
-    feedbacks.value = await store.loadFeedbacks(status || undefined)
+    feedbacks.value = await api.loadFeedbacksApi(status || undefined)
   } finally {
     loading.value = false
   }
@@ -65,7 +64,7 @@ function onTabChange(value: string) {
 }
 
 async function openDetail(item: FeedbackListVO) {
-  const data = await store.getFeedbackDetail(item.feedbackId)
+  const data = await api.getFeedbackDetailApi(item.feedbackId)
   detailData.value = data as FeedbackDetail
   detailDrawerVisible.value = true
 }
@@ -111,7 +110,7 @@ async function confirmResolve() {
   payload.score = editForm.value.score
   if (editForm.value.category) payload.category = editForm.value.category
   try {
-    const res = await store.resolveFeedback(resolveTarget.value.feedbackId, payload)
+    const res = await api.resolveFeedbackApi(resolveTarget.value.feedbackId, payload)
     ElMessage.success('题目已修改，反馈已采纳')
     resolveDialogVisible.value = false
     await loadData(activeTab.value)
@@ -135,7 +134,7 @@ async function confirmReject() {
     }
   }
   try {
-    const res = await store.rejectFeedback(rejectTarget.value.feedbackId, rejectReason.value || '无')
+    const res = await api.rejectFeedbackApi(rejectTarget.value.feedbackId, rejectReason.value || '无')
     ElMessage.success('反馈已驳回')
     rejectDialogVisible.value = false
     await loadData(activeTab.value)

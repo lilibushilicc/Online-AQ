@@ -8,7 +8,9 @@ import com.example.olineaqspring.service.QuestionService;
 import com.example.olineaqspring.vo.ApiResponse;
 import com.example.olineaqspring.vo.PageResult;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -85,7 +87,11 @@ public class QuestionController {
         List<Question> questions = questionService.listAll(category);
         byte[] bytes = exportService.exportQuestions(questions);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=题库导出.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename("题库导出.xlsx", StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(bytes);
     }

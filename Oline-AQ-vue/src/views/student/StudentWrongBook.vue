@@ -4,9 +4,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Loading, Plus, Notebook, Delete, Edit } from '@element-plus/icons-vue'
 import StatCards from '@/views/components/StatCards.vue'
-import { useExamStore, type WrongNotebook, type WrongQuestionGroup } from '@/stores/exam'
-
-const store = useExamStore()
+import * as api from '@/api'
+import { type WrongNotebook, type WrongQuestionGroup } from '@/stores/exam'
 const router = useRouter()
 const notebooks = ref<WrongNotebook[]>([])
 const allWrongCount = ref(0)
@@ -24,8 +23,8 @@ onMounted(async () => {
   loading.value = true
   try {
     const [nbData, wrongData] = await Promise.all([
-      store.loadNotebooks(),
-      store.getWrongQuestions()
+      api.loadNotebooksApi(),
+      api.getWrongQuestionsApi()
     ])
     notebooks.value = nbData
     allWrongCount.value = wrongData.reduce((s: number, g: WrongQuestionGroup) => s + g.questions.length, 0)
@@ -38,11 +37,11 @@ async function handleCreate() {
   if (!newName.value.trim()) return
   submitting.value = true
   try {
-    await store.createNotebook(newName.value.trim(), newDesc.value.trim())
+    await api.createNotebookApi(newName.value.trim(), newDesc.value.trim())
     createDialogVisible.value = false
     newName.value = ''
     newDesc.value = ''
-    notebooks.value = await store.loadNotebooks()
+    notebooks.value = await api.loadNotebooksApi()
   } finally {
     submitting.value = false
   }
@@ -59,9 +58,9 @@ async function handleEdit() {
   if (!editName.value.trim() || !editNotebook.value) return
   submitting.value = true
   try {
-    await store.updateNotebook(editNotebook.value.notebookId, editName.value.trim(), editDesc.value.trim())
+    await api.updateNotebookApi(editNotebook.value.notebookId, editName.value.trim(), editDesc.value.trim())
     editDialogVisible.value = false
-    notebooks.value = await store.loadNotebooks()
+    notebooks.value = await api.loadNotebooksApi()
   } finally {
     submitting.value = false
   }
@@ -69,8 +68,8 @@ async function handleEdit() {
 
 async function handleDelete(notebook: WrongNotebook) {
   try {
-    await store.deleteNotebook(notebook.notebookId)
-    notebooks.value = await store.loadNotebooks()
+    await api.deleteNotebookApi(notebook.notebookId)
+    notebooks.value = await api.loadNotebooksApi()
   } catch {
     ElMessage.error('删除失败，请稍后重试')
   }
@@ -195,7 +194,7 @@ async function handleDelete(notebook: WrongNotebook) {
   margin-bottom: 12px;
 }
 .all-icon {
-  background: rgba(26, 61, 46, 0.12);
+  background: var(--accent-light);
   color: var(--ink-green);
 }
 .notebook-card h3 {

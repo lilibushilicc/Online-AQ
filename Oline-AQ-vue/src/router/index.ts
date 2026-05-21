@@ -10,16 +10,19 @@ type RouteMeta = {
 }
 
 const LoginView = () => import('@/views/login/LoginView.vue')
+const RegisterView = () => import('@/views/login/RegisterView.vue')
 const AdminLayoutWrapper = () => import('@/views/admin/AdminLayoutWrapper.vue')
 const StudentLayoutWrapper = () => import('@/views/student/StudentLayoutWrapper.vue')
 const AdminDashboard = () => import('@/views/admin/AdminDashboard.vue')
 const AdminUpload = () => import('@/views/admin/AdminUpload.vue')
 const AdminQuestions = () => import('@/views/admin/AdminQuestions.vue')
 const AdminExams = () => import('@/views/admin/AdminExams.vue')
+const AdminPapers = () => import('@/views/admin/AdminPapers.vue')
 const AdminResults = () => import('@/views/admin/AdminResults.vue')
 const AdminStudents = () => import('@/views/admin/AdminStudents.vue')
 const AdminConfig = () => import('@/views/admin/AdminConfig.vue')
 const AdminFeedbacks = () => import('@/views/admin/AdminFeedbacks.vue')
+const AdminAnnouncements = () => import('@/views/admin/AdminAnnouncements.vue')
 const StudentExams = () => import('@/views/student/StudentExams.vue')
 const StudentExamDetail = () => import('@/views/student/StudentExamDetail.vue')
 const StudentResults = () => import('@/views/student/StudentResults.vue')
@@ -27,10 +30,12 @@ const StudentResultDetail = () => import('@/views/student/StudentResultDetail.vu
 const StudentPractice = () => import('@/views/student/StudentPractice.vue')
 const StudentWrongBook = () => import('@/views/student/StudentWrongBook.vue')
 const StudentWrongBookDetail = () => import('@/views/student/StudentWrongBookDetail.vue')
+const StudentProfile = () => import('@/views/student/StudentProfile.vue')
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: LoginView },
+  { path: '/register', component: RegisterView },
   {
     path: '/admin',
     component: AdminLayoutWrapper,
@@ -39,12 +44,17 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', component: AdminDashboard, meta: { title: '教学控制台', subtitle: '考试数据概览与快捷操作。' } },
       { path: 'upload', component: AdminUpload, meta: { title: '上传试题', subtitle: '上传 TXT 或 DOCX 文件，可指定分类，后端自动解析并保存到题库。' } },
       { path: 'questions', component: AdminQuestions, meta: { title: '题库管理', subtitle: '按文件、分类、题型筛选题目，并进行批量操作。' } },
+      { path: 'papers', component: AdminPapers, meta: { title: '试卷管理', subtitle: '创建和管理试卷草稿，组卷后发布为正式考试。' } },
       { path: 'exams', component: AdminExams, meta: { title: '考试管理' } },
-      { path: 'exams/create', component: AdminExams, meta: { title: '创建考试' } },
       { path: 'results', component: AdminResults, meta: { title: '成绩查看' } },
       { path: 'students', component: AdminStudents, meta: { title: '学生管理' } },
-      { path: 'config', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置存储方式、R2 云存储、AI 解析等系统级选项。' } },
+      { path: 'config', redirect: '/admin/config/storage' },
+      { path: 'config/storage', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置存储方式与 R2 云存储。' } },
+      { path: 'config/ai', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置 AI 接口用于智能解析试题。' } },
+      { path: 'config/email', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置 SMTP 服务并开启邮箱注册功能。' } },
       { path: 'feedbacks', component: AdminFeedbacks, meta: { title: '反馈管理', subtitle: '查看并处理学生对试题的反馈与申诉。' } },
+      { path: 'announcements', component: AdminAnnouncements, meta: { title: '公告管理', subtitle: '发布和管理系统公告，学生登录后将收到弹窗通知。' } },
+      { path: 'profile', component: StudentProfile, meta: { title: '个人中心' } },
     ],
   },
   {
@@ -59,6 +69,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'practice', component: StudentPractice, meta: { title: '在线做题', subtitle: '随机抽题练习，检验学习成果。' } },
       { path: 'wrong-book', component: StudentWrongBook, meta: { title: '错题本', subtitle: '整理和管理你的错题。' } },
       { path: 'wrong-book/:notebookId', component: StudentWrongBookDetail, meta: { title: '错题本详情', subtitle: '查看错题本中的题目', showBack: true } },
+      { path: 'profile', component: StudentProfile, meta: { title: '个人中心' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/login' },
@@ -106,16 +117,20 @@ router.beforeEach((to) => {
 
 const TITLE_MAP: Record<string, string> = {
   login: '登录',
+  register: '邮箱注册',
   dashboard: '教学控制台',
   upload: '上传试题',
   questions: '题库管理',
+  papers: '试卷管理',
   exams: '考试管理',
   results: '成绩查看',
   students: '学生管理',
   config: '系统配置',
   feedbacks: '反馈管理',
+  announcements: '公告管理',
   practice: '在线做题',
   'wrong-book': '错题本',
+  profile: '个人中心',
 }
 
 router.afterEach((to) => {

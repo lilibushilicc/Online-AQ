@@ -3,14 +3,10 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type Exam } from '@/stores/exam'
+import { formatTime } from '@/utils/format'
 
 const store = useExamStore()
 const loading = ref(true)
-
-function toTimeLabel(value?: string | null) {
-  if (!value) return '未设置'
-  return new Date(value).toLocaleString()
-}
 
 function getAvailability(exam: Exam) {
   const now = Date.now()
@@ -81,8 +77,8 @@ onMounted(async () => {
             <el-descriptions-item label="考试时长">{{ exam.duration }} 分钟</el-descriptions-item>
             <el-descriptions-item label="总分">{{ exam.totalScore }} 分</el-descriptions-item>
             <el-descriptions-item label="重考策略">{{ exam.allowRetake ? '允许重考' : '仅限一次' }}</el-descriptions-item>
-            <el-descriptions-item label="开始时间">{{ toTimeLabel(exam.startTime) }}</el-descriptions-item>
-            <el-descriptions-item label="结束时间">{{ toTimeLabel(exam.endTime) }}</el-descriptions-item>
+            <el-descriptions-item label="开始时间">{{ formatTime(exam.startTime) }}</el-descriptions-item>
+            <el-descriptions-item label="结束时间">{{ formatTime(exam.endTime) }}</el-descriptions-item>
             <el-descriptions-item label="历史记录">{{ getExamHistory(exam.examId).length }} 次</el-descriptions-item>
           </el-descriptions>
           <div v-if="getExamHistory(exam.examId).length > 0" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px">

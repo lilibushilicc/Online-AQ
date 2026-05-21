@@ -37,6 +37,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ['reference-request-stumble.ngrok-free.dev'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

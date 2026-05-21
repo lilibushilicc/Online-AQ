@@ -2,6 +2,7 @@ package com.example.olineaqspring.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.olineaqspring.dto.ExamCreateRequest;
+import com.example.olineaqspring.dto.ExamSettingsRequest;
 import com.example.olineaqspring.dto.PublishExamRequest;
 import com.example.olineaqspring.entity.Exam;
 import com.example.olineaqspring.entity.ExamHistory;
@@ -102,12 +103,7 @@ public class ExamService {
 
     private Question shuffleQuestionOptions(Question original, Map<Integer, int[]> shuffleMap) {
         Question q = new Question();
-        q.setQuestionId(original.getQuestionId());
-        q.setQuestionContent(original.getQuestionContent());
-        q.setQuestionType(original.getQuestionType());
-        q.setScore(original.getScore());
-        q.setCategory(original.getCategory());
-        q.setSourceFileId(original.getSourceFileId());
+        org.springframework.beans.BeanUtils.copyProperties(original, q, "correctAnswer");
 
         String[] options = {original.getOptionA(), original.getOptionB(), original.getOptionC(), original.getOptionD()};
         int[] indices = {0, 1, 2, 3};
@@ -190,7 +186,8 @@ public class ExamService {
             relation.setExamId(exam.getExamId());
             relation.setQuestionId(questionId);
             relation.setSortOrder(index++);
-            relation.setScore(customScoreMap.getOrDefault(questionId, question.getScore()));
+            BigDecimal qScore = customScoreMap.getOrDefault(questionId, question.getScore());
+            relation.setScore(qScore != null ? qScore : BigDecimal.ZERO);
             examQuestionMapper.insert(relation);
         }
 
@@ -203,6 +200,85 @@ public class ExamService {
         return exam;
     }
 
+    @Transactional
+    public Exam update(Integer examId, ExamCreateRequest request, Integer operatorId) {
+        Exam exam = getExam(examId);
+        if (!"draft".equals(exam.getStatus())) {
+            throw new RuntimeException("仅草稿状态的考试可以编辑");
+        }
+
+        List<Integer> questionIds = request.getQuestionIds();
+        if (questionIds == null || questionIds.isEmpty()) {
+            throw new RuntimeException("请至少选择一道题目");
+        }
+
+        validateTimeRange(request.getStartTime(), request.getEndTime());
+        Map<Integer, Question> questionMap = getQuestionMap(questionIds);
+
+        Map<Integer, BigDecimal> customScoreMap = new HashMap<>();
+        if (request.getQuestionScores() != null) {
+            for (ExamCreateRequest.QuestionScoreItem item : request.getQuestionScores()) {
+                if (item.getScore() != null) {
+                    customScoreMap.put(item.getQuestionId(), item.getScore());
+                }
+            }
+        }
+
+        exam.setExamName(request.getExamName());
+        exam.setDescription(request.getDescription());
+        exam.setDuration(request.getDuration());
+        exam.setAllowRetake(Boolean.TRUE.equals(request.getAllowRetake()));
+        exam.setStartTime(request.getStartTime());
+        exam.setEndTime(request.getEndTime());
+        exam.setTotalScore(calculateTotalScore(questionIds, questionMap, customScoreMap));
+        examMapper.updateById(exam);
+
+        // 清除旧关联，重新插入
+        examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>().eq(ExamQuestion::getExamId, examId));
+        int index = 1;
+        for (Integer questionId : questionIds) {
+            Question question = questionMap.get(questionId);
+            if (question == null) continue;
+            ExamQuestion relation = new ExamQuestion();
+            relation.setExamId(examId);
+            relation.setQuestionId(questionId);
+            relation.setSortOrder(index++);
+            BigDecimal qScore = customScoreMap.getOrDefault(questionId, question.getScore());
+            relation.setScore(qScore != null ? qScore : BigDecimal.ZERO);
+            examQuestionMapper.insert(relation);
+        }
+
+        recordHistory(examId, operatorId, "UPDATE",
+                String.format("编辑考试：%s，题目数 %d", exam.getExamName(), questionIds.size()));
+        return exam;
+    }
+
+    @Transactional
+    public Exam updateSettings(Integer examId, ExamSettingsRequest request, Integer operatorId) {
+        Exam exam = getExam(examId);
+        if ("draft".equals(exam.getStatus())) {
+            throw new RuntimeException("草稿状态的考试请前往试卷管理编辑");
+        }
+
+        if (request.getEndTime() != null) {
+            if (exam.getStartTime() != null && request.getEndTime().isBefore(exam.getStartTime())) {
+                throw new RuntimeException("结束时间不能早于开始时间");
+            }
+            exam.setEndTime(request.getEndTime());
+        }
+        if (request.getAllowRetake() != null) {
+            exam.setAllowRetake(request.getAllowRetake());
+        }
+
+        examMapper.updateById(exam);
+        recordHistory(examId, operatorId, "UPDATE_SETTINGS",
+                String.format("修改考试设置：%s，结束时间：%s，允许重考：%s",
+                        exam.getExamName(),
+                        request.getEndTime() != null ? request.getEndTime().toString() : "不变",
+                        request.getAllowRetake() != null ? (request.getAllowRetake() ? "是" : "否") : "不变"));
+        return exam;
+    }
+
     public void publish(Integer examId, Integer operatorId) {
         publish(examId, operatorId, null);
     }
@@ -210,6 +286,15 @@ public class ExamService {
     @Transactional
     public void publish(Integer examId, Integer operatorId, PublishExamRequest request) {
         Exam exam = getExam(examId);
+
+        // 发布时验证时间有效性
+        if (exam.getDuration() == null || exam.getDuration() <= 0) {
+            throw new RuntimeException("考试时长未设置，请先设置有效的考试时长");
+        }
+        if (exam.getStartTime() != null) {
+            validateTimeRange(exam.getStartTime(), exam.getEndTime());
+        }
+
         exam.setStatus("published");
         if (request != null) {
             exam.setShuffleQuestions(Boolean.TRUE.equals(request.getShuffleQuestions()));
@@ -289,6 +374,9 @@ public class ExamService {
         if (startTime != null && endTime != null && !endTime.isAfter(startTime)) {
             throw new RuntimeException("结束时间必须晚于开始时间");
         }
+        if (startTime != null && endTime == null && startTime.isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("开始时间不能是过去时间");
+        }
     }
 
     private void fillOperatorNames(List<ExamHistory> historyList) {
@@ -316,7 +404,7 @@ public class ExamService {
             Question question = questionMap.get(questionId);
             if (question != null) {
                 BigDecimal score = customScoreMap.getOrDefault(questionId, question.getScore());
-                totalScore = totalScore.add(score);
+                totalScore = totalScore.add(score != null ? score : BigDecimal.ZERO);
             }
         }
         return totalScore;

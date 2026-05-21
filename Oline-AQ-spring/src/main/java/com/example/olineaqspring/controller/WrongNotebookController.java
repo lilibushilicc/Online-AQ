@@ -5,10 +5,13 @@ import com.example.olineaqspring.service.ExportService;
 import com.example.olineaqspring.service.WrongNotebookService;
 import com.example.olineaqspring.vo.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
 
 import java.util.List;
 import java.util.Map;
@@ -70,7 +73,11 @@ public class WrongNotebookController {
         List<Map<String, Object>> groups = (List<Map<String, Object>>) detail.get("groups");
         byte[] bytes = exportService.exportWrongQuestions(groups);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=错题本导出.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename("错题本导出.xlsx", StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(bytes);
     }

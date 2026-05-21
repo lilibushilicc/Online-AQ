@@ -2,9 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Download, Document } from '@element-plus/icons-vue'
 import StatCards from '@/views/components/StatCards.vue'
+import QuestionOptions from '@/views/components/QuestionOptions.vue'
 import { useExamStore, type ResultDetail } from '@/stores/exam'
 import { downloadFile } from '@/utils/download'
+import * as api from '@/api'
 
 const route = useRoute()
 const store = useExamStore()
@@ -35,7 +38,7 @@ async function submitFeedback() {
     return
   }
   try {
-    await store.submitFeedback({
+    await api.submitFeedbackApi({
       questionId: feedbackTarget.value.questionId,
       examId: resultDetail.value?.result.examId,
       feedbackType: feedbackForm.value.feedbackType,
@@ -51,17 +54,50 @@ async function submitFeedback() {
 
 onMounted(async () => {
   try {
-    resultDetail.value = await store.getResultDetail(resultId)
+    resultDetail.value = await api.getResultDetailApi(resultId)
     const ids = resultDetail.value.answers.map((a) => a.questionId)
-    const reported = await store.myFeedbackQuestionIds(ids)
+    const reported = await api.myFeedbackQuestionIdsApi(ids)
     submittedFeedbackIds.value = new Set(reported)
+    const fmt = route.query.fromBlank as string | undefined
+    if (fmt === 'pdf') setTimeout(pdfExport, 800)
+    else if (fmt === 'word') setTimeout(wordExport, 800)
+    else if (fmt === 'excel') setTimeout(excelExport, 800)
   } catch {
     ElMessage.error('加载成绩详情失败，请刷新重试')
   }
 })
+
+function filename() { return `成绩详情_${new Date().toLocaleDateString()}` }
+
+function excelExport() {
+  downloadFile(`/results/export/${resultId}/detail`, `${filename()}.xlsx`)
+}
+
+function wordExport() {
+  downloadFile(`/results/export/${resultId}/detail/word`, `${filename()}.docx`)
+}
+
+async function pdfExport() {
+  const el = document.getElementById('result-content')
+  if (!el) return
+  ElMessage.info('正在生成 PDF…')
+  try {
+    const html2pdf = (await import('html2pdf.js')).default
+    await html2pdf().set({
+      margin: [8, 8, 8, 8],
+      filename: `${filename()}.pdf`,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    }).from(el).save()
+  } catch {
+    ElMessage.error('PDF 生成失败')
+  }
+}
 </script>
 
 <template>
+  <div id="result-content">
     <section v-if="resultDetail">
       <StatCards :items="[
         { title: '总分', value: resultDetail.result.totalScore, suffix: '分' },
@@ -76,9 +112,9 @@ onMounted(async () => {
         <div style="display: flex; align-items: center; justify-content: space-between">
           <strong>答题明细</strong>
           <div style="display: flex; align-items: center; gap: 8px">
-            <el-button size="small" plain @click="downloadFile(`/api/results/export/${resultId}/detail`, `成绩详情_${new Date().toLocaleDateString()}.xlsx`)">
-              导出详情
-            </el-button>
+            <el-button size="small" plain :icon="Download" @click="pdfExport">导出 PDF</el-button>
+            <el-button size="small" plain :icon="Document" @click="wordExport">导出 Word</el-button>
+            <el-button size="small" plain @click="excelExport">导出 Excel</el-button>
             <span style="color: var(--muted); font-size: 13px">记录 ID：{{ resultDetail.result.resultId }}</span>
           </div>
         </div>
@@ -98,12 +134,7 @@ onMounted(async () => {
             <el-tag v-else size="small" type="info">已反馈</el-tag>
           </div>
         </div>
-        <div v-if="answer.questionType === 'single' || answer.questionType === 'judge'" class="option-grid">
-          <span>A. {{ answer.optionA }}</span>
-          <span>B. {{ answer.optionB }}</span>
-          <span v-if="answer.optionC">C. {{ answer.optionC }}</span>
-          <span v-if="answer.optionD">D. {{ answer.optionD }}</span>
-        </div>
+        <QuestionOptions v-if="answer.questionType === 'single' || answer.questionType === 'judge'" :question="answer" />
         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px">
           <el-tag>你的答案：{{ answer.studentAnswer || '未作答' }}</el-tag>
           <el-tag type="success">正确答案：{{ answer.correctAnswer }}</el-tag>
@@ -134,4 +165,5 @@ onMounted(async () => {
         <el-button type="primary" @click="submitFeedback">提交反馈</el-button>
       </template>
     </el-dialog>
+</div>
 </template>

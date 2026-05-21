@@ -22,19 +22,11 @@ public class QuestionService {
     private final QuestionMapper questionMapper;
 
     public List<Question> listAll(String category) {
-        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
-        if (category != null && !category.isEmpty()) {
-            wrapper.eq(Question::getCategory, category);
-        }
-        return questionMapper.selectList(wrapper);
+        return questionMapper.selectList(buildOrderedWrapper(category));
     }
 
     public PageResult<Question> list(String category, Integer page, Integer pageSize) {
-        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
-        if (category != null && !category.isEmpty()) {
-            wrapper.eq(Question::getCategory, category);
-        }
-        IPage<Question> p = questionMapper.selectPage(new Page<>(page, pageSize), wrapper);
+        IPage<Question> p = questionMapper.selectPage(new Page<>(page, pageSize), buildOrderedWrapper(category));
         return new PageResult<>(p.getRecords(), p.getTotal(), (int) p.getCurrent(), (int) p.getSize());
     }
 
@@ -104,5 +96,13 @@ public class QuestionService {
         if (questionIds == null || questionIds.isEmpty()) {
             throw new RuntimeException("请至少选择一道题目");
         }
+    }
+
+    private LambdaQueryWrapper<Question> buildOrderedWrapper(String category) {
+        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
+        if (category != null && !category.isEmpty()) {
+            wrapper.eq(Question::getCategory, category);
+        }
+        return wrapper;
     }
 }

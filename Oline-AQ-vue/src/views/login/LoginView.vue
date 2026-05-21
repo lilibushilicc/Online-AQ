@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElDialog } from 'element-plus'
 import { UploadFilled, Document, EditPen, Trophy } from '@element-plus/icons-vue'
 import { useExamStore, type Role } from '@/stores/exam'
 
@@ -9,9 +9,14 @@ const router = useRouter()
 const store = useExamStore()
 
 const form = reactive({
-  username: 'admin',
-  password: '123456',
-  role: 'admin' as Role,
+  username: '',
+  password: '',
+  role: 'student' as Role,
+})
+
+const adminForm = reactive({
+  username: '',
+  password: '',
 })
 
 const features = [
@@ -21,9 +26,27 @@ const features = [
   { icon: Trophy, label: '自动评分与成绩分析' },
 ]
 
+const logoClickCount = ref(0)
+let logoTimer: ReturnType<typeof setTimeout> | null = null
+const adminDialogVisible = ref(false)
+
+function handleLogoClick() {
+  logoClickCount.value++
+  if (logoTimer) {
+    clearTimeout(logoTimer)
+  }
+  logoTimer = setTimeout(() => {
+    logoClickCount.value = 0
+  }, 2000)
+  if (logoClickCount.value >= 3) {
+    logoClickCount.value = 0
+    adminDialogVisible.value = true
+  }
+}
+
 async function submit() {
   if (!form.username.trim()) {
-    ElMessage.warning('请输入账号')
+    ElMessage.warning('请输入账号或邮箱')
     return
   }
   if (!form.password) {
@@ -38,16 +61,39 @@ async function submit() {
     ElMessage.error(message)
   }
 }
+
+async function adminLogin() {
+  if (!adminForm.username.trim()) {
+    ElMessage.warning('请输入管理员账号')
+    return
+  }
+  if (!adminForm.password) {
+    ElMessage.warning('请输入密码')
+    return
+  }
+  try {
+    const user = await store.login(adminForm.username, adminForm.password, 'admin')
+    adminDialogVisible.value = false
+    router.push('/admin/dashboard')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '登录失败'
+    ElMessage.error(message)
+  }
+}
 </script>
 
 <template>
   <main class="login-page">
+    <div class="login-logo" @click="handleLogoClick">
+      <div class="login-logo-icon">O◈AQ</div>
+    </div>
+
     <section class="login-hero">
       <div class="hero-divider"></div>
       <h1>智能<br><span>在线答题</span><br>系统</h1>
       <p class="hero-sub">教师导入试题、自动解析组卷并发布考试。学生在线作答，系统即时评分并沉淀数据，形成完整的教学测验闭环。</p>
       <div class="hero-features">
-        <div v-for="item in features" :key="item.label" class="hero-feature fade-in">
+        <div v-for="(item, idx) in features" :key="item.label" class="hero-feature" :class="`fade-in stagger-${idx + 1}`">
           <span class="hero-feature-icon">
             <el-icon :size="13"><component :is="item.icon" /></el-icon>
           </span>
@@ -57,31 +103,37 @@ async function submit() {
     </section>
 
     <section class="login-card">
-      <h2>登录系统</h2>
-      <p class="login-muted">选择身份，使用测试账号快速体验</p>
+      <h2>学生登录</h2>
+      <p class="login-muted">使用学号或邮箱登录</p>
 
       <el-form class="login-form" label-position="top" @submit.prevent>
-        <el-form-item label="账号">
-          <el-input v-model="form.username" placeholder="admin / 2023001" />
+        <el-form-item label="学号 / 邮箱">
+          <el-input v-model="form.username" placeholder="学号 / 邮箱" />
         </el-form-item>
         <el-form-item label="密码">
           <el-input v-model="form.password" type="password" show-password placeholder="输入密码" />
-        </el-form-item>
-        <el-form-item label="身份">
-          <el-segmented
-            v-model="form.role"
-            :options="[
-              { label: '教师', value: 'admin' },
-              { label: '学生', value: 'student' },
-            ]"
-          />
         </el-form-item>
         <el-button class="login-submit" @click="submit">登 录</el-button>
       </el-form>
 
       <div class="login-footer">
-        测试账号 · admin / 2023001 &nbsp; 密码 123456
+        <el-button link type="primary" @click="router.push('/register')">没有账号？邮箱注册</el-button>
       </div>
     </section>
+
+    <el-dialog v-model="adminDialogVisible" title="管理员登录" width="400px" top="25vh">
+      <el-form label-position="top">
+        <el-form-item label="管理员账号">
+          <el-input v-model="adminForm.username" placeholder="请输入管理员账号" />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="adminForm.password" type="password" show-password placeholder="请输入密码" @keyup.enter="adminLogin" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="adminDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="adminLogin">登录</el-button>
+      </template>
+    </el-dialog>
   </main>
 </template>

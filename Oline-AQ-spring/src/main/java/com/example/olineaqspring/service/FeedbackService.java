@@ -72,42 +72,38 @@ public class FeedbackService {
 
     @Transactional
     public int resolve(Integer id, QuestionRequest request) {
-        QuestionFeedback feedback = feedbackMapper.selectById(id);
-        if (feedback == null) {
-            throw new RuntimeException("反馈不存在");
-        }
+        QuestionFeedback feedback = findFeedback(id);
         Question question = questionMapper.selectById(feedback.getQuestionId());
         if (question == null) {
             throw new RuntimeException("题目不存在");
         }
         BeanUtils.copyQuestion(request, question);
         questionMapper.updateById(question);
-
-        feedback.setStatus("resolved");
-        feedback.setResolveType("modified");
-        feedback.setUpdateTime(LocalDateTime.now());
-        feedbackMapper.updateById(feedback);
-
-        int affected = feedbackMapper.resolveOtherByQuestionId(
-                feedback.getQuestionId(), "resolved", "modified", id);
-        return affected;
+        return updateFeedbackStatus(id, "resolved", "modified", null);
     }
 
     @Transactional
     public int reject(Integer id, String reason) {
+        findFeedback(id);
+        return updateFeedbackStatus(id, "rejected", "rejected", reason);
+    }
+
+    private QuestionFeedback findFeedback(Integer id) {
         QuestionFeedback feedback = feedbackMapper.selectById(id);
         if (feedback == null) {
             throw new RuntimeException("反馈不存在");
         }
-        feedback.setStatus("rejected");
-        feedback.setRejectReason(reason);
-        feedback.setResolveType("rejected");
+        return feedback;
+    }
+
+    private int updateFeedbackStatus(Integer id, String status, String resolveType, String rejectReason) {
+        QuestionFeedback feedback = feedbackMapper.selectById(id);
+        feedback.setStatus(status);
+        feedback.setResolveType(resolveType);
+        feedback.setRejectReason(rejectReason);
         feedback.setUpdateTime(LocalDateTime.now());
         feedbackMapper.updateById(feedback);
-
-        int affected = feedbackMapper.resolveOtherByQuestionId(
-                feedback.getQuestionId(), "rejected", "rejected", id);
-        return affected;
+        return feedbackMapper.resolveOtherByQuestionId(feedback.getQuestionId(), status, resolveType, id);
     }
 
     public List<Integer> myFeedbackQuestionIds(Integer studentId, List<Integer> questionIds) {

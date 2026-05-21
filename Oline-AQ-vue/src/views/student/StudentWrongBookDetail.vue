@@ -5,9 +5,12 @@ import { ElMessage } from 'element-plus'
 import { Loading, Delete, Plus } from '@element-plus/icons-vue'
 import { downloadFile } from '@/utils/download'
 import StatCards from '@/views/components/StatCards.vue'
-import { useExamStore, type WrongQuestionGroup, type WrongNotebook, type NotebookDetail } from '@/stores/exam'
+import QuestionOptions from '@/views/components/QuestionOptions.vue'
+import * as api from '@/api'
+import { type WrongQuestionGroup, type WrongNotebook, type NotebookDetail } from '@/stores/exam'
+import { QUESTION_TYPE_LABEL } from '@/constants'
 
-const store = useExamStore()
+
 const route = useRoute()
 const router = useRouter()
 const notebookId = computed(() => route.params.notebookId as string)
@@ -24,24 +27,17 @@ const notebooks = ref<WrongNotebook[]>([])
 const addNotebookId = ref<number | null>(null)
 const adding = ref(false)
 
-const typeLabel: Record<string, string> = {
-  single: '单选',
-  judge: '判断',
-  short_answer: '简答',
-  fill_blank: '填空',
-}
-
 async function loadData() {
   loading.value = true
   try {
     if (isAllView.value) {
-      groups.value = await store.getWrongQuestions()
-      notebooks.value = await store.loadNotebooks()
+      groups.value = await api.getWrongQuestionsApi()
+      notebooks.value = await api.loadNotebooksApi()
     } else {
-      const detail = await store.getNotebookDetail(Number(notebookId.value))
+      const detail = await api.getNotebookDetailApi(Number(notebookId.value))
       notebookDetail.value = detail
       groups.value = detail.groups || []
-      notebooks.value = await store.loadNotebooks()
+      notebooks.value = await api.loadNotebooksApi()
     }
   } finally {
     loading.value = false
@@ -54,7 +50,7 @@ const totalQuestions = computed(() => groups.value.reduce((s, g) => s + g.questi
 
 async function handleRemove(itemId: number) {
   try {
-    await store.removeNotebookItem(Number(notebookId.value), itemId)
+    await api.removeNotebookItemApi(Number(notebookId.value), itemId)
     await loadData()
   } catch {
     ElMessage.error('移除失败，请稍后重试')
@@ -72,9 +68,9 @@ async function handleAddToNotebook() {
   if (!addTargetAnswerId.value || !addNotebookId.value) return
   adding.value = true
   try {
-    await store.addToNotebook(addNotebookId.value, addTargetAnswerId.value)
+    await api.addToNotebookApi(addNotebookId.value, addTargetAnswerId.value)
     addDialogVisible.value = false
-    await store.loadNotebooks().then(d => { notebooks.value = d })
+    await api.loadNotebooksApi().then(d => { notebooks.value = d })
   } finally {
     adding.value = false
   }
@@ -82,16 +78,16 @@ async function handleAddToNotebook() {
 
 function handleExport() {
   if (isAllView.value) {
-    downloadFile('/api/results/export/wrong', `错题导出_${new Date().toLocaleDateString()}.xlsx`)
+    downloadFile('/results/export/wrong', `错题导出_${new Date().toLocaleDateString()}.xlsx`)
   } else {
-    downloadFile(`/api/wrong-notebooks/${notebookId.value}/export`, `错题本导出_${new Date().toLocaleDateString()}.xlsx`)
+    downloadFile(`/wrong-notebooks/${notebookId.value}/export`, `错题本导出_${new Date().toLocaleDateString()}.xlsx`)
   }
 }
 
 async function handleDeleteNotebook() {
   if (isAllView.value) return
   try {
-    await store.deleteNotebook(Number(notebookId.value))
+    await api.deleteNotebookApi(Number(notebookId.value))
     router.replace('/student/wrong-book')
   } catch {
     ElMessage.error('删除失败，请稍后重试')
@@ -123,14 +119,9 @@ async function handleDeleteNotebook() {
             <div style="flex: 1; min-width: 0">
               <p style="font-weight: 600; margin-bottom: 8px">{{ item.questionContent }}</p>
               <div style="font-size: 13px">
-                <el-tag size="small" style="margin-right: 6px">{{ typeLabel[item.questionType] || item.questionType }}</el-tag>
+                <el-tag size="small" style="margin-right: 6px">{{ QUESTION_TYPE_LABEL[item.questionType] || item.questionType }}</el-tag>
               </div>
-              <div v-if="item.questionType === 'single' || item.questionType === 'judge'" class="option-grid" style="margin-top: 8px">
-                <span :class="item.correctAnswer === 'A' ? 'correct-option' : ''">A. {{ item.optionA }}</span>
-                <span :class="item.correctAnswer === 'B' ? 'correct-option' : ''">B. {{ item.optionB }}</span>
-                <span v-if="item.optionC" :class="item.correctAnswer === 'C' ? 'correct-option' : ''">C. {{ item.optionC }}</span>
-                <span v-if="item.optionD" :class="item.correctAnswer === 'D' ? 'correct-option' : ''">D. {{ item.optionD }}</span>
-              </div>
+              <QuestionOptions v-if="item.questionType === 'single' || item.questionType === 'judge'" :question="item" :correct-answer="item.correctAnswer" />
               <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center">
                 <el-tag type="danger" effect="plain">你的答案：{{ item.studentAnswer || '未作答' }}</el-tag>
                 <el-tag type="success">正确答案：{{ item.correctAnswer }}</el-tag>
@@ -170,14 +161,4 @@ async function handleDeleteNotebook() {
 </template>
 
 <style scoped>
-.option-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  font-size: 13px;
-}
-.correct-option {
-  color: var(--el-color-success);
-  font-weight: 600;
-}
 </style>

@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useExamStore, type UploadFileItem } from '@/stores/exam'
+import { useExamStore } from '@/stores/exam'
+import * as api from '@/api'
+import type { UploadFileItem } from '@/types'
+import { QUESTION_TYPE_LABEL } from '@/constants'
 import { downloadFile } from '@/utils/download'
+
+const route = useRoute()
 
 const store = useExamStore()
 const loading = ref(true)
@@ -32,13 +38,6 @@ const filteredQuestions = computed(() => {
     return matchKeyword && matchSource && matchType && matchCategory && matchFile
   })
 })
-const QUESTION_TYPE_LABEL: Record<string, string> = {
-  single: '单选',
-  judge: '判断',
-  short_answer: '简答',
-  fill_blank: '填空',
-}
-
 const activeFileName = computed(() => {
   if (!activeFileId.value) return '全部题目'
   return uploadFiles.value.find((f) => f.fileId === activeFileId.value)?.fileName ?? '全部题目'
@@ -47,7 +46,14 @@ const activeFileName = computed(() => {
 onMounted(async () => {
   try {
     await Promise.all([store.loadQuestions(), store.loadCategories()])
-    uploadFiles.value = await store.loadUploadFiles()
+    uploadFiles.value = await api.loadUploadFilesApi()
+    const fileId = route.query.fileId
+    if (fileId) {
+      const id = Number(fileId)
+      if (uploadFiles.value.some((f) => f.fileId === id)) {
+        activeFileId.value = id
+      }
+    }
   } catch {
     ElMessage.error('加载数据失败，请刷新重试')
   } finally {
@@ -80,8 +86,8 @@ function updateSelection(rows: Array<{ questionId: number }>) {
 
 async function handleDeleteFile(fileId: number) {
   if (activeFileId.value === fileId) activeFileId.value = null
-  await store.deleteFile(fileId)
-  uploadFiles.value = await store.loadUploadFiles()
+  await api.deleteFileApi(fileId)
+  uploadFiles.value = await api.loadUploadFilesApi()
   await store.loadQuestions()
   ElMessage.success('文件及关联题目已删除')
 }
@@ -164,7 +170,7 @@ async function updateSelectedScore() {
             </div>
             <span class="toolbar-right">
               <span class="muted">共 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
-              <el-button size="small" plain @click="downloadFile('/api/questions/export', `题库导出_${new Date().toLocaleDateString()}.xlsx`)">
+              <el-button size="small" plain @click="downloadFile('/questions/export', `题库导出_${new Date().toLocaleDateString()}.xlsx`)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 导出
               </el-button>
@@ -193,7 +199,7 @@ async function updateSelectedScore() {
             <el-table-column prop="questionContent" label="题干" min-width="240" />
             <el-table-column label="题型" width="100">
               <template #default="{ row }">
-                {{ QUESTION_TYPE_LABEL[row.questionType] || row.questionType }}
+                {{ QUESTION_TYPE_LABEL[row.questionType as keyof typeof QUESTION_TYPE_LABEL] || row.questionType }}
               </template>
             </el-table-column>
             <el-table-column prop="correctAnswer" label="答案" width="80" />

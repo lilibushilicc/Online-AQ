@@ -2,7 +2,10 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { View } from '@element-plus/icons-vue'
+import * as api from '@/api'
 import { useExamStore, type Exam, type Question } from '@/stores/exam'
+import { downloadFile } from '@/utils/download'
 
 const DRAFT_KEY_PREFIX = 'exam_draft_'
 
@@ -18,6 +21,10 @@ const serverTime = ref(0)
 const remainingSeconds = ref(0)
 const initialRemainingSeconds = ref(0)
 const submitting = ref(false)
+const blankDialogVisible = ref(false)
+const blankFormat = ref('pdf')
+const exportDialogVisible = ref(false)
+const exportFormat = ref('word')
 const activeQuestionIndex = ref(0)
 const hasDraft = ref(false)
 let timer: number | null = null
@@ -70,6 +77,7 @@ function examBlockedReason(currentExam: Exam) {
     return '考试当前不可作答'
   }
   if (!currentExam.allowRetake && store.hasSubmittedExam(currentExam.examId)) return '该考试仅允许提交一次'
+  if (!currentExam.duration || currentExam.duration <= 0) return '考试时长未设置，请联系管理员'
   return ''
 }
 
@@ -78,8 +86,8 @@ function resolveRemainingSeconds(currentExam: Exam) {
   const serverOffset = serverTime.value ? Date.now() - serverTime.value : 0
   const endLimit = currentExam.endTime
     ? Math.max(0, Math.floor((new Date(currentExam.endTime).getTime() - Date.now() + serverOffset) / 1000))
-    : durationLimit
-  if (durationLimit === 0) return endLimit
+    : Infinity
+  if (durationLimit === 0) return endLimit === Infinity ? 0 : endLimit
   if (!currentExam.endTime) return durationLimit
   return Math.min(durationLimit, endLimit)
 }
@@ -142,10 +150,72 @@ async function handleSubmit(options?: { auto?: boolean }) {
   } finally { submitting.value = false }
 }
 
+function openBlankDialog() {
+  if (!exam.value || submitting.value) return
+  const blockedReason = examBlockedReason(exam.value)
+  if (blockedReason) { ElMessage.warning(blockedReason); return }
+  blankFormat.value = 'pdf'
+  blankDialogVisible.value = true
+}
+
+function openExportDialog() {
+  if (!exam.value) return
+  const blockedReason = examBlockedReason(exam.value)
+  if (blockedReason) { ElMessage.warning(blockedReason); return }
+  exportFormat.value = 'word'
+  exportDialogVisible.value = true
+}
+
+function doExport() {
+  if (!exam.value) return
+  exportDialogVisible.value = false
+  if (exportFormat.value === 'pdf') {
+    ElMessage.info('PDF 生成中...')
+    import('html2pdf.js').then((m) => {
+      const el = document.getElementById('export-content')
+      if (!el) return
+      m.default().set({
+        margin: [8, 8, 8, 8],
+        filename: `${exam.value!.examName}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      }).from(el).save()
+    }).catch(() => ElMessage.error('PDF 生成失败'))
+  } else if (exportFormat.value === 'word') {
+    downloadFile(`/exams/${exam.value.examId}/export/word`, `${exam.value.examName}.docx`)
+  } else if (exportFormat.value === 'excel') {
+    downloadFile(`/exams/${exam.value.examId}/export/excel`, `${exam.value.examName}.xlsx`)
+  }
+}
+
+async function handleBlankSubmit() {
+  if (!exam.value) return
+  blankDialogVisible.value = false
+  submitting.value = true
+  clearTimer()
+
+  const blankAnswers: Record<number, string> = {}
+  questions.value.forEach((q) => { blankAnswers[q.questionId] = '' })
+
+  try {
+    const result = await store.submitExam(exam.value.examId, blankAnswers, elapsedSeconds.value)
+    clearDraft()
+    if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer); draftSaveTimer = null }
+    ElMessage.success('提交成功，正在加载答案')
+    router.push(`/student/results/${result.resultId}?fromBlank=${blankFormat.value}`)
+  } finally { submitting.value = false }
+}
+
 function startCountdown(currentExam: Exam) {
   initialRemainingSeconds.value = resolveRemainingSeconds(currentExam)
   remainingSeconds.value = initialRemainingSeconds.value
-  if (remainingSeconds.value <= 0) { void handleSubmit({ auto: true }); return }
+  if (remainingSeconds.value <= 0) {
+    const msg = examBlockedReason(currentExam)
+    if (msg) { ElMessage.warning(msg); return }
+    void handleSubmit({ auto: true })
+    return
+  }
   clearTimer()
   timer = window.setInterval(() => {
     if (remainingSeconds.value <= 1) { remainingSeconds.value = 0; clearTimer(); void handleSubmit({ auto: true }); return }
@@ -161,11 +231,12 @@ watch(answers, () => {
 onMounted(async () => {
   try {
     await store.loadMyResults()
-    const detail = await store.getExamDetail(examId)
+    const detail = await api.getExamDetailApi(examId)
     exam.value = detail.exam
     questions.value = detail.questions
     if (detail.shuffleMap) shuffleMap.value = detail.shuffleMap
-    if (detail.serverTime) serverTime.value = detail.serverTime
+    const d = detail as any
+    if (d.serverTime) serverTime.value = d.serverTime
     if (!exam.value) return
     const blockedReason = examBlockedReason(exam.value)
     if (blockedReason) { ElMessage.warning(blockedReason); router.replace('/student/exams'); return }
@@ -265,7 +336,67 @@ onUnmounted(() => {
         <el-button type="primary" size="large" style="width: 100%" :loading="submitting" @click="handleSubmit()">
           提交试卷
         </el-button>
+        <el-button size="small" plain style="width: 100%; margin-top: 8px; margin-bottom: 4px" @click="openExportDialog()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          导出试卷
+        </el-button>
+        <el-button size="small" plain style="width: 100%; margin-top: 4px" :loading="submitting" @click="openBlankDialog()">
+          <el-icon style="margin-right: 4px"><View /></el-icon>查看答案
+        </el-button>
       </aside>
+
+      <!-- 空白提交确认弹窗 -->
+      <el-dialog v-model="blankDialogVisible" title="查看答案" width="440px" :close-on-click-modal="false">
+        <div style="margin-bottom: 20px;">
+          <p style="margin: 0 0 8px; color: var(--ink); font-size: 14px; line-height: 1.7;">
+            提交空白试卷后可查看全部正确答案，本次得分为 0。
+          </p>
+          <p v-if="exam && !exam.allowRetake" style="margin: 0; color: var(--red); font-size: 13px; font-weight: 600;">
+            ⚠ 该考试禁止重考，提交后无法再次作答。
+          </p>
+        </div>
+        <el-form label-position="top">
+          <el-form-item label="导出格式">
+            <el-radio-group v-model="blankFormat">
+              <el-radio value="pdf">PDF</el-radio>
+              <el-radio value="word">Word</el-radio>
+              <el-radio value="excel">Excel</el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="blankDialogVisible = false">返回作答</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleBlankSubmit">确认查看</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 导出试卷弹窗 -->
+      <el-dialog v-model="exportDialogVisible" title="导出试卷" width="400px">
+        <p style="margin-bottom: 16px">将当前试卷导出为文件，不包含答案。</p>
+        <el-radio-group v-model="exportFormat">
+          <el-radio value="word">Word 文档</el-radio>
+          <el-radio value="excel">Excel 表格</el-radio>
+          <el-radio value="pdf">PDF 文件</el-radio>
+        </el-radio-group>
+        <template #footer>
+          <el-button @click="exportDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="doExport">下载</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 隐藏的导出内容（供 html2pdf 抓取） -->
+      <div id="export-content" style="position: fixed; left: -9999px; top: 0; width: 210mm; padding: 20mm; background: #fff; color: #000; font-size: 14px; line-height: 1.8" v-if="exam">
+        <h1 style="text-align: center; margin-bottom: 20px">{{ exam.examName }}</h1>
+        <p v-if="exam.description" style="margin-bottom: 16px; font-style: italic">{{ exam.description }}</p>
+        <div v-for="(q, index) in questions" :key="q.questionId" style="margin-bottom: 20px">
+          <strong>{{ index + 1 }}. {{ q.questionContent }}</strong>
+          <p style="margin: 6px 0 0 12px">A. {{ q.optionA }}</p>
+          <p style="margin: 2px 0 0 12px">B. {{ q.optionB }}</p>
+          <p v-if="q.optionC" style="margin: 2px 0 0 12px">C. {{ q.optionC }}</p>
+          <p v-if="q.optionD" style="margin: 2px 0 0 12px">D. {{ q.optionD }}</p>
+          <p style="margin: 4px 0 0 12px; color: #666; font-size: 12px">（{{ q.score }} 分）</p>
+        </div>
+      </div>
     </section>
     <section v-else>
       <el-empty description="考试不存在或正在加载" />
@@ -295,13 +426,13 @@ onUnmounted(() => {
 }
 .q-nav-btn--done {
   background: var(--accent-light);
-  border-color: rgba(45,90,71,0.25);
+  border-color: color-mix(in srgb, var(--ink-green) 25%, transparent);
   color: var(--ink-green);
 }
 .q-nav-btn--active {
   border-color: var(--ink-green);
   background: var(--ink-green);
   color: #fff;
-  box-shadow: 0 2px 6px rgba(45,90,71,0.25);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
 }
 </style>

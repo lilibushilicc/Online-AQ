@@ -1,5 +1,11 @@
 # 智能在线答题系统
 
+> 2026-05-21 更新：修复试卷创建失败（question.score 为 null 时 calculateTotalScore NPE），编辑试卷时正确加载自定义分值。登录页移除教师身份选择入口，左上角添加品牌 logo，点击三次弹出管理员登录对话框。
+> 2026-05-20 更新：新增系统公告功能。管理员可在后台发布和管理公告，学生登录后自动弹窗通知，右上角铃铛图标显示未读数量并支持查看全部公告。
+> 2026-05-20 更新：修复 Word/Excel 导出功能无法正常下载的问题：后端所有导出接口使用 RFC 5987 标准编码中文文件名，前端修复 Blob URL 过早释放和 Axios 拦截器对 Blob 错误响应的处理，ExportService 增加 null 安全防护。
+> 2026-05-20 更新：新增个人中心功能，支持学生和管理员查看/编辑个人资料（姓名、邮箱）和修改密码；管理员学生管理页补充邮箱和注册时间列。后端新增 GET/PUT /api/users/me 接口，前端新增 StudentProfile 页面和路由入口。
+> 2026-05-20 更新：系统级代码优化，后端抽取 checkOwner/updateFeedbackStatus/buildOrderedWrapper/validateEmailRegistration 等共享方法消除 10+ 处重复代码，修复 N+1 查询；前端删除 store 32 个透传 action 改为组件直接调用 api，创建 useDataSource 组合函数统一加载/错误处理，cleanParams 函数合并参数清洗逻辑，修复因类型推断暴露的预存类型错误。
+> 2026-05-20 更新：新增邮箱学生注册功能。管理员可在后台配置页开启/关闭邮箱注册，设置 SMTP 服务器用于发送验证码。学生在登录页可切换至注册表单，通过邮箱验证码完成注册后自动登录。
 > 2026-05-19 更新：Element Plus 改为全量导入，去除 40+ 组件手工注册（减少 67 行）。清理 5 处未使用 import、删除嵌套仓库副本 Online-AQ/ 和测试文件、将 task_plan.md 移入 WillPlan/。
 > 2026-05-19 更新：考试作答支持自动保存草稿到 localStorage，刷新/关闭页面可恢复；倒计时改为服务端时间校准，防止篡改客户端时钟。页面新增统一的 v-loading 加载状态。后端 MyBatis-Plus 分页替代手动 SQL 拼接，新增 PaginationInnerInterceptor。运维配置拆分为 dev/prod profile，Vue DevTools 仅开发模式启用，添加 .env.production。
 > 2026-05-19 更新：重构上传试题页布局，拆分为导入文件、解析策略、最近导入记录和格式参考四个区域，并收拢页面内解析模式与文件状态逻辑，提升可读性与维护性。

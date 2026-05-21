@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Upload, Collection, Document, DataAnalysis, User, Setting, ChatDotRound, Tickets, Fold, Expand, Menu } from '@element-plus/icons-vue'
+import { HomeFilled, Upload, Collection, Document, DataAnalysis, User, Setting, ChatDotRound, Tickets, Fold, Expand, Menu, MagicStick, Message } from '@element-plus/icons-vue'
 import { useExamStore } from '@/stores/exam'
 
 defineProps<{ title: string; subtitle?: string }>()
@@ -57,7 +57,7 @@ watch(() => route.path, () => {
             <div class="user-name">{{ userName }}</div>
             <div class="user-role">管理员</div>
           </div>
-          <div class="user-pulse"></div>
+          <div class="user-pulse animate-pulse-ring"></div>
         </div>
 
         <el-menu
@@ -73,8 +73,12 @@ watch(() => route.path, () => {
           <el-sub-menu index="exam-group">
             <template #title>
               <el-icon><Document /></el-icon>
-              <span>考试与成绩</span>
+              <span>考试与试卷</span>
             </template>
+            <el-menu-item index="/admin/papers">
+              <el-icon><Edit /></el-icon>
+              <span>试卷管理</span>
+            </el-menu-item>
             <el-menu-item index="/admin/exams">
               <el-icon><Tickets /></el-icon>
               <span>考试管理</span>
@@ -115,9 +119,32 @@ watch(() => route.path, () => {
             </el-menu-item>
           </el-sub-menu>
 
-          <el-menu-item index="/admin/config">
-            <el-icon><Setting /></el-icon>
-            <span>系统设置</span>
+          <el-sub-menu index="config-group">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>系统设置</span>
+            </template>
+            <el-menu-item index="/admin/config/storage">
+              <el-icon><Setting /></el-icon>
+              <span>存储设置</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/config/ai">
+              <el-icon><MagicStick /></el-icon>
+              <span>AI 解析</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/config/email">
+              <el-icon><Message /></el-icon>
+              <span>邮箱注册</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/announcements">
+              <el-icon><ChatDotRound /></el-icon>
+              <span>公告管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <el-menu-item index="/admin/profile">
+            <el-icon><User /></el-icon>
+            <span>个人中心</span>
           </el-menu-item>
         </el-menu>
 

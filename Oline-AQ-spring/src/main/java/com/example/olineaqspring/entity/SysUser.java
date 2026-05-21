@@ -16,5 +16,6 @@ public class SysUser {
     private String password;
     private String realName;
     private String role;
+    private String email;
     private LocalDateTime createTime;
 }

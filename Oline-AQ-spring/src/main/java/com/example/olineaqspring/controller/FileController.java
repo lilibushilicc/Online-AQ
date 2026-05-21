@@ -31,9 +31,11 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public ApiResponse<Map<String, Object>> upload(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
+    public ApiResponse<Map<String, Object>> upload(@RequestParam("file") MultipartFile file,
+                                                   @RequestParam(required = false) String name,
+                                                   HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
-        return ApiResponse.ok("上传成功", fileService.upload(file, userId));
+        return ApiResponse.ok("上传成功", fileService.upload(file, userId, name));
     }
 
     @DeleteMapping("/{fileId}")

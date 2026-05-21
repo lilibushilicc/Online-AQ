@@ -5,6 +5,8 @@ export interface User {
   username: string
   realName: string
   role: Role
+  email?: string
+  createTime?: string
 }
 
 export type QuestionType = 'single' | 'judge' | 'short_answer' | 'fill_blank'
@@ -120,6 +122,7 @@ export interface ExamDetail {
   questions: Question[]
   relationScores?: Record<number, number>
   shuffleMap?: Record<number, number[]>
+  serverTime?: number
 }
 
 export interface ResultDetail {
@@ -138,6 +141,7 @@ export interface CreateUserPayload {
 
 export interface UpdateUserPayload {
   realName?: string
+  email?: string
   password?: string
 }
 
@@ -210,6 +214,28 @@ export interface PublishExamPayload {
   studentIds?: number[]
   shuffleQuestions?: boolean
   shuffleAnswers?: boolean
+}
+
+export interface Announcement {
+  announcementId: number
+  title: string
+  content: string
+  active: boolean
+  createTime: string
+  updateTime: string
+}
+
+export interface AnnouncementItem {
+  announcementId: number
+  title: string
+  content: string
+  createTime: string
+  read: boolean
+}
+
+export interface UnreadInfo {
+  unreadCount: number
+  announcements: AnnouncementItem[]
 }
 
 export interface PageResult<T> {

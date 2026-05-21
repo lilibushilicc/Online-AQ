@@ -3,6 +3,7 @@ package com.example.olineaqspring.service;
 import com.example.olineaqspring.entity.SysConfig;
 import com.example.olineaqspring.mapper.SysConfigMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ConfigService {
     private final SysConfigMapper sysConfigMapper;
+    private final JdbcTemplate jdbcTemplate;
 
     public Map<String, String> getAll() {
         List<SysConfig> list = sysConfigMapper.selectList(null);
@@ -24,18 +26,14 @@ public class ConfigService {
     }
 
     public void update(Map<String, String> configMap) {
-        for (Map.Entry<String, String> entry : configMap.entrySet()) {
-            SysConfig config = sysConfigMapper.selectById(entry.getKey());
-            if (config == null) {
-                config = new SysConfig();
-                config.setConfigKey(entry.getKey());
-                config.setConfigValue(entry.getValue());
-                sysConfigMapper.insert(config);
-            } else {
-                config.setConfigValue(entry.getValue());
-                sysConfigMapper.updateById(config);
-            }
-        }
+        List<Object[]> batchArgs = configMap.entrySet().stream()
+                .map(e -> new Object[]{e.getKey(), e.getValue()})
+                .toList();
+        jdbcTemplate.batchUpdate(
+            "INSERT INTO sys_config (config_key, config_value) VALUES (?, ?) " +
+            "ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value",
+            batchArgs
+        );
     }
 
     public String get(String key) {

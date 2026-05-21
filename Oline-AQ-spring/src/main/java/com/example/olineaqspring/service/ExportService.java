@@ -1,5 +1,6 @@
 package com.example.olineaqspring.service;
 
+import com.example.olineaqspring.entity.Exam;
 import com.example.olineaqspring.entity.ExamResult;
 import com.example.olineaqspring.entity.Question;
 import com.example.olineaqspring.entity.SysUser;
@@ -8,9 +9,13 @@ import com.example.olineaqspring.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Service;
 
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblGrid;
+
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -86,6 +91,7 @@ public class ExportService {
 
         for (int i = 0; i < data.size(); i++) {
             Question q = data.get(i);
+            if (q == null) continue;
             Row row = sheet.createRow(i + 1);
             for (int j = 0; j < fields.length; j++) {
                 Cell cell = row.createCell(j);
@@ -99,15 +105,15 @@ public class ExportService {
     private void setCellValue(Cell cell, Question q, String field) {
         switch (field) {
             case "questionId" -> cell.setCellValue(q.getQuestionId());
-            case "questionContent" -> cell.setCellValue(q.getQuestionContent());
+            case "questionContent" -> cell.setCellValue(nullToEmpty(q.getQuestionContent()));
             case "questionType" -> cell.setCellValue(typeLabel(q.getQuestionType()));
-            case "optionA" -> cell.setCellValue(q.getOptionA());
-            case "optionB" -> cell.setCellValue(q.getOptionB());
-            case "optionC" -> cell.setCellValue(q.getOptionC());
-            case "optionD" -> cell.setCellValue(q.getOptionD());
-            case "correctAnswer" -> cell.setCellValue(q.getCorrectAnswer());
-            case "score" -> cell.setCellValue(q.getScore().doubleValue());
-            case "category" -> cell.setCellValue(q.getCategory());
+            case "optionA" -> cell.setCellValue(nullToEmpty(q.getOptionA()));
+            case "optionB" -> cell.setCellValue(nullToEmpty(q.getOptionB()));
+            case "optionC" -> cell.setCellValue(nullToEmpty(q.getOptionC()));
+            case "optionD" -> cell.setCellValue(nullToEmpty(q.getOptionD()));
+            case "correctAnswer" -> cell.setCellValue(nullToEmpty(q.getCorrectAnswer()));
+            case "score" -> cell.setCellValue(q.getScore() != null ? q.getScore().doubleValue() : 0);
+            case "category" -> cell.setCellValue(nullToEmpty(q.getCategory()));
         }
     }
 
@@ -182,17 +188,16 @@ public class ExportService {
     }
 
     public byte[] exportResultDetail(Map<String, Object> detail) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> resultMap = (Map<String, Object>) detail.get("result");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> examMap = (Map<String, Object>) detail.get("exam");
+        ExamResult examResult = (ExamResult) detail.get("result");
+        Exam exam = (Exam) detail.get("exam");
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> answers = (List<Map<String, Object>>) detail.get("answers");
+        if (answers == null) answers = List.of();
 
-        String examName = examMap != null ? String.valueOf(examMap.getOrDefault("examName", "")) : "";
-        Object totalScore = resultMap != null ? resultMap.get("totalScore") : 0;
-        Object correctCount = resultMap != null ? resultMap.get("correctCount") : 0;
-        Object wrongCount = resultMap != null ? resultMap.get("wrongCount") : 0;
+        String examName = exam != null ? exam.getExamName() : "";
+        Object totalScore = examResult != null ? examResult.getTotalScore() : 0;
+        Object correctCount = examResult != null ? examResult.getCorrectCount() : 0;
+        Object wrongCount = examResult != null ? examResult.getWrongCount() : 0;
 
         Workbook wb = new XSSFWorkbook();
         Sheet sheet = wb.createSheet("成绩详情");
@@ -232,6 +237,7 @@ public class ExportService {
 
         for (int i = 0; i < answers.size(); i++) {
             Map<String, Object> a = answers.get(i);
+            if (a == null) continue;
             Row row = sheet.createRow(i + 2);
             row.createCell(0).setCellValue(String.valueOf(a.getOrDefault("questionContent", "")));
             row.createCell(1).setCellValue(typeLabel((String) a.get("questionType")));
@@ -250,6 +256,225 @@ public class ExportService {
         return toBytes(wb);
     }
 
+    public byte[] exportResultDetailWord(Map<String, Object> detail) {
+        ExamResult examResult = (ExamResult) detail.get("result");
+        Exam exam = (Exam) detail.get("exam");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> answers = (List<Map<String, Object>>) detail.get("answers");
+        if (answers == null) answers = List.of();
+
+        String examName = exam != null ? exam.getExamName() : "";
+        Object totalScore = examResult != null ? examResult.getTotalScore() : 0;
+        Object correctCount = examResult != null ? examResult.getCorrectCount() : 0;
+        Object wrongCount = examResult != null ? examResult.getWrongCount() : 0;
+
+        try (XWPFDocument doc = new XWPFDocument(); ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            // Title
+            XWPFParagraph titlePara = doc.createParagraph();
+            titlePara.setAlignment(ParagraphAlignment.CENTER);
+            XWPFRun titleRun = titlePara.createRun();
+            titleRun.setText("考试成绩详情");
+            titleRun.setBold(true);
+            titleRun.setFontSize(18);
+            titleRun.setFontFamily("微软雅黑");
+
+            // Stats
+            XWPFParagraph statsPara = doc.createParagraph();
+            statsPara.setSpacingAfter(200);
+            XWPFRun statsRun = statsPara.createRun();
+            statsRun.setText(String.format("考试：%s    总分：%s    正确：%s    错误：%s",
+                    examName, totalScore, correctCount, wrongCount));
+            statsRun.setFontSize(11);
+            statsRun.setFontFamily("微软雅黑");
+
+            // Table
+            String[] headers = {"序号", "题目", "题型", "选项A", "选项B", "选项C", "选项D", "你的答案", "正确答案", "是否正确", "分值"};
+            int cols = headers.length;
+            XWPFTable table = doc.createTable(answers.size() + 1, cols);
+            table.setWidth("100%");
+
+            // Column widths (approximate proportions)
+            int[] widths = {8, 35, 8, 12, 12, 12, 12, 12, 12, 10, 8};
+            setTableGridCols(table, cols, widths);
+
+            // Header row
+            XWPFTableRow headerRow = table.getRow(0);
+            for (int i = 0; i < cols; i++) {
+                XWPFParagraph p = headerRow.getCell(i).getParagraphs().get(0);
+                p.setAlignment(ParagraphAlignment.CENTER);
+                XWPFRun r = p.createRun();
+                r.setText(headers[i]);
+                r.setBold(true);
+                r.setFontSize(9);
+                r.setFontFamily("微软雅黑");
+                headerRow.getCell(i).setColor("E8E8E8");
+            }
+
+            // Data rows
+            for (int i = 0; i < answers.size(); i++) {
+                Map<String, Object> a = answers.get(i);
+                if (a == null) continue;
+                XWPFTableRow row = table.getRow(i + 1);
+                String[] vals = {
+                        String.valueOf(i + 1),
+                        String.valueOf(a.getOrDefault("questionContent", "")),
+                        typeLabel((String) a.get("questionType")),
+                        String.valueOf(a.getOrDefault("optionA", "")),
+                        String.valueOf(a.getOrDefault("optionB", "")),
+                        String.valueOf(a.getOrDefault("optionC", "")),
+                        String.valueOf(a.getOrDefault("optionD", "")),
+                        String.valueOf(a.getOrDefault("studentAnswer", "")),
+                        String.valueOf(a.getOrDefault("correctAnswer", "")),
+                        a.get("isCorrect") instanceof Boolean && (Boolean) a.get("isCorrect") ? "正确" : "错误",
+                        a.get("score") instanceof Number ? String.valueOf(a.get("score")) : "0",
+                };
+                for (int j = 0; j < cols; j++) {
+                    XWPFParagraph p = row.getCell(j).getParagraphs().get(0);
+                    XWPFRun r = p.createRun();
+                    r.setText(vals[j]);
+                    r.setFontSize(9);
+                    r.setFontFamily("微软雅黑");
+                }
+            }
+
+            doc.write(os);
+            return os.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("导出 Word 失败：" + e.getMessage());
+        }
+    }
+
+    public byte[] exportExamPaperExcel(Map<String, Object> detail) {
+        Exam exam = (Exam) detail.get("exam");
+        @SuppressWarnings("unchecked")
+        List<Question> questions = (List<Question>) detail.get("questions");
+        if (questions == null) questions = List.of();
+
+        String examName = exam != null ? exam.getExamName() : "";
+
+        String[] headers = {"序号", "题型", "题目", "选项A", "选项B", "选项C", "选项D", "分值"};
+        Workbook wb = new XSSFWorkbook();
+        Sheet sheet = wb.createSheet(examName.length() > 31 ? examName.substring(0, 31) : examName);
+
+        int[] widths = {8, 8, 40, 16, 16, 16, 16, 8};
+        for (int i = 0; i < widths.length; i++) {
+            sheet.setColumnWidth(i, widths[i] * 256);
+        }
+
+        Row header = sheet.createRow(0);
+        CellStyle headerStyle = headerStyle(wb);
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = header.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        for (int i = 0; i < questions.size(); i++) {
+            Question q = questions.get(i);
+            if (q == null) continue;
+            Row row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue(i + 1);
+            row.createCell(1).setCellValue(typeLabel(q.getQuestionType()));
+            row.createCell(2).setCellValue(nullToEmpty(q.getQuestionContent()));
+            row.createCell(3).setCellValue(nullToEmpty(q.getOptionA()));
+            row.createCell(4).setCellValue(nullToEmpty(q.getOptionB()));
+            row.createCell(5).setCellValue(nullToEmpty(q.getOptionC()));
+            row.createCell(6).setCellValue(nullToEmpty(q.getOptionD()));
+            row.createCell(7).setCellValue(q.getScore() != null ? q.getScore().doubleValue() : 0);
+        }
+
+        return toBytes(wb);
+    }
+
+    public byte[] exportExamPaperWord(Map<String, Object> detail) {
+        Exam exam = (Exam) detail.get("exam");
+        @SuppressWarnings("unchecked")
+        List<Question> questions = (List<Question>) detail.get("questions");
+        if (questions == null) questions = List.of();
+
+        String examName = exam != null ? exam.getExamName() : "";
+        String description = exam != null ? exam.getDescription() : "";
+
+        try (XWPFDocument doc = new XWPFDocument(); ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            XWPFParagraph titlePara = doc.createParagraph();
+            titlePara.setAlignment(ParagraphAlignment.CENTER);
+            XWPFRun titleRun = titlePara.createRun();
+            titleRun.setText(examName);
+            titleRun.setBold(true);
+            titleRun.setFontSize(18);
+            titleRun.setFontFamily("微软雅黑");
+
+            if (description != null && !description.isEmpty() && !"null".equals(description)) {
+                XWPFParagraph descPara = doc.createParagraph();
+                descPara.setSpacingAfter(200);
+                XWPFRun descRun = descPara.createRun();
+                descRun.setText(description);
+                descRun.setFontSize(11);
+                descRun.setFontFamily("微软雅黑");
+                descRun.setItalic(true);
+            }
+
+            String[] headers = {"序号", "题型", "题目", "选项A", "选项B", "选项C", "选项D", "分值"};
+            int cols = headers.length;
+            XWPFTable table = doc.createTable(questions.size() + 1, cols);
+            table.setWidth("100%");
+
+            int[] widths = {8, 8, 35, 12, 12, 12, 12, 8};
+            setTableGridCols(table, cols, widths);
+
+            XWPFTableRow headerRow = table.getRow(0);
+            for (int i = 0; i < cols; i++) {
+                XWPFParagraph p = headerRow.getCell(i).getParagraphs().get(0);
+                p.setAlignment(ParagraphAlignment.CENTER);
+                XWPFRun r = p.createRun();
+                r.setText(headers[i]);
+                r.setBold(true);
+                r.setFontSize(9);
+                r.setFontFamily("微软雅黑");
+                headerRow.getCell(i).setColor("E8E8E8");
+            }
+
+            for (int i = 0; i < questions.size(); i++) {
+                Question q = questions.get(i);
+                if (q == null) continue;
+                XWPFTableRow row = table.getRow(i + 1);
+                String[] vals = {
+                        String.valueOf(i + 1),
+                        typeLabel(q.getQuestionType()),
+                        nullToEmpty(q.getQuestionContent()),
+                        nullToEmpty(q.getOptionA()),
+                        nullToEmpty(q.getOptionB()),
+                        nullToEmpty(q.getOptionC()),
+                        nullToEmpty(q.getOptionD()),
+                        q.getScore() != null ? String.valueOf(q.getScore()) : "0",
+                };
+                for (int j = 0; j < cols; j++) {
+                    XWPFParagraph p = row.getCell(j).getParagraphs().get(0);
+                    XWPFRun r = p.createRun();
+                    r.setText(vals[j]);
+                    r.setFontSize(9);
+                    r.setFontFamily("微软雅黑");
+                }
+            }
+
+            doc.write(os);
+            return os.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("导出试卷 Word 失败：" + e.getMessage());
+        }
+    }
+
+    private static void setTableGridCols(XWPFTable table, int cols, int[] widths) {
+        CTTblGrid grid = table.getCTTbl().getTblGrid();
+        if (grid == null) {
+            grid = table.getCTTbl().addNewTblGrid();
+        }
+        for (int i = 0; i < cols; i++) {
+            grid.addNewGridCol();
+            grid.getGridColArray()[i].setW(BigInteger.valueOf(widths[i] * 200L));
+        }
+    }
+
     private byte[] toBytes(Workbook wb) {
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             wb.write(os);
@@ -257,5 +482,9 @@ public class ExportService {
         } catch (Exception e) {
             throw new RuntimeException("导出失败：" + e.getMessage());
         }
+    }
+
+    private static String nullToEmpty(String s) {
+        return s != null ? s : "";
     }
 }

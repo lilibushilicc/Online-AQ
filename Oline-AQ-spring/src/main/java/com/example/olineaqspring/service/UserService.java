@@ -39,17 +39,46 @@ public class UserService {
         return user;
     }
 
-    public SysUser update(Integer userId, String realName, String password) {
+    public SysUser getById(Integer userId) {
         SysUser user = userMapper.selectById(userId);
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
+        if (user == null) throw new RuntimeException("用户不存在");
+        return user;
+    }
+
+    public SysUser update(Integer userId, String realName, String email, String password) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) throw new RuntimeException("用户不存在");
+        if (realName != null && !realName.isEmpty()) user.setRealName(realName);
+        if (email != null && !email.isEmpty()) user.setEmail(email);
+        if (password != null && !password.isEmpty()) user.setPassword(passwordEncoder.encode(password));
+        userMapper.updateById(user);
+        user.setPassword(null);
+        return user;
+    }
+
+    public SysUser updateMyProfile(Integer userId, String realName, String email, String oldPassword, String newPassword) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) throw new RuntimeException("用户不存在");
+
+        if (newPassword != null && !newPassword.isEmpty()) {
+            if (oldPassword == null || oldPassword.isEmpty()) {
+                throw new RuntimeException("修改密码需要输入旧密码");
+            }
+            if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+                throw new RuntimeException("旧密码不正确");
+            }
+            if (newPassword.length() < 6) {
+                throw new RuntimeException("新密码长度不能少于6位");
+            }
+            user.setPassword(passwordEncoder.encode(newPassword));
         }
 
-        if (realName != null && !realName.isEmpty()) {
-            user.setRealName(realName);
-        }
-        if (password != null && !password.isEmpty()) {
-            user.setPassword(passwordEncoder.encode(password));
+        if (realName != null && !realName.isEmpty()) user.setRealName(realName);
+        if (email != null && !email.isEmpty()) {
+            if (!email.matches("^[\\w.-]+@[\\w.-]+\\.\\w{2,}$")) {
+                throw new RuntimeException("邮箱格式不正确");
+            }
+            user.setEmail(email);
         }
         userMapper.updateById(user);
         user.setPassword(null);

@@ -22,7 +22,8 @@ public class AuthService {
 
     public Map<String, Object> login(LoginRequest request) {
         SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUsername, request.getUsername()));
+                .eq(SysUser::getUsername, request.getUsername())
+                .or().eq(SysUser::getEmail, request.getUsername()));
 
         if (user == null) {
             throw new UnauthorizedException("账号或密码不正确");

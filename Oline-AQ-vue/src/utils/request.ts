@@ -15,7 +15,7 @@ function clearAuthState() {
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-  timeout: 10000,
+  timeout: 30000,
 })
 
 request.interceptors.request.use((config) => {
@@ -42,6 +42,11 @@ request.interceptors.response.use(
     return payload
   },
   (error) => {
+    // Blob 响应（文件导出请求）的错误：不尝试解析 message
+    if (error.response?.data instanceof Blob) {
+      return Promise.reject(error)
+    }
+
     // 优先提取后端返回的业务错误信息
     const serverMessage = error.response?.data?.message
     if (serverMessage) {

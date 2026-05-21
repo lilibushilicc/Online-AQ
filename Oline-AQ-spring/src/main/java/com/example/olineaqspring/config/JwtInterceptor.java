@@ -25,9 +25,13 @@ public class JwtInterceptor implements HandlerInterceptor {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             throw new UnauthorizedException("未登录或 Token 缺失");
         }
-        Claims claims = jwtUtils.parseToken(authorization.substring(7));
-        request.setAttribute("userId", claims.get("userId", Integer.class));
-        request.setAttribute("role", claims.get("role", String.class));
+        try {
+            Claims claims = jwtUtils.parseToken(authorization.substring(7));
+            request.setAttribute("userId", claims.get("userId", Integer.class));
+            request.setAttribute("role", claims.get("role", String.class));
+        } catch (Exception e) {
+            throw new UnauthorizedException("登录已过期或 Token 无效，请重新登录");
+        }
         return true;
     }
 }

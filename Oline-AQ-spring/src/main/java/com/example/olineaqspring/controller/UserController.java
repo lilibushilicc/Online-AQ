@@ -1,5 +1,7 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.config.CurrentUser;
+import com.example.olineaqspring.config.UserPrincipal;
 import com.example.olineaqspring.entity.SysUser;
 import com.example.olineaqspring.service.UserService;
 import com.example.olineaqspring.vo.ApiResponse;
@@ -29,6 +31,29 @@ public class UserController {
         return ApiResponse.ok("查询成功", userService.list());
     }
 
+    @GetMapping("/me")
+    public ApiResponse<SysUser> myProfile(@CurrentUser UserPrincipal user) {
+        SysUser u = userService.getById(user.getUserId());
+        u.setPassword(null);
+        return ApiResponse.ok(u);
+    }
+
+    @GetMapping("/{userId}")
+    public ApiResponse<SysUser> getUser(@PathVariable Integer userId) {
+        SysUser u = userService.getById(userId);
+        u.setPassword(null);
+        return ApiResponse.ok(u);
+    }
+
+    @PutMapping("/me")
+    public ApiResponse<SysUser> updateMyProfile(@CurrentUser UserPrincipal user,
+                                                  @RequestBody Map<String, String> body) {
+        SysUser u = userService.updateMyProfile(user.getUserId(),
+                body.get("realName"), body.get("email"),
+                body.get("oldPassword"), body.get("newPassword"));
+        return ApiResponse.ok("修改成功", u);
+    }
+
     @PostMapping
     public ApiResponse<SysUser> create(@RequestBody Map<String, String> body) {
         String username = body.get("username");
@@ -36,22 +61,17 @@ public class UserController {
         String realName = body.get("realName");
         String role = body.getOrDefault("role", "student");
 
-        if (username == null || username.isEmpty()) {
-            return ApiResponse.fail("账号不能为空");
-        }
-        if (password == null || password.isEmpty()) {
-            return ApiResponse.fail("密码不能为空");
-        }
-        if (realName == null || realName.isEmpty()) {
-            return ApiResponse.fail("姓名不能为空");
-        }
+        if (username == null || username.isEmpty()) return ApiResponse.fail("账号不能为空");
+        if (password == null || password.isEmpty()) return ApiResponse.fail("密码不能为空");
+        if (realName == null || realName.isEmpty()) return ApiResponse.fail("姓名不能为空");
 
         return ApiResponse.ok("新增成功", userService.create(username, password, realName, role));
     }
 
     @PutMapping("/{userId}")
     public ApiResponse<SysUser> update(@PathVariable Integer userId, @RequestBody Map<String, String> body) {
-        return ApiResponse.ok("修改成功", userService.update(userId, body.get("realName"), body.get("password")));
+        return ApiResponse.ok("修改成功",
+                userService.update(userId, body.get("realName"), body.get("email"), body.get("password")));
     }
 
     @DeleteMapping("/{userId}")

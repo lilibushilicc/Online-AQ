@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class FileService {
+    private static final String STATUS_PARSED = "parsed";
+    private static final String R2_PREFIX = "r2://";
+
     private final UploadFileMapper uploadFileMapper;
     private final QuestionMapper questionMapper;
     private final QuestionParseService questionParseService;
@@ -37,12 +40,17 @@ public class FileService {
     private String uploadDir;
 
     public Map<String, Object> upload(MultipartFile file, Integer userId) {
+        return upload(file, userId, null);
+    }
+
+    public Map<String, Object> upload(MultipartFile file, Integer userId, String name) {
         if (file.isEmpty()) throw new RuntimeException("上传文件不能为空");
         String originalName = file.getOriginalFilename() == null ? "unknown.txt" : file.getOriginalFilename();
         String suffix = originalName.substring(originalName.lastIndexOf('.') + 1).toLowerCase();
         if (!suffix.equals("txt") && !suffix.equals("docx")) {
             throw new RuntimeException("初版只支持 txt 和 docx 文件");
         }
+        String displayName = (name != null && !name.isBlank()) ? name : originalName;
         try {
             byte[] bytes = file.getBytes();
             String rawText = readRawText(bytes, suffix);
@@ -62,7 +70,7 @@ public class FileService {
             }
 
             UploadFile uploadFile = new UploadFile();
-            uploadFile.setFileName(originalName);
+            uploadFile.setFileName(displayName);
             uploadFile.setFileType(suffix);
             uploadFile.setFilePath(filePath);
             uploadFile.setRawText(rawText);
@@ -97,7 +105,7 @@ public class FileService {
         }
 
         questions.forEach(questionMapper::insert);
-        uploadFile.setStatus("parsed");
+        uploadFile.setStatus(STATUS_PARSED);
         uploadFileMapper.updateById(uploadFile);
         Map<String, Object> data = new HashMap<>();
         data.put("fileId", fileId);
@@ -114,8 +122,8 @@ public class FileService {
 
         String filePath = uploadFile.getFilePath();
         if (filePath != null) {
-            if (filePath.startsWith("r2://")) {
-                String r2Key = filePath.substring(5);
+            if (filePath.startsWith(R2_PREFIX)) {
+                String r2Key = filePath.substring(R2_PREFIX.length());
                 r2StorageService.delete(r2Key);
             } else {
                 try {
@@ -130,7 +138,7 @@ public class FileService {
     public List<UploadFileVO> listFiles() {
         List<UploadFile> files = uploadFileMapper.selectList(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UploadFile>()
-                        .eq(UploadFile::getStatus, "parsed")
+                        .eq(UploadFile::getStatus, STATUS_PARSED)
                         .orderByDesc(UploadFile::getCreateTime));
         if (files.isEmpty()) {
             return List.of();

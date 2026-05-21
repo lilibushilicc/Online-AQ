@@ -3,12 +3,23 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type ResultDetail } from '@/stores/exam'
+import * as api from '@/api'
 import { downloadFile } from '@/utils/download'
+import type { ExamResult } from '@/types'
 
 const store = useExamStore()
 const examId = ref<number>()
 const detailVisible = ref(false)
 const resultDetail = ref<ResultDetail | null>(null)
+const resultSearch = ref('')
+const filteredResults = computed(() => {
+  if (!resultSearch.value) return store.results
+  const kw = resultSearch.value.toLowerCase()
+  return store.results.filter((r) => {
+    const exam = store.exams.find((e) => e.examId === r.examId)
+    return exam?.examName.toLowerCase().includes(kw) || String(r.studentId).includes(kw)
+  })
+})
 
 const averageScore = computed(() => {
   if (store.results.length === 0) return 0
@@ -37,7 +48,7 @@ async function loadResults() {
 }
 
 async function openDetail(resultId: number) {
-  resultDetail.value = await store.getResultDetail(resultId)
+  resultDetail.value = await api.getResultDetailApi(resultId)
   detailVisible.value = true
 }
 </script>
@@ -76,24 +87,26 @@ async function openDetail(resultId: number) {
 
     <el-card>
       <div class="toolbar">
-        <el-select v-model="examId" placeholder="选择考试" style="width: 260px" @change="loadResults">
+        <el-select v-model="examId" placeholder="选择考试" style="width: 200px" @change="loadResults">
           <el-option v-for="exam in store.exams" :key="exam.examId" :label="exam.examName" :value="exam.examId" />
         </el-select>
+        <el-input v-model="resultSearch" placeholder="搜索考试名称..." clearable style="max-width: 200px" />
         <span class="toolbar-right">
-          <span class="muted">共 {{ store.results.length }} 条成绩记录</span>
+          <span class="muted">共 {{ store.results.length }} 条</span>
           <el-button
             v-if="examId"
             size="small"
             plain
-            @click="downloadFile(`/api/results/export/${examId}`, `考试成绩_${store.exams.find(e => e.examId === examId)?.examName ?? examId}_${new Date().toLocaleDateString()}.xlsx`)"
+            @click="downloadFile(`/results/export/${examId}`, `考试成绩_${store.exams.find(e => e.examId === examId)?.examName ?? examId}_${new Date().toLocaleDateString()}.xlsx`)"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             导出成绩
           </el-button>
         </span>
       </div>
-      <el-empty v-if="store.results.length === 0" description="暂无成绩，先用学生账号提交一次考试" />
-      <el-table v-else :data="store.results" stripe>
+      <el-empty v-if="!store.results.length" description="暂无成绩，先用学生账号提交一次考试" />
+      <el-empty v-else-if="!filteredResults.length && resultSearch" description="没有匹配的成绩" />
+      <el-table v-else :data="filteredResults" stripe>
         <el-table-column prop="studentId" label="学生ID" />
         <el-table-column prop="examId" label="考试ID" />
         <el-table-column label="得分">

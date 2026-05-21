@@ -39,13 +39,7 @@ public class WrongNotebookService {
 
     @Transactional
     public WrongNotebook updateNotebook(Integer notebookId, Integer studentId, String notebookName, String description) {
-        WrongNotebook notebook = notebookMapper.selectById(notebookId);
-        if (notebook == null) {
-            throw new RuntimeException("错题本不存在");
-        }
-        if (!notebook.getStudentId().equals(studentId)) {
-            throw new RuntimeException("无权操作该错题本");
-        }
+        WrongNotebook notebook = checkOwner(notebookId, studentId);
         if (notebookName != null && !notebookName.isBlank()) {
             notebook.setNotebookName(notebookName);
         }
@@ -58,13 +52,7 @@ public class WrongNotebookService {
 
     @Transactional
     public void deleteNotebook(Integer notebookId, Integer studentId) {
-        WrongNotebook notebook = notebookMapper.selectById(notebookId);
-        if (notebook == null) {
-            throw new RuntimeException("错题本不存在");
-        }
-        if (!notebook.getStudentId().equals(studentId)) {
-            throw new RuntimeException("无权操作该错题本");
-        }
+        checkOwner(notebookId, studentId);
         itemMapper.delete(new LambdaQueryWrapper<WrongNotebookItem>()
                 .eq(WrongNotebookItem::getNotebookId, notebookId));
         notebookMapper.deleteById(notebookId);
@@ -72,13 +60,7 @@ public class WrongNotebookService {
 
     @Transactional
     public Map<String, Object> addItem(Integer notebookId, Integer studentId, Integer answerId) {
-        WrongNotebook notebook = notebookMapper.selectById(notebookId);
-        if (notebook == null) {
-            throw new RuntimeException("错题本不存在");
-        }
-        if (!notebook.getStudentId().equals(studentId)) {
-            throw new RuntimeException("无权操作该错题本");
-        }
+        checkOwner(notebookId, studentId);
 
         StudentAnswer answer = studentAnswerMapper.selectById(answerId);
         if (answer == null) {
@@ -108,13 +90,7 @@ public class WrongNotebookService {
 
     @Transactional
     public void removeItem(Integer notebookId, Integer itemId, Integer studentId) {
-        WrongNotebook notebook = notebookMapper.selectById(notebookId);
-        if (notebook == null) {
-            throw new RuntimeException("错题本不存在");
-        }
-        if (!notebook.getStudentId().equals(studentId)) {
-            throw new RuntimeException("无权操作该错题本");
-        }
+        checkOwner(notebookId, studentId);
         WrongNotebookItem item = itemMapper.selectById(itemId);
         if (item == null || !item.getNotebookId().equals(notebookId)) {
             throw new RuntimeException("记录不存在");
@@ -123,13 +99,7 @@ public class WrongNotebookService {
     }
 
     public Map<String, Object> getNotebookDetail(Integer notebookId, Integer studentId) {
-        WrongNotebook notebook = notebookMapper.selectById(notebookId);
-        if (notebook == null) {
-            throw new RuntimeException("错题本不存在");
-        }
-        if (!notebook.getStudentId().equals(studentId)) {
-            throw new RuntimeException("无权查看该错题本");
-        }
+        WrongNotebook notebook = checkOwner(notebookId, studentId);
 
         List<WrongNotebookItem> items = itemMapper.selectList(new LambdaQueryWrapper<WrongNotebookItem>()
                 .eq(WrongNotebookItem::getNotebookId, notebookId)
@@ -188,18 +158,34 @@ public class WrongNotebookService {
 
     public List<Map<String, Object>> getNotebookItemCounts(Integer studentId) {
         List<WrongNotebook> notebooks = listNotebooks(studentId);
+        if (notebooks.isEmpty()) {
+            return List.of();
+        }
+        List<Integer> notebookIds = notebooks.stream().map(WrongNotebook::getNotebookId).toList();
+        Map<Integer, Long> countMap = itemMapper.selectList(
+                new LambdaQueryWrapper<WrongNotebookItem>().in(WrongNotebookItem::getNotebookId, notebookIds))
+                .stream().collect(Collectors.groupingBy(WrongNotebookItem::getNotebookId, Collectors.counting()));
         List<Map<String, Object>> result = new ArrayList<>();
         for (WrongNotebook nb : notebooks) {
-            Long count = itemMapper.selectCount(new LambdaQueryWrapper<WrongNotebookItem>()
-                    .eq(WrongNotebookItem::getNotebookId, nb.getNotebookId()));
             Map<String, Object> m = new HashMap<>();
             m.put("notebookId", nb.getNotebookId());
             m.put("notebookName", nb.getNotebookName());
             m.put("description", nb.getDescription());
             m.put("createTime", nb.getCreateTime());
-            m.put("itemCount", count != null ? count.intValue() : 0);
+            m.put("itemCount", countMap.getOrDefault(nb.getNotebookId(), 0L).intValue());
             result.add(m);
         }
         return result;
+    }
+
+    private WrongNotebook checkOwner(Integer notebookId, Integer studentId) {
+        WrongNotebook notebook = notebookMapper.selectById(notebookId);
+        if (notebook == null) {
+            throw new RuntimeException("错题本不存在");
+        }
+        if (!notebook.getStudentId().equals(studentId)) {
+            throw new RuntimeException("无权操作该错题本");
+        }
+        return notebook;
     }
 }

@@ -6,6 +6,8 @@ spring:
     active: dev
   datasource:
     driver-class-name: org.postgresql.Driver
+  jackson:
+    time-zone: Asia/Shanghai
   servlet:
     multipart:
       max-file-size: 20MB

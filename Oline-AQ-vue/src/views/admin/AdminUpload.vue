@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled, MagicStick, InfoFilled, Delete, FolderOpened, DocumentChecked } from '@element-plus/icons-vue'
-import { useExamStore, type UploadFileItem } from '@/stores/exam'
+import { useExamStore } from '@/stores/exam'
+import * as api from '@/api'
+import type { UploadFileItem } from '@/types'
+
+const router = useRouter()
+
+const store = useExamStore()
 
 type ParseMode = 'regex' | 'ai'
 
@@ -13,9 +20,9 @@ interface FormatGuide {
   tip: string
 }
 
-const store = useExamStore()
 const selectedFile = ref<File | null>(null)
 const category = ref('')
+const bankName = ref('')
 const parseMode = ref<ParseMode>('regex')
 const uploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -109,20 +116,28 @@ async function parse() {
   }
   uploading.value = true
   try {
-    const count = await store.uploadAndParse(selectedFile.value, category.value.trim() || undefined, useAi.value)
+    const name = bankName.value.trim() || undefined
+    const count = await store.uploadAndParse(selectedFile.value, category.value.trim() || undefined, useAi.value, name)
     const mode = parseModeTitle.value
     clearSelectedFile()
+    bankName.value = ''
     ElMessage.success(`[${mode}] 上传并解析成功，共新增 ${count} 道题`)
     await loadFiles()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '上传失败，请检查文件格式后重试')
   } finally {
     uploading.value = false
   }
 }
 
+function goToFileQuestions(fileId: number) {
+  router.push({ path: '/admin/questions', query: { fileId: String(fileId) } })
+}
+
 async function loadFiles() {
   loadingFiles.value = true
   try {
-    uploadFiles.value = await store.loadUploadFiles()
+    uploadFiles.value = await api.loadUploadFilesApi()
   } finally {
     loadingFiles.value = false
   }
@@ -135,7 +150,7 @@ async function handleDeleteFile(fileId: number, fileName: string) {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
     })
-    await store.deleteFile(fileId)
+    await api.deleteFileApi(fileId)
     uploadFiles.value = uploadFiles.value.filter((item) => item.fileId !== fileId)
     ElMessage.success('文件已删除')
   } catch {
@@ -192,12 +207,9 @@ onMounted(loadFiles)
           <el-button link type="danger" :disabled="!selectedFile" @click="clearSelectedFile">清空</el-button>
         </div>
 
-        <div class="form-grid">
-          <el-input
-            v-model="category"
-            placeholder="题目分类，可选，如：Java / 数学 / 期中复习"
-            clearable
-          />
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr">
+          <el-input v-model="bankName" placeholder="题库名称，可选（留空使用文件名）" clearable maxlength="100" />
+          <el-input v-model="category" placeholder="题目分类，可选，如：Java / 数学 / 期中复习" clearable />
           <el-segmented v-model="parseMode" :options="parseModeOptions" class="mode-segmented" />
         </div>
 
@@ -273,7 +285,13 @@ onMounted(loadFiles)
       <div v-if="loadingFiles" class="table-placeholder">正在加载上传记录...</div>
       <div v-else-if="uploadFiles.length === 0" class="table-placeholder">暂无已上传文件</div>
       <el-table v-else :data="uploadFiles" stripe>
-        <el-table-column prop="fileName" label="文件名" min-width="220" />
+        <el-table-column label="文件名" min-width="220">
+          <template #default="{ row }">
+            <el-button link size="small" @click="goToFileQuestions(row.fileId)" style="font-size: 13px">
+              {{ row.fileName }}
+            </el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="questionCount" label="题目数" width="90" />
         <el-table-column prop="fileType" label="格式" width="90">
           <template #default="{ row }">
@@ -599,12 +617,24 @@ onMounted(loadFiles)
   padding: 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
-  background: rgba(255,255,255,0.7);
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
   font-size: 12px;
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: var(--font-mono);
+}
+
+/* 深色模式覆写（上传页面特有样式） */
+html.dark .drop-zone {
+  background:
+    linear-gradient(180deg, rgba(34,32,30,0.96), rgba(26,25,23,0.98)),
+    repeating-linear-gradient(135deg, rgba(61,160,110,0.05), rgba(61,160,110,0.05) 12px, transparent 12px, transparent 24px);
+}
+html.dark .drop-zone--ready {
+  background:
+    linear-gradient(180deg, rgba(15,40,30,0.96), rgba(26,25,23,0.98)),
+    repeating-linear-gradient(135deg, rgba(61,160,110,0.08), rgba(61,160,110,0.08) 12px, transparent 12px, transparent 24px);
 }
 
 .guide-card__tip {
