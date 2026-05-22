@@ -10,4 +10,6 @@
     <string name="my_results">我的成绩</string>
     <string name="submit">提交答卷</string>
     <string name="logout">退出登录</string>
+    <string name="server_settings">服务器设置</string>
+    <string name="score_detail">成绩详情</string>
 </resources>

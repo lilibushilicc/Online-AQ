@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="amoled_background">#000000</color>
+    <color name="amoled_surface">#000000</color>
+    <color name="amoled_surface_container">#0C0C0C</color>
+    <color name="black">#000000</color>
+    <color name="blue_50">#10203B</color>
+    <color name="blue_500">@color/ctp_blue</color>
+    <color name="card_shadow">#33000000</color>
+    <color name="ctp_base">#1E1E2E</color>
+    <color name="ctp_blue">#89B4FA</color>
+    <color name="ctp_crust">#11111B</color>
+    <color name="ctp_flamingo">#F2CDCD</color>
+    <color name="ctp_green">#A6E3A1</color>
+    <color name="ctp_lavender">#B4BEFE</color>
+    <color name="ctp_mantle">#181825</color>
+    <color name="ctp_maroon">#F38BA8</color>
+    <color name="ctp_mauve">#CBA6F7</color>
+    <color name="ctp_overlay0">#6C7086</color>
+    <color name="ctp_overlay1">#7F849C</color>
+    <color name="ctp_overlay2">#9399B2</color>
+    <color name="ctp_peach">#FAB387</color>
+    <color name="ctp_pink">#F5C2E7</color>
+    <color name="ctp_red">#F38BA8</color>
+    <color name="ctp_rosewater">#F5E0DC</color>
+    <color name="ctp_sapphire">#74C7EC</color>
+    <color name="ctp_sky">#89DCEB</color>
+    <color name="ctp_subtext0">#A6ADC8</color>
+    <color name="ctp_subtext1">#BAC2DE</color>
+    <color name="ctp_surface0">#313244</color>
+    <color name="ctp_surface1">#45475A</color>
+    <color name="ctp_surface2">#585B70</color>
+    <color name="ctp_teal">#94E2D5</color>
+    <color name="ctp_text">#CDD6F4</color>
+    <color name="ctp_yellow">#F9E2AF</color>
+    <color name="gradient_end">@color/ctp_blue</color>
+    <color name="gradient_start">@color/ctp_mauve</color>
+    <color name="gray_100">@color/ctp_mantle</color>
+    <color name="gray_200">@color/ctp_crust</color>
+    <color name="gray_300">@color/ctp_surface0</color>
+    <color name="gray_400">@color/ctp_overlay0</color>
+    <color name="gray_50">@color/ctp_base</color>
+    <color name="gray_500">@color/ctp_overlay1</color>
+    <color name="gray_600">@color/ctp_subtext0</color>
+    <color name="gray_700">@color/ctp_subtext1</color>
+    <color name="gray_800">@color/ctp_text</color>
+    <color name="gray_900">#1F2937</color>
+    <color name="green_50">#103B10</color>
+    <color name="green_500">@color/ctp_green</color>
+    <color name="m3_background">@color/ctp_base</color>
+    <color name="m3_error">@color/ctp_red</color>
+    <color name="m3_on_background">@color/ctp_text</color>
+    <color name="m3_on_error">@color/ctp_base</color>
+    <color name="m3_on_primary">@color/ctp_base</color>
+    <color name="m3_on_primary_container">@color/ctp_mauve</color>
+    <color name="m3_on_secondary">@color/ctp_base</color>
+    <color name="m3_on_secondary_container">@color/ctp_blue</color>
+    <color name="m3_on_surface">@color/ctp_text</color>
+    <color name="m3_on_surface_variant">@color/ctp_overlay0</color>
+    <color name="m3_on_tertiary">@color/ctp_base</color>
+    <color name="m3_outline">@color/ctp_surface1</color>
+    <color name="m3_primary">@color/ctp_mauve</color>
+    <color name="m3_primary_container">#3B2268</color>
+    <color name="m3_secondary">@color/ctp_blue</color>
+    <color name="m3_secondary_container">#1A315E</color>
+    <color name="m3_surface">@color/ctp_base</color>
+    <color name="m3_surface_variant">@color/ctp_surface0</color>
+    <color name="m3_tertiary">@color/ctp_teal</color>
+    <color name="orange_500">@color/ctp_peach</color>
+    <color name="primary_100">#3B2268</color>
+    <color name="primary_50">#2A1A4A</color>
+    <color name="primary_500">@color/ctp_mauve</color>
+    <color name="primary_600">@color/ctp_blue</color>
+    <color name="primary_700">#6B21A5</color>
+    <color name="red_50">#3B1010</color>
+    <color name="red_500">@color/ctp_red</color>
+    <color name="status_closed">@color/ctp_overlay0</color>
+    <color name="status_draft">@color/ctp_yellow</color>
+    <color name="status_ongoing">@color/ctp_green</color>
+    <color name="teal_500">@color/ctp_teal</color>
+    <color name="teal_600">@color/ctp_teal</color>
+    <color name="teal_700">#0F766E</color>
+    <color name="white">#FFFFFF</color>
+    <style name="Theme.AppCompat.DayNight" parent="Theme.AppCompat"/>
+    <style name="Theme.AppCompat.DayNight.DarkActionBar" parent="Theme.AppCompat"/>
+    <style name="Theme.AppCompat.DayNight.Dialog" parent="Theme.AppCompat.Dialog"/>
+    <style name="Theme.AppCompat.DayNight.Dialog.Alert" parent="Theme.AppCompat.Dialog.Alert"/>
+    <style name="Theme.AppCompat.DayNight.Dialog.MinWidth" parent="Theme.AppCompat.Dialog.MinWidth"/>
+    <style name="Theme.AppCompat.DayNight.DialogWhenLarge" parent="Theme.AppCompat.DialogWhenLarge"/>
+    <style name="Theme.AppCompat.DayNight.NoActionBar" parent="Theme.AppCompat.NoActionBar"/>
+    <style name="Theme.Material3.DayNight" parent="Theme.Material3.Dark"/>
+    <style name="Theme.Material3.DayNight.BottomSheetDialog" parent="Theme.Material3.Dark.BottomSheetDialog"/>
+    <style name="Theme.Material3.DayNight.Dialog" parent="Theme.Material3.Dark.Dialog"/>
+    <style name="Theme.Material3.DayNight.Dialog.Alert" parent="Theme.Material3.Dark.Dialog.Alert"/>
+    <style name="Theme.Material3.DayNight.Dialog.MinWidth" parent="Theme.Material3.Dark.Dialog.MinWidth"/>
+    <style name="Theme.Material3.DayNight.DialogWhenLarge" parent="Theme.Material3.Dark.DialogWhenLarge"/>
+    <style name="Theme.Material3.DayNight.NoActionBar" parent="Theme.Material3.Dark.NoActionBar"/>
+    <style name="Theme.Material3.DayNight.SideSheetDialog" parent="Theme.Material3.Dark.SideSheetDialog"/>
+    <style name="Theme.Material3.DynamicColors.DayNight" parent="Theme.Material3.DynamicColors.Dark"/>
+    <style name="Theme.MaterialComponents.DayNight" parent="Theme.MaterialComponents"/>
+    <style name="Theme.MaterialComponents.DayNight.BottomSheetDialog" parent="Theme.MaterialComponents.BottomSheetDialog"/>
+    <style name="Theme.MaterialComponents.DayNight.Bridge" parent="Theme.MaterialComponents.Bridge"/>
+    <style name="Theme.MaterialComponents.DayNight.DarkActionBar" parent="Theme.MaterialComponents"/>
+    <style name="Theme.MaterialComponents.DayNight.DarkActionBar.Bridge" parent="Theme.MaterialComponents.Bridge"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog" parent="Theme.MaterialComponents.Dialog"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog.Alert" parent="Theme.MaterialComponents.Dialog.Alert"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog.Alert.Bridge" parent="Theme.MaterialComponents.Dialog.Alert.Bridge"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog.Bridge" parent="Theme.MaterialComponents.Dialog.Bridge"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog.FixedSize" parent="Theme.MaterialComponents.Dialog.FixedSize"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog.FixedSize.Bridge" parent="Theme.MaterialComponents.Dialog.FixedSize.Bridge"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog.MinWidth" parent="Theme.MaterialComponents.Dialog.MinWidth"/>
+    <style name="Theme.MaterialComponents.DayNight.Dialog.MinWidth.Bridge" parent="Theme.MaterialComponents.Dialog.MinWidth.Bridge"/>
+    <style name="Theme.MaterialComponents.DayNight.DialogWhenLarge" parent="Theme.MaterialComponents.DialogWhenLarge"/>
+    <style name="Theme.MaterialComponents.DayNight.NoActionBar" parent="Theme.MaterialComponents.NoActionBar"/>
+    <style name="Theme.MaterialComponents.DayNight.NoActionBar.Bridge" parent="Theme.MaterialComponents.NoActionBar.Bridge"/>
+    <style name="Theme.OnlineAQ" parent="Theme.Material3.Dark.NoActionBar">
+        
+        <item name="colorPrimary">@color/m3_primary</item>
+        <item name="colorOnPrimary">@color/m3_on_primary</item>
+        <item name="colorPrimaryContainer">@color/m3_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/m3_on_primary_container</item>
+        <item name="colorSecondary">@color/m3_secondary</item>
+        <item name="colorOnSecondary">@color/m3_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/m3_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/m3_on_secondary_container</item>
+        <item name="colorTertiary">@color/m3_tertiary</item>
+        <item name="colorOnTertiary">@color/m3_on_tertiary</item>
+        <item name="android:colorBackground">@color/m3_background</item>
+        <item name="colorOnBackground">@color/m3_on_background</item>
+        <item name="colorSurface">@color/m3_surface</item>
+        <item name="colorOnSurface">@color/m3_on_surface</item>
+        <item name="colorSurfaceVariant">@color/m3_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/m3_on_surface_variant</item>
+        <item name="colorOutline">@color/m3_outline</item>
+        <item name="colorError">@color/m3_error</item>
+        <item name="colorOnError">@color/m3_on_error</item>
+
+        
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <style name="ThemeOverlay.AppCompat.DayNight" parent="ThemeOverlay.AppCompat.Dark"/>
+    <style name="ThemeOverlay.Material3.DynamicColors.DayNight" parent="ThemeOverlay.Material3.DynamicColors.Dark"/>
+    <style name="Widget.MaterialComponents.ActionBar.PrimarySurface" parent="Widget.MaterialComponents.ActionBar.Surface"/>
+    <style name="Widget.MaterialComponents.AppBarLayout.PrimarySurface" parent="Widget.MaterialComponents.AppBarLayout.Surface"/>
+    <style name="Widget.MaterialComponents.BottomAppBar.PrimarySurface" parent="Widget.MaterialComponents.BottomAppBar"/>
+    <style name="Widget.MaterialComponents.BottomNavigationView.PrimarySurface" parent="Widget.MaterialComponents.BottomNavigationView"/>
+    <style name="Widget.MaterialComponents.NavigationRailView.PrimarySurface" parent="Widget.MaterialComponents.NavigationRailView"/>
+    <style name="Widget.MaterialComponents.TabLayout.PrimarySurface" parent="Widget.MaterialComponents.TabLayout"/>
+    <style name="Widget.MaterialComponents.Toolbar.PrimarySurface" parent="Widget.MaterialComponents.Toolbar.Surface"/>
+</resources>

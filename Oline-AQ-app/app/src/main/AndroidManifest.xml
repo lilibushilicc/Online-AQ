@@ -24,13 +24,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.examlist.ExamListActivity"
+            android:name=".ui.main.MainActivity"
             android:exported="false" />
         <activity
             android:name=".ui.examdetail.ExamDetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.results.ResultsActivity"
             android:exported="false" />
         <activity
             android:name=".ui.resultdetail.ResultDetailActivity"

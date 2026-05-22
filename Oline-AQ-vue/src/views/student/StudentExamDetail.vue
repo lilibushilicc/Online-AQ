@@ -134,6 +134,7 @@ async function handleSubmit(options?: { auto?: boolean }) {
   if (blockedReason && !autoSubmit) { ElMessage.warning(blockedReason); return }
   if (!autoSubmit && answeredCount.value < questions.value.length) { ElMessage.warning('请完成所有题目后再提交'); return }
   if (!autoSubmit) await ElMessageBox.confirm('提交后将立即自动评分，确认现在提交吗？', '提交试卷', { type: 'warning' })
+  if (sessionStorage.getItem('submitted_' + examId)) { ElMessage.warning('已提交过，请勿重复操作'); return }
   submitting.value = true
   clearTimer()
   try {
@@ -143,10 +144,11 @@ async function handleSubmit(options?: { auto?: boolean }) {
     }
     const result = await store.submitExam(exam.value.examId, transformedAnswers, elapsedSeconds.value)
     clearDraft()
+    sessionStorage.setItem('submitted_' + examId, '1')
     if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer); draftSaveTimer = null }
     if (autoSubmit) ElMessage.warning('考试时间已到，系统已自动交卷')
     else ElMessage.success(`提交成功，得分 ${result.totalScore}`)
-    router.push(`/student/results/${result.resultId}`)
+    router.replace(`/student/results/${result.resultId}`)
   } finally { submitting.value = false }
 }
 
@@ -191,6 +193,7 @@ function doExport() {
 
 async function handleBlankSubmit() {
   if (!exam.value) return
+  if (sessionStorage.getItem('submitted_' + examId)) { ElMessage.warning('已提交过，请勿重复操作'); return }
   blankDialogVisible.value = false
   submitting.value = true
   clearTimer()
@@ -201,9 +204,10 @@ async function handleBlankSubmit() {
   try {
     const result = await store.submitExam(exam.value.examId, blankAnswers, elapsedSeconds.value)
     clearDraft()
+    sessionStorage.setItem('submitted_' + examId, '1')
     if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer); draftSaveTimer = null }
     ElMessage.success('提交成功，正在加载答案')
-    router.push(`/student/results/${result.resultId}?fromBlank=${blankFormat.value}`)
+    router.replace(`/student/results/${result.resultId}?fromBlank=${blankFormat.value}`)
   } finally { submitting.value = false }
 }
 

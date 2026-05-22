@@ -1,0 +1,146 @@
+[
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_item_result.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/item_result.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/xml_backup_rules.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_bg_login_btn.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/bg_login_btn.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/color_bottom_nav_color.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/color/bottom_nav_color.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_logo.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_logo.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_nav_exams.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_nav_exams.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_menu.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_menu.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_item_question.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/item_question.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_dialog_server_settings.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/dialog_server_settings.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_bg_status.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/bg_status.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_item_exam.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/item_exam.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_settings.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_settings.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/navigation_bottom_nav_menu.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/navigation/bottom_nav_menu.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_fragment_more.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/fragment_more.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_activity_login.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/activity_login.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_fragment_exam_list.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/fragment_exam_list.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_activity_result_detail.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/activity_result_detail.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_nav_more.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_nav_more.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_back.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_back.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_result.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_result.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_logout.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_logout.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_exam.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_exam.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_nav_header.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/nav_header.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_activity_results.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/activity_results.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_activity_main.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_item_answer_detail.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/item_answer_detail.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/menu_nav_menu.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/menu/nav_menu.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_ic_nav_results.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/ic_nav_results.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_fragment_results.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/fragment_results.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_bg_gradient_top.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/bg_gradient_top.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_activity_exam_detail.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/activity_exam_detail.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/drawable_bg_card_shadow.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/drawable/bg_card_shadow.xml"
+    },
+    {
+        "merged": "com.onlineaq.student.app-debug-37:/layout_activity_exam_list.xml.flat",
+        "source": "com.onlineaq.student.app-main-39:/layout/activity_exam_list.xml"
+    }
+]

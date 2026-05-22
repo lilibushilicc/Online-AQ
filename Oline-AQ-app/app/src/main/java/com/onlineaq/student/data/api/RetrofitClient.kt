@@ -1,6 +1,6 @@
 package com.onlineaq.student.data.api
 
-import com.onlineaq.student.OnlineAQApp
+import com.onlineaq.student.utils.ServerConfig
 import com.onlineaq.student.utils.TokenManager
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -33,11 +33,21 @@ object RetrofitClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(OnlineAQApp.BASE_URL)
-        .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+    private var currentBaseUrl: String? = null
+    private var _apiService: ApiService? = null
 
-    val apiService: ApiService = retrofit.create(ApiService::class.java)
+    val apiService: ApiService
+        get() {
+            val url = ServerConfig.getBaseUrl()
+            if (_apiService == null || url != currentBaseUrl) {
+                currentBaseUrl = url
+                _apiService = Retrofit.Builder()
+                    .baseUrl(url)
+                    .client(okHttpClient)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .create(ApiService::class.java)
+            }
+            return _apiService!!
+        }
 }

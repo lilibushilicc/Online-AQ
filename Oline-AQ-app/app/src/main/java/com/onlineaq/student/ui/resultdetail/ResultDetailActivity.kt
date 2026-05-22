@@ -5,14 +5,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.onlineaq.student.R
 import com.onlineaq.student.data.api.RetrofitClient
 import com.onlineaq.student.data.model.ResultAnswer
 import com.onlineaq.student.data.model.ResultDetail
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -27,6 +29,7 @@ class ResultDetailActivity : AppCompatActivity() {
     private var resultId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_result_detail)
 
@@ -49,7 +52,7 @@ class ResultDetailActivity : AppCompatActivity() {
     }
 
     private fun loadDetail() {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.apiService.getResultDetail(resultId)
                 withContext(Dispatchers.Main) {
@@ -58,9 +61,15 @@ class ResultDetailActivity : AppCompatActivity() {
                         if (detail != null) {
                             bindData(detail)
                         }
+                    } else {
+                        Toast.makeText(this@ResultDetailActivity, "加载成绩详情失败", Toast.LENGTH_SHORT).show()
                     }
                 }
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@ResultDetailActivity, "网络错误: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -98,14 +107,23 @@ class AnswerDetailAdapter(
         private val tvCorrectAnswer = itemView.findViewById<TextView>(R.id.tv_correct_answer)
 
         fun bind(answer: ResultAnswer, position: Int) {
-            tvIndex.text = "第 ${position + 1} 题"
+            val typeLabel = when (answer.questionType) {
+                "single" -> "单选题"
+                "judge" -> "判断题"
+                "fill_blank" -> "填空题"
+                "short_answer" -> "简答题"
+                else -> answer.questionType
+            }
+            tvIndex.text = "第 ${position + 1} 题 ($typeLabel)"
             tvContent.text = answer.questionContent
 
             val isCorrect = answer.isCorrect == true
             tvResult.text = if (isCorrect) "正确" else "错误"
-            tvResult.setBackgroundResource(
-                if (isCorrect) android.R.color.holo_green_light
-                else android.R.color.holo_red_light
+            tvResult.setBackgroundColor(
+                itemView.context.getColor(
+                    if (isCorrect) R.color.ctp_green
+                    else R.color.ctp_red
+                )
             )
 
             tvYourAnswer.text = "你的答案: ${answer.studentAnswer ?: "未作答"}"

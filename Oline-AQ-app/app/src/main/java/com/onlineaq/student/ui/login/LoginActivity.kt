@@ -2,16 +2,20 @@ package com.onlineaq.student.ui.login
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.onlineaq.student.R
 import com.onlineaq.student.data.api.RetrofitClient
 import com.onlineaq.student.data.model.LoginRequest
-import com.onlineaq.student.ui.examlist.ExamListActivity
+import com.onlineaq.student.ui.main.MainActivity
+import com.onlineaq.student.utils.ServerConfig
 import com.onlineaq.student.utils.TokenManager
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,12 +25,14 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var etUsername: TextInputEditText
     private lateinit var etPassword: TextInputEditText
     private lateinit var btnLogin: MaterialButton
+    private lateinit var tvServerHint: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         if (TokenManager.isLoggedIn()) {
-            startActivity(Intent(this, ExamListActivity::class.java))
+            startActivity(Intent(this, MainActivity::class.java))
             finish()
             return
         }
@@ -36,8 +42,51 @@ class LoginActivity : AppCompatActivity() {
         etUsername = findViewById(R.id.et_username)
         etPassword = findViewById(R.id.et_password)
         btnLogin = findViewById(R.id.btn_login)
+        tvServerHint = findViewById(R.id.tv_server_hint)
+
+        updateServerHint()
 
         btnLogin.setOnClickListener { attemptLogin() }
+        findViewById<android.widget.ImageButton>(R.id.btn_server_settings).setOnClickListener { showServerSettings() }
+    }
+
+    private fun updateServerHint() {
+        val url = ServerConfig.getBaseUrl()
+        tvServerHint.text = "服务器: $url"
+    }
+
+    private fun showServerSettings() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_server_settings, null)
+        val etUrl = dialogView.findViewById<TextInputEditText>(R.id.et_server_url)
+        etUrl.setText(ServerConfig.getBaseUrl())
+        etUrl.setSelection(etUrl.text?.length ?: 0)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_save).setOnClickListener {
+            val url = etUrl.text?.toString()?.trim() ?: return@setOnClickListener
+            if (url.isNotBlank()) {
+                ServerConfig.setBaseUrl(url)
+                updateServerHint()
+                Toast.makeText(this, "服务器地址已更新，请重新登录", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_reset).setOnClickListener {
+            ServerConfig.resetToDefault()
+            etUrl.setText(ServerConfig.getBaseUrl())
+            etUrl.setSelection(etUrl.text?.length ?: 0)
+            updateServerHint()
+            Toast.makeText(this, "已恢复默认地址", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_cancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun attemptLogin() {
@@ -52,7 +101,7 @@ class LoginActivity : AppCompatActivity() {
         btnLogin.isEnabled = false
         btnLogin.text = "登录中..."
 
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.apiService.login(
                     LoginRequest(username = username, password = password, role = "student")
@@ -71,7 +120,7 @@ class LoginActivity : AppCompatActivity() {
                                 realName = data.realName,
                                 role = data.role
                             )
-                            startActivity(Intent(this@LoginActivity, ExamListActivity::class.java))
+                            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                             finish()
                         }
                     } else {

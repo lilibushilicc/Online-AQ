@@ -15,7 +15,7 @@ data class ResultDetail(
     val result: ExamResult,
     val exam: Exam,
     val answers: List<ResultAnswer>,
-    val history: List<ExamHistory>
+    val history: List<ExamHistory>?
 )
 
 data class ResultAnswer(

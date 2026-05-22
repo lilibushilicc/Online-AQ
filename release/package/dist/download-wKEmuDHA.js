@@ -1,1 +1,0 @@
-import{at as e,ot as t}from"./api-jI0wZ_u2.js";function n(n,r,i){return t.get(n,{params:e(i),responseType:`blob`}).then(e=>{let t=new Blob([e],{type:`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`}),n=document.createElement(`a`);n.href=URL.createObjectURL(t),n.download=r,n.click(),URL.revokeObjectURL(n.href)})}export{n as t};

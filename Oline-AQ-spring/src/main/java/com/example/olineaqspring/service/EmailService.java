@@ -46,42 +46,47 @@ public class EmailService {
 
     public void sendVerificationCode(String to, String code) {
         SmtpAccount account = getActiveAccount();
-        checkAndResetLimits(account);
-        if (account.getHourlyLimit() != null && account.getHourlyLimit() > 0 && account.getHourlySent() >= account.getHourlyLimit()) {
-            throw new RuntimeException("当前 SMTP 账号已达到每小时发送上限（" + account.getHourlyLimit() + " 封），请稍后再试或切换账号");
-        }
-        if (account.getDailyLimit() != null && account.getDailyLimit() > 0 && account.getDailySent() >= account.getDailyLimit()) {
-            throw new RuntimeException("当前 SMTP 账号已达到每日发送上限（" + account.getDailyLimit() + " 封），请切换账号或等待重置");
-        }
-
-        JavaMailSender sender = createMailSender(account);
-        try {
-            String systemName = getConfig("smtp.system_name", "Online-AQ 智能在线答题系统");
-            String subject = getConfig("smtp.subject", "${systemName} - 邮箱验证")
-                    .replace("${systemName}", systemName);
-            String template = getConfig("smtp.email_template", null);
-
-            if (template == null || template.isBlank()) {
-                template = EmailConstants.DEFAULT_HTML_TEMPLATE;
+        String lockKey = ("smtp_send_" + account.getId()).intern();
+        synchronized (lockKey) {
+            // 重新查一次，保证计数器最新
+            account = smtpAccountMapper.selectById(account.getId());
+            checkAndResetLimits(account);
+            if (account.getHourlyLimit() != null && account.getHourlyLimit() > 0 && account.getHourlySent() >= account.getHourlyLimit()) {
+                throw new RuntimeException("当前 SMTP 账号已达到每小时发送上限（" + account.getHourlyLimit() + " 封），请稍后再试或切换账号");
+            }
+            if (account.getDailyLimit() != null && account.getDailyLimit() > 0 && account.getDailySent() >= account.getDailyLimit()) {
+                throw new RuntimeException("当前 SMTP 账号已达到每日发送上限（" + account.getDailyLimit() + " 封），请切换账号或等待重置");
             }
 
-            String html = template
-                    .replace("${code}", code)
-                    .replace("${systemName}", systemName);
+            JavaMailSender sender = createMailSender(account);
+            try {
+                String systemName = getConfig("smtp.system_name", "Online-AQ 智能在线答题系统");
+                String subject = getConfig("smtp.subject", "${systemName} - 邮箱验证")
+                        .replace("${systemName}", systemName);
+                String template = getConfig("smtp.email_template", null);
 
-            MimeMessage message = sender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(account.getFromAddress());
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            sender.send(message);
+                if (template == null || template.isBlank()) {
+                    template = EmailConstants.DEFAULT_HTML_TEMPLATE;
+                }
 
-            incrementCounts(account);
-            logSend(account.getId(), to, "register_verify", true);
-        } catch (Exception e) {
-            logSend(account.getId(), to, "register_verify", false);
-            throw new RuntimeException("邮件发送失败：" + e.getMessage());
+                String html = template
+                        .replace("${code}", code)
+                        .replace("${systemName}", systemName);
+
+                MimeMessage message = sender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                helper.setFrom(account.getFromAddress());
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(html, true);
+                sender.send(message);
+
+                incrementCounts(account);
+                logSend(account.getId(), to, "register_verify", true);
+            } catch (Exception e) {
+                logSend(account.getId(), to, "register_verify", false);
+                throw new RuntimeException("邮件发送失败：" + e.getMessage());
+            }
         }
     }
 

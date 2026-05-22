@@ -1,10 +1,10 @@
 package com.onlineaq.student
 
 import android.app.Application
+import com.onlineaq.student.utils.ThemeConfig
 
 class OnlineAQApp : Application() {
     companion object {
-        const val BASE_URL = "http://10.0.2.2:8080/api/"
         lateinit var instance: OnlineAQApp
             private set
     }
@@ -12,5 +12,6 @@ class OnlineAQApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        ThemeConfig.applyThemeMode()
     }
 }

@@ -25,23 +25,25 @@ public class FeedbackService {
     private final QuestionMapper questionMapper;
 
     public QuestionFeedback create(FeedbackCreateRequest request, Integer studentId) {
-        // 防止同一学生对同一题重复提交反馈
-        long existingCount = feedbackMapper.selectCount(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<QuestionFeedback>()
-                        .eq(QuestionFeedback::getQuestionId, request.getQuestionId())
-                        .eq(QuestionFeedback::getStudentId, studentId));
-        if (existingCount > 0) {
-            throw new RuntimeException("你已经反馈过这道题了，无需重复提交");
+        String lockKey = ("feedback_" + request.getQuestionId() + "_" + studentId).intern();
+        synchronized (lockKey) {
+            long existingCount = feedbackMapper.selectCount(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<QuestionFeedback>()
+                            .eq(QuestionFeedback::getQuestionId, request.getQuestionId())
+                            .eq(QuestionFeedback::getStudentId, studentId));
+            if (existingCount > 0) {
+                throw new RuntimeException("你已经反馈过这道题了，无需重复提交");
+            }
+            QuestionFeedback feedback = new QuestionFeedback();
+            feedback.setQuestionId(request.getQuestionId());
+            feedback.setStudentId(studentId);
+            feedback.setExamId(request.getExamId());
+            feedback.setFeedbackType(request.getFeedbackType());
+            feedback.setDescription(request.getDescription());
+            feedback.setStatus("pending");
+            feedbackMapper.insert(feedback);
+            return feedback;
         }
-        QuestionFeedback feedback = new QuestionFeedback();
-        feedback.setQuestionId(request.getQuestionId());
-        feedback.setStudentId(studentId);
-        feedback.setExamId(request.getExamId());
-        feedback.setFeedbackType(request.getFeedbackType());
-        feedback.setDescription(request.getDescription());
-        feedback.setStatus("pending");
-        feedbackMapper.insert(feedback);
-        return feedback;
     }
 
     public List<FeedbackListVO> list(String status) {

@@ -7,25 +7,23 @@
     <title>在线答题系统</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-      (function() {
-        var mq = window.matchMedia('(prefers-color-scheme: dark)');
-        document.documentElement.classList.toggle('dark', mq.matches);
-        mq.addEventListener('change', function(e) {
-          document.documentElement.classList.toggle('dark', e.matches);
-        });
-      })();
-    </script>
-    <script type="module" crossorigin src="/assets/index-BpTl6qhw.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/assets/index-C-qP4aYZ.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-S-ySWqyJ.js">
-    <link rel="modulepreload" crossorigin href="/assets/element-plus-base-sKefpw0p.js">
-    <link rel="modulepreload" crossorigin href="/assets/vue-vendor-COqoT1UZ.js">
-    <link rel="modulepreload" crossorigin href="/assets/api-jI0wZ_u2.js">
-    <link rel="stylesheet" crossorigin href="/assets/element-plus-base-om3aDtE-.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-NRWvcZmE.css">
+    <link rel="modulepreload" crossorigin href="/assets/element-plus-base-ChP-1dDS.js">
+    <link rel="modulepreload" crossorigin href="/assets/vue-vendor-cp2EOSh1.js">
+    <link rel="modulepreload" crossorigin href="/assets/api-DMiRJR-X.js">
+    <link rel="stylesheet" crossorigin href="/assets/element-plus-base-C_gDB-KB.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-h1NlBgNe.css">
   </head>
   <body>
+    <script>
+      ;(function () {
+        var saved = localStorage.getItem('theme')
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        document.documentElement.setAttribute('data-theme', theme)
+      })()
+    </script>
     <div id="app"></div>
   </body>
 </html>

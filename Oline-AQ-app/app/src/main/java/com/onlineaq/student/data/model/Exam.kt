@@ -7,7 +7,7 @@ data class Exam(
     val duration: Int,
     val totalScore: Double?,
     val status: String,
-    val allowRetake: Boolean,
+    val allowRetake: Boolean?,
     val assignAll: Boolean?,
     val startTime: String?,
     val endTime: String?,

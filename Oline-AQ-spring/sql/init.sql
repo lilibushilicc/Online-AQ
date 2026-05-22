@@ -91,6 +91,20 @@ CREATE TABLE IF NOT EXISTS exam_result (
     submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 防重复提交：同一学生同一考试只能有一条结果记录
+ALTER TABLE exam_result ADD CONSTRAINT IF NOT EXISTS uk_exam_result_exam_student UNIQUE (exam_id, student_id);
+
+-- 幂等记录表：防重复提交的通用兜底
+CREATE TABLE IF NOT EXISTS idempotent_record (
+    idempotent_key VARCHAR(128) PRIMARY KEY,
+    result_type VARCHAR(64) NOT NULL,
+    result_json TEXT,
+    expire_time TIMESTAMP NOT NULL,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_idempotent_expire ON idempotent_record (expire_time);
+
 -- 密码使用 BCrypt 加密（明文 123456 的加密结果）
 -- 应用启动时会通过 DemoUserInitializer 自动创建用户（使用 BCrypt 加密）
 -- 如需手动插入，请使用编程方式生成加密密码

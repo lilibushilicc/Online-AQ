@@ -187,6 +187,28 @@ public class SchemaInitializer implements CommandLineRunner {
         createIndex("idx_announcement_read_announcement", "announcement_read(announcement_id)");
         createIndex("idx_question_feedback_question_id", "question_feedback(question_id)");
         createIndex("idx_question_feedback_status", "question_feedback(status)");
+
+        // 防重复提交：同一学生同一考试只能有一条结果记录
+        addUniqueConstraintSafe("exam_result", "uk_exam_result_exam_student", "exam_id", "student_id");
+
+        // 幂等记录表：通用幂等兜底
+        createTable("idempotent_record",
+            "idempotent_key VARCHAR(128) PRIMARY KEY",
+            "result_type VARCHAR(64) NOT NULL",
+            "result_json TEXT",
+            "expire_time TIMESTAMP NOT NULL",
+            "create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        );
+        createIndex("idx_idempotent_expire", "idempotent_record(expire_time)");
+    }
+
+    private void addUniqueConstraintSafe(String table, String constraintName, String... columns) {
+        try {
+            jdbcTemplate.execute("ALTER TABLE " + table + " ADD CONSTRAINT " + constraintName +
+                " UNIQUE (" + String.join(", ", columns) + ")");
+        } catch (Exception e) {
+            // 约束可能已存在，忽略错误
+        }
     }
 
     private void createTable(String name, String... columns) {

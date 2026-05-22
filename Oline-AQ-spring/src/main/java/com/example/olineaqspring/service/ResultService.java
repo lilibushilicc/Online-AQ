@@ -12,7 +12,9 @@ import com.example.olineaqspring.mapper.ExamResultMapper;
 import com.example.olineaqspring.mapper.QuestionMapper;
 import com.example.olineaqspring.mapper.StudentAnswerMapper;
 import com.example.olineaqspring.utils.AnswerMapHelper;
+import com.example.olineaqspring.utils.RateLimiter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,63 +39,80 @@ public class ResultService {
     @Transactional
     public Map<String, Object> submit(Integer examId, SubmitExamRequest request, Integer loginUserId) {
         Integer studentId = request.getStudentId() == null ? loginUserId : request.getStudentId();
-        Exam exam = examService.getExam(examId);
-        validateSubmit(exam, studentId);
 
-        Map<Integer, String> answerMap = buildAnswerMap(request);
-        List<ExamQuestion> relations = examService.listExamQuestions(examId);
-        List<Integer> qids = relations.stream().map(ExamQuestion::getQuestionId).distinct().toList();
-        Map<Integer, Question> questionMap = questionMapper.selectBatchIds(qids).stream()
-                .collect(Collectors.toMap(Question::getQuestionId, Function.identity()));
-
-        BigDecimal totalScore = BigDecimal.ZERO;
-        int correctCount = 0;
-        LocalDateTime submitTime = LocalDateTime.now();
-
-        for (ExamQuestion relation : relations) {
-            Question question = questionMap.get(relation.getQuestionId());
-            if (question == null) {
-                continue;
-            }
-
-            String value = answerMap.getOrDefault(question.getQuestionId(), "");
-            boolean correct;
-            BigDecimal score;
-            if ("short_answer".equals(question.getQuestionType())) {
-                correct = false;
-                score = BigDecimal.ZERO;
-            } else {
-                correct = value.equalsIgnoreCase(question.getCorrectAnswer());
-                score = correct ? relation.getScore() : BigDecimal.ZERO;
-            }
-            if (correct) {
-                correctCount++;
-            }
-            totalScore = totalScore.add(score);
-
-            studentAnswerMapper.insert(buildStudentAnswer(examId, studentId, question, value, correct, score, submitTime));
+        // 第一层：请求限流，防恶意高并发打崩
+        if (!RateLimiter.tryAcquire("submit:" + examId + ":" + studentId, 5, 10)) {
+            throw new RuntimeException("提交过于频繁，请稍后重试");
         }
 
-        int wrongCount = relations.size() - correctCount;
-        ExamResult result = new ExamResult();
-        result.setExamId(examId);
-        result.setStudentId(studentId);
-        result.setTotalScore(totalScore);
-        result.setCorrectCount(correctCount);
-        result.setWrongCount(wrongCount);
-        result.setUseTime(request.getUseTime());
-        result.setSubmitTime(submitTime);
-        examResultMapper.insert(result);
+        // 第二层：同步锁，防同一学生并发提交
+        String lockKey = ("submit_" + examId + "_" + studentId).intern();
+        synchronized (lockKey) {
+            // 进入同步块后二次检查，防止队列中第一个提交后第二个继续执行
+            Exam exam = examService.getExam(examId);
+            validateSubmit(exam, studentId);
 
-        examService.recordHistory(examId, studentId, "SUBMIT",
-                String.format("学生 %d 提交考试，得分 %s", studentId, totalScore));
+            Map<Integer, String> answerMap = buildAnswerMap(request);
+            List<ExamQuestion> relations = examService.listExamQuestions(examId);
+            List<Integer> qids = relations.stream().map(ExamQuestion::getQuestionId).distinct().toList();
+            Map<Integer, Question> questionMap = questionMapper.selectBatchIds(qids).stream()
+                    .collect(Collectors.toMap(Question::getQuestionId, Function.identity()));
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("resultId", result.getResultId());
-        data.put("totalScore", totalScore);
-        data.put("correctCount", correctCount);
-        data.put("wrongCount", wrongCount);
-        return data;
+            BigDecimal totalScore = BigDecimal.ZERO;
+            int correctCount = 0;
+            LocalDateTime submitTime = LocalDateTime.now();
+
+            for (ExamQuestion relation : relations) {
+                Question question = questionMap.get(relation.getQuestionId());
+                if (question == null) {
+                    continue;
+                }
+
+                String value = answerMap.getOrDefault(question.getQuestionId(), "");
+                boolean correct;
+                BigDecimal score;
+                if ("short_answer".equals(question.getQuestionType())) {
+                    correct = false;
+                    score = BigDecimal.ZERO;
+                } else {
+                    correct = value.equalsIgnoreCase(question.getCorrectAnswer());
+                    score = correct ? relation.getScore() : BigDecimal.ZERO;
+                }
+                if (correct) {
+                    correctCount++;
+                }
+                totalScore = totalScore.add(score);
+
+                studentAnswerMapper.insert(buildStudentAnswer(examId, studentId, question, value, correct, score, submitTime));
+            }
+
+            int wrongCount = relations.size() - correctCount;
+            ExamResult result = new ExamResult();
+            result.setExamId(examId);
+            result.setStudentId(studentId);
+            result.setTotalScore(totalScore);
+            result.setCorrectCount(correctCount);
+            result.setWrongCount(wrongCount);
+            result.setUseTime(request.getUseTime());
+            result.setSubmitTime(submitTime);
+
+            try {
+                examResultMapper.insert(result);
+            } catch (DuplicateKeyException e) {
+                // 第三层兜底：唯一约束防重
+                throw new RuntimeException("该考试已提交过，不允许重复提交");
+            }
+
+            examService.recordHistory(examId, studentId, "SUBMIT",
+                    String.format("学生 %d 提交考试，得分 %s", studentId, totalScore));
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("resultId", result.getResultId());
+            data.put("totalScore", totalScore);
+            data.put("correctCount", correctCount);
+            data.put("wrongCount", wrongCount);
+            return data;
+        }
     }
 
     public List<ExamResult> myResults(Integer studentId) {
