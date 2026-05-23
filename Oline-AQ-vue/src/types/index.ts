@@ -63,6 +63,7 @@ export interface ExamHistory {
 }
 
 export interface ResultAnswerDetail {
+  answerId: number
   questionId: number
   questionContent: string
   questionType: QuestionType
@@ -74,6 +75,20 @@ export interface ResultAnswerDetail {
   correctAnswer: string
   isCorrect: boolean
   score: number
+  reviewStatus?: string
+}
+
+export interface ReviewItem {
+  answerId: number
+  questionId: number
+  questionContent: string
+  questionType: QuestionType
+  studentAnswer: string
+  correctAnswer: string
+  score: number
+  examName: string
+  studentName: string
+  submitTime: string
 }
 
 export interface WrongQuestionItem {
@@ -123,6 +138,7 @@ export interface ExamDetail {
   relationScores?: Record<number, number>
   shuffleMap?: Record<number, number[]>
   serverTime?: number
+  attemptId?: string
 }
 
 export interface ResultDetail {
@@ -214,6 +230,20 @@ export interface PublishExamPayload {
   studentIds?: number[]
   shuffleQuestions?: boolean
   shuffleAnswers?: boolean
+}
+
+export interface PracticeResult {
+  practiceId: number
+  studentId: number
+  totalQuestions: number
+  correctCount: number
+  wrongCount: number
+  totalScore: number
+  submitTime: string
+}
+
+export interface SubmitPracticePayload {
+  answers: { questionId: number; answer: string }[]
 }
 
 export interface Announcement {

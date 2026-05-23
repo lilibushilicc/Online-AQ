@@ -72,8 +72,8 @@ export const useExamStore = defineStore('exam', {
     async publishExam(id: number, p?: PublishExamPayload) { await api.publishExamApi(id, p); await this.loadExams() },
     async closeExam(id: number) { await api.closeExamApi(id); await this.loadExams() },
     async deleteExam(id: number) { await api.deleteExamApi(id); await this.loadExams() },
-    async submitExam(examId: number, answers: Record<number, string>, useTime = 0) {
-      const d = await api.submitExamApi(examId, this.currentUser?.userId, answers, useTime)
+    async submitExam(examId: number, attemptId: string | undefined, answers: Record<number, string>, useTime = 0) {
+      const d = await api.submitExamApi(examId, attemptId, answers, useTime)
       await this.loadMyResults(); return d
     },
 

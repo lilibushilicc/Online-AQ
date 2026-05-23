@@ -3,6 +3,8 @@ package com.example.olineaqspring.service;
 import com.example.olineaqspring.entity.SysConfig;
 import com.example.olineaqspring.mapper.SysConfigMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ public class ConfigService {
     private final SysConfigMapper sysConfigMapper;
     private final JdbcTemplate jdbcTemplate;
 
+    @Cacheable(value = "config", key = "'all'")
     public Map<String, String> getAll() {
         List<SysConfig> list = sysConfigMapper.selectList(null);
         Map<String, String> map = new HashMap<>();
@@ -25,6 +28,7 @@ public class ConfigService {
         return map;
     }
 
+    @CacheEvict(value = "config", allEntries = true)
     public void update(Map<String, String> configMap) {
         List<Object[]> batchArgs = configMap.entrySet().stream()
                 .map(e -> new Object[]{e.getKey(), e.getValue()})
@@ -36,6 +40,7 @@ public class ConfigService {
         );
     }
 
+    @Cacheable(value = "config", key = "#key")
     public String get(String key) {
         SysConfig config = sysConfigMapper.selectById(key);
         return config == null ? null : config.getConfigValue();

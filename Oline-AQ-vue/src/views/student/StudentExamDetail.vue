@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View } from '@element-plus/icons-vue'
 import * as api from '@/api'
@@ -17,6 +17,7 @@ const answers = ref<Record<number, string>>({})
 const exam = ref<Exam | null>(null)
 const questions = ref<Question[]>([])
 const shuffleMap = ref<Record<number, number[]> | null>(null)
+const attemptId = ref<string>('')
 const serverTime = ref(0)
 const remainingSeconds = ref(0)
 const initialRemainingSeconds = ref(0)
@@ -27,39 +28,67 @@ const exportDialogVisible = ref(false)
 const exportFormat = ref('word')
 const activeQuestionIndex = ref(0)
 const hasDraft = ref(false)
+const started = ref(false)
+const leavingConfirmed = ref(false)
 let timer: number | null = null
 let draftSaveTimer: number | null = null
 
 function draftKey() { return DRAFT_KEY_PREFIX + examId }
 
-function saveDraft() {
-  if (!exam.value || submitting.value) return
-  const data = { answers: answers.value, examId: examId, savedAt: Date.now() }
+function cacheDraftLocally() {
+  if (!attemptId.value) return
   try {
-    localStorage.setItem(draftKey(), JSON.stringify(data))
-    hasDraft.value = true
-  } catch { /* storage full, ignore */ }
+    localStorage.setItem(draftKey(), JSON.stringify({ answers: answers.value, examId, attemptId: attemptId.value, savedAt: Date.now() }))
+  } catch { /* ignore */ }
 }
 
-function loadDraft(): Record<number, string> | null {
+async function saveDraft() {
+  if (!exam.value || submitting.value || !attemptId.value) return
+  const answerList = Object.entries(answers.value).map(([questionId, studentAnswer]) => ({
+    questionId: Number(questionId),
+    studentAnswer,
+  }))
+  try {
+    await api.saveDraftApi(examId, attemptId.value, answerList, elapsedSeconds.value)
+    hasDraft.value = true
+  } catch { /* ignore */ }
+  cacheDraftLocally()
+}
+
+async function loadDraft(): Promise<Record<number, string> | null> {
+  try {
+    const draft = await api.loadDraftApi(examId)
+    if (draft?.answers) {
+      const parsed = JSON.parse(draft.answers)
+      if (Object.keys(parsed).length > 0) return parsed
+    }
+  } catch { /* ignore */ }
   try {
     const raw = localStorage.getItem(draftKey())
     if (!raw) return null
     const data = JSON.parse(raw)
-    if (data?.examId === examId && data?.answers) return data.answers
-  } catch { /* ignore corrupt draft */ }
+    if (data?.examId === examId && data?.attemptId === attemptId.value && data?.answers) return data.answers
+  } catch { /* ignore */ }
   return null
 }
 
+function startExam() {
+  started.value = true
+  startCountdown(exam.value!)
+  window.addEventListener('scroll', updateActiveQuestion, { passive: true })
+}
+
 function clearDraft() {
+  api.clearDraftApi(examId).catch(() => {})
   localStorage.removeItem(draftKey())
   hasDraft.value = false
 }
 
-const answeredCount = computed(() => Object.keys(answers.value).length)
+const answeredCount = computed(() => Object.values(answers.value).filter((value) => String(value ?? '').trim() !== '').length)
 const progress = computed(() => (questions.value.length === 0 ? 0 : Math.round((answeredCount.value / questions.value.length) * 100)))
 const historyCount = computed(() => store.results.filter((result) => result.examId === examId).length)
 const elapsedSeconds = computed(() => Math.max(0, initialRemainingSeconds.value - remainingSeconds.value))
+const shouldBlockLeaving = computed(() => started.value && Boolean(exam.value) && Boolean(attemptId.value) && !submitting.value)
 const countdownText = computed(() => {
   const hours = Math.floor(remainingSeconds.value / 3600)
   const minutes = Math.floor((remainingSeconds.value % 3600) / 60)
@@ -76,7 +105,6 @@ function examBlockedReason(currentExam: Exam) {
     if (end !== null && now > end) return '考试已结束'
     return '考试当前不可作答'
   }
-  if (!currentExam.allowRetake && store.hasSubmittedExam(currentExam.examId)) return '该考试仅允许提交一次'
   if (!currentExam.duration || currentExam.duration <= 0) return '考试时长未设置，请联系管理员'
   return ''
 }
@@ -94,14 +122,6 @@ function resolveRemainingSeconds(currentExam: Exam) {
 
 function clearTimer() {
   if (timer !== null) { window.clearInterval(timer); timer = null }
-}
-
-function toOriginalAnswer(questionId: number, answer: string): string {
-  if (!answer || answer.length !== 1 || !shuffleMap.value) return answer
-  const perm = shuffleMap.value[questionId]
-  const idx = answer.charCodeAt(0) - 65
-  if (perm == null || idx < 0 || idx >= perm.length) return answer
-  return String.fromCharCode(65 + perm[idx]!)
 }
 
 function scrollToQuestion(index: number) {
@@ -131,25 +151,68 @@ async function handleSubmit(options?: { auto?: boolean }) {
   if (!exam.value || submitting.value) return
   const autoSubmit = Boolean(options?.auto)
   const blockedReason = examBlockedReason(exam.value)
+  const unansweredCount = questions.value.length - answeredCount.value
   if (blockedReason && !autoSubmit) { ElMessage.warning(blockedReason); return }
-  if (!autoSubmit && answeredCount.value < questions.value.length) { ElMessage.warning('请完成所有题目后再提交'); return }
-  if (!autoSubmit) await ElMessageBox.confirm('提交后将立即自动评分，确认现在提交吗？', '提交试卷', { type: 'warning' })
-  if (sessionStorage.getItem('submitted_' + examId)) { ElMessage.warning('已提交过，请勿重复操作'); return }
+  if (!autoSubmit) {
+    const submitMessage = unansweredCount > 0
+      ? `您还有 ${unansweredCount} 道题未作答，提交后这些题目将按未作答处理，确认现在提交吗？`
+      : '提交后将立即自动评分，确认现在提交吗？'
+    await ElMessageBox.confirm(submitMessage, '提交试卷', { type: 'warning' })
+  }
   submitting.value = true
   clearTimer()
   try {
-    const transformedAnswers: Record<number, string> = {}
-    for (const [qId, answer] of Object.entries(answers.value)) {
-      transformedAnswers[Number(qId)] = toOriginalAnswer(Number(qId), answer)
-    }
-    const result = await store.submitExam(exam.value.examId, transformedAnswers, elapsedSeconds.value)
+    const result = await store.submitExam(exam.value.examId, attemptId.value, answers.value, elapsedSeconds.value)
     clearDraft()
-    sessionStorage.setItem('submitted_' + examId, '1')
+    attemptId.value = ''
+    leavingConfirmed.value = true
     if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer); draftSaveTimer = null }
     if (autoSubmit) ElMessage.warning('考试时间已到，系统已自动交卷')
     else ElMessage.success(`提交成功，得分 ${result.totalScore}`)
-    router.replace(`/student/results/${result.resultId}`)
+    if (result.wrongCount > 0) {
+      try {
+        await ElMessageBox.confirm(`您有 ${result.wrongCount} 道错题，是否立即查看并加入错题本？`, '错题提示', {
+          confirmButtonText: '查看错题',
+          cancelButtonText: '稍后再说',
+          type: 'info',
+        })
+        router.replace(`/student/results/${result.resultId}`)
+      } catch {
+        router.push(`/student/exams`)
+      }
+    } else {
+      router.replace(`/student/results/${result.resultId}`)
+    }
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '提交失败，请稍后重试')
+    if (started.value && exam.value) startCountdown(exam.value)
   } finally { submitting.value = false }
+}
+
+async function confirmLeaveExam() {
+  if (!shouldBlockLeaving.value || leavingConfirmed.value) return true
+  try {
+    await ElMessageBox.confirm('退出考试后将保留当前作答草稿，下次进入可继续答题。确认现在退出吗？', '退出考试', {
+      type: 'warning',
+      confirmButtonText: '确认退出',
+      cancelButtonText: '继续作答',
+    })
+    await saveDraft()
+    cacheDraftLocally()
+    hasDraft.value = true
+    leavingConfirmed.value = true
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function handleExitExam() {
+  if (!started.value) {
+    router.push('/student/exams')
+    return
+  }
+  if (await confirmLeaveExam()) router.push('/student/exams')
 }
 
 function openBlankDialog() {
@@ -193,7 +256,6 @@ function doExport() {
 
 async function handleBlankSubmit() {
   if (!exam.value) return
-  if (sessionStorage.getItem('submitted_' + examId)) { ElMessage.warning('已提交过，请勿重复操作'); return }
   blankDialogVisible.value = false
   submitting.value = true
   clearTimer()
@@ -202,12 +264,16 @@ async function handleBlankSubmit() {
   questions.value.forEach((q) => { blankAnswers[q.questionId] = '' })
 
   try {
-    const result = await store.submitExam(exam.value.examId, blankAnswers, elapsedSeconds.value)
+    const result = await store.submitExam(exam.value.examId, attemptId.value, blankAnswers, elapsedSeconds.value)
     clearDraft()
-    sessionStorage.setItem('submitted_' + examId, '1')
+    attemptId.value = ''
+    leavingConfirmed.value = true
     if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer); draftSaveTimer = null }
     ElMessage.success('提交成功，正在加载答案')
     router.replace(`/student/results/${result.resultId}?fromBlank=${blankFormat.value}`)
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '提交失败，请稍后重试')
+    if (started.value && exam.value) startCountdown(exam.value)
   } finally { submitting.value = false }
 }
 
@@ -227,17 +293,30 @@ function startCountdown(currentExam: Exam) {
   }, 1000)
 }
 
+function handleBeforeUnload(event: BeforeUnloadEvent) {
+  cacheDraftLocally()
+  if (!shouldBlockLeaving.value || leavingConfirmed.value) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
 watch(answers, () => {
   if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer) }
   draftSaveTimer = window.setTimeout(saveDraft, 800)
 }, { deep: true })
 
+onBeforeRouteLeave(async () => {
+  if (await confirmLeaveExam()) return true
+  return false
+})
+
 onMounted(async () => {
   try {
     await store.loadMyResults()
-    const detail = await api.getExamDetailApi(examId)
+    const detail = await api.getExamDetailApi(examId, attemptId.value || undefined)
     exam.value = detail.exam
     questions.value = detail.questions
+    attemptId.value = detail.attemptId || ''
     if (detail.shuffleMap) shuffleMap.value = detail.shuffleMap
     const d = detail as any
     if (d.serverTime) serverTime.value = d.serverTime
@@ -245,15 +324,16 @@ onMounted(async () => {
     const blockedReason = examBlockedReason(exam.value)
     if (blockedReason) { ElMessage.warning(blockedReason); router.replace('/student/exams'); return }
 
-    const saved = loadDraft()
+    const saved = await loadDraft()
     if (saved && Object.keys(saved).length > 0) {
       answers.value = saved
+      started.value = true
+      startCountdown(exam.value)
+      window.addEventListener('scroll', updateActiveQuestion, { passive: true })
       ElMessage.info('已恢复上次作答草稿')
     }
 
-    startCountdown(exam.value)
-    window.addEventListener('scroll', updateActiveQuestion, { passive: true })
-    window.addEventListener('beforeunload', saveDraft)
+    window.addEventListener('beforeunload', handleBeforeUnload)
   } catch {
     ElMessage.error('加载试卷失败，请返回重试')
   }
@@ -263,12 +343,29 @@ onUnmounted(() => {
   clearTimer()
   if (draftSaveTimer !== null) { window.clearTimeout(draftSaveTimer) }
   window.removeEventListener('scroll', updateActiveQuestion)
-  window.removeEventListener('beforeunload', saveDraft)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 </script>
 
 <template>
     <section v-if="exam" class="answer-layout">
+
+      <!-- 考试前概览 -->
+      <div v-if="!started" style="max-width: 600px; margin: 40px auto; text-align: center">
+        <el-card>
+          <h2 style="margin-bottom: 20px">{{ exam.examName }}</h2>
+          <el-descriptions :column="1" border size="small" style="margin-bottom: 20px">
+            <el-descriptions-item label="题目数量">{{ questions.length }} 道</el-descriptions-item>
+            <el-descriptions-item label="考试时长">{{ exam.duration }} 分钟</el-descriptions-item>
+            <el-descriptions-item label="总分">{{ exam.totalScore }} 分</el-descriptions-item>
+            <el-descriptions-item label="开放开始">{{ exam.startTime ? new Date(exam.startTime).toLocaleString() : '未设置' }}</el-descriptions-item>
+            <el-descriptions-item label="开放结束">{{ exam.endTime ? new Date(exam.endTime).toLocaleString() : '未设置' }}</el-descriptions-item>
+          </el-descriptions>
+          <el-button type="primary" size="large" @click="startExam">开始作答</el-button>
+        </el-card>
+      </div>
+
+      <template v-if="started">
       <div>
         <el-card shadow="hover" style="margin-bottom: 14px">
           <el-descriptions :column="3" border size="small">
@@ -340,6 +437,9 @@ onUnmounted(() => {
         <el-button type="primary" size="large" style="width: 100%" :loading="submitting" @click="handleSubmit()">
           提交试卷
         </el-button>
+        <el-button size="large" plain style="width: 100%; margin-top: 8px" :disabled="submitting" @click="handleExitExam">
+          退出考试
+        </el-button>
         <el-button size="small" plain style="width: 100%; margin-top: 8px; margin-bottom: 4px" @click="openExportDialog()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           导出试卷
@@ -401,6 +501,7 @@ onUnmounted(() => {
           <p style="margin: 4px 0 0 12px; color: #666; font-size: 12px">（{{ q.score }} 分）</p>
         </div>
       </div>
+      </template>
     </section>
     <section v-else>
       <el-empty description="考试不存在或正在加载" />

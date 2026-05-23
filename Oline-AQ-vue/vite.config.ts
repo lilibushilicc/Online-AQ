@@ -40,7 +40,7 @@ export default defineConfig({
     allowedHosts: ['reference-request-stumble.ngrok-free.dev'],
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:8880',
         changeOrigin: true,
       },
     },

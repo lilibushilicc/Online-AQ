@@ -9,6 +9,7 @@ import com.example.olineaqspring.entity.SmtpAccount;
 import com.example.olineaqspring.mapper.EmailSendLogMapper;
 import com.example.olineaqspring.mapper.EmailVerificationMapper;
 import com.example.olineaqspring.mapper.SmtpAccountMapper;
+import com.example.olineaqspring.utils.LockUtils;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -46,8 +47,12 @@ public class EmailService {
 
     public void sendVerificationCode(String to, String code) {
         SmtpAccount account = getActiveAccount();
-        String lockKey = ("smtp_send_" + account.getId()).intern();
-        synchronized (lockKey) {
+        String lockKey = "smtp_send_" + account.getId();
+        boolean locked = LockUtils.tryLock(lockKey, 10000);
+        if (!locked) {
+            throw new RuntimeException("请求繁忙，请稍后重试");
+        }
+        try {
             // 重新查一次，保证计数器最新
             account = smtpAccountMapper.selectById(account.getId());
             checkAndResetLimits(account);
@@ -87,6 +92,8 @@ public class EmailService {
                 logSend(account.getId(), to, "register_verify", false);
                 throw new RuntimeException("邮件发送失败：" + e.getMessage());
             }
+        } finally {
+            LockUtils.unlock(lockKey);
         }
     }
 

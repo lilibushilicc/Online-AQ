@@ -15,10 +15,12 @@ public class StudentAnswer {
     private Integer answerId;
     private Integer examId;
     private Integer studentId;
+    private String attemptId;
     private Integer questionId;
     private String studentAnswer;
     private String correctAnswer;
     private Boolean isCorrect;
     private BigDecimal score;
     private LocalDateTime submitTime;
+    private String reviewStatus;
 }

@@ -8,6 +8,7 @@ import com.example.olineaqspring.mapper.QuestionFeedbackMapper;
 import com.example.olineaqspring.mapper.QuestionMapper;
 import com.example.olineaqspring.vo.FeedbackDetailVO;
 import com.example.olineaqspring.utils.BeanUtils;
+import com.example.olineaqspring.utils.LockUtils;
 import com.example.olineaqspring.vo.FeedbackListVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,8 +26,12 @@ public class FeedbackService {
     private final QuestionMapper questionMapper;
 
     public QuestionFeedback create(FeedbackCreateRequest request, Integer studentId) {
-        String lockKey = ("feedback_" + request.getQuestionId() + "_" + studentId).intern();
-        synchronized (lockKey) {
+        String lockKey = "feedback_" + request.getQuestionId() + "_" + studentId;
+        boolean locked = LockUtils.tryLock(lockKey, 10000);
+        if (!locked) {
+            throw new RuntimeException("请求繁忙，请稍后重试");
+        }
+        try {
             long existingCount = feedbackMapper.selectCount(
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<QuestionFeedback>()
                             .eq(QuestionFeedback::getQuestionId, request.getQuestionId())
@@ -43,6 +48,8 @@ public class FeedbackService {
             feedback.setStatus("pending");
             feedbackMapper.insert(feedback);
             return feedback;
+        } finally {
+            LockUtils.unlock(lockKey);
         }
     }
 

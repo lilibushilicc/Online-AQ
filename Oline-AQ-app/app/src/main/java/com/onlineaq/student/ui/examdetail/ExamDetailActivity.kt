@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.HorizontalScrollView
+import android.widget.LinearLayout
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
@@ -26,7 +29,6 @@ import com.onlineaq.student.R
 import com.onlineaq.student.data.api.RetrofitClient
 import com.onlineaq.student.data.model.*
 import com.onlineaq.student.ui.resultdetail.ResultDetailActivity
-import com.onlineaq.student.utils.TokenManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,7 +39,11 @@ class ExamDetailActivity : AppCompatActivity() {
     private lateinit var tvTimer: TextView
     private lateinit var tvProgress: TextView
     private lateinit var rvQuestions: RecyclerView
+    private lateinit var scrollQuestionNav: HorizontalScrollView
+    private lateinit var layoutQuestionNav: LinearLayout
+    private lateinit var btnNextUnanswered: MaterialButton
     private lateinit var btnSubmit: MaterialButton
+    private lateinit var questionLayoutManager: LinearLayoutManager
 
     private var examId: Int = 0
     private var questions: List<Question> = emptyList()
@@ -46,6 +52,9 @@ class ExamDetailActivity : AppCompatActivity() {
     private var remainingSeconds: Int = 0
     private var usedSeconds: Int = 0
     private var examDurationMinutes: Int = 0
+    private var attemptId: String? = null
+    private val navViews = mutableListOf<TextView>()
+    private var activeQuestionIndex = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -62,12 +71,32 @@ class ExamDetailActivity : AppCompatActivity() {
         tvTimer = findViewById(R.id.tv_timer)
         tvProgress = findViewById(R.id.tv_progress)
         rvQuestions = findViewById(R.id.rv_questions)
+        scrollQuestionNav = findViewById(R.id.scroll_question_nav)
+        layoutQuestionNav = findViewById(R.id.layout_question_nav)
+        btnNextUnanswered = findViewById(R.id.btn_next_unanswered)
         btnSubmit = findViewById(R.id.btn_submit)
 
         toolbar.setNavigationOnClickListener { finish() }
+        btnNextUnanswered.setOnClickListener { jumpToNextUnanswered() }
         btnSubmit.setOnClickListener { attemptSubmit() }
 
-        rvQuestions.layoutManager = LinearLayoutManager(this)
+        questionLayoutManager = LinearLayoutManager(this)
+        rvQuestions.layoutManager = questionLayoutManager
+        rvQuestions.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val firstCompletely = questionLayoutManager.findFirstCompletelyVisibleItemPosition()
+                val firstVisible = questionLayoutManager.findFirstVisibleItemPosition()
+                val target = when {
+                    firstCompletely != RecyclerView.NO_POSITION -> firstCompletely
+                    firstVisible != RecyclerView.NO_POSITION -> firstVisible
+                    else -> return
+                }
+                if (target != activeQuestionIndex) {
+                    highlightActiveQuestion(target)
+                }
+            }
+        })
 
         loadExamDetail()
     }
@@ -82,6 +111,7 @@ class ExamDetailActivity : AppCompatActivity() {
                         if (detail != null) {
                             questions = detail.questions
                             examDurationMinutes = detail.exam.duration
+                            attemptId = detail.attemptId
                             toolbar.title = detail.exam.examName
                             setupQuestions()
                             startTimer()
@@ -106,6 +136,7 @@ class ExamDetailActivity : AppCompatActivity() {
     private fun setupQuestions() {
         val adapter = QuestionAdapter(questions, answers) { updateProgress() }
         rvQuestions.adapter = adapter
+        renderQuestionNav()
         updateProgress()
     }
 
@@ -142,6 +173,83 @@ class ExamDetailActivity : AppCompatActivity() {
         val answered = answers.size
         val total = questions.size
         tvProgress.text = "已答 $answered / $total"
+        updateQuestionNavState()
+    }
+
+    private fun renderQuestionNav() {
+        navViews.clear()
+        layoutQuestionNav.removeAllViews()
+        questions.forEachIndexed { index, _ ->
+            val chip = TextView(this).apply {
+                text = "${index + 1}"
+                gravity = Gravity.CENTER
+                textSize = 13f
+                setPadding(24, 16, 24, 16)
+                setTextColor(getColor(R.color.ctp_text))
+                background = getDrawable(R.drawable.bg_question_nav_idle)
+                    setOnClickListener {
+                        rvQuestions.smoothScrollToPosition(index)
+                        highlightActiveQuestion(index)
+                    }
+            }
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                marginEnd = 10
+            }
+            chip.layoutParams = params
+            navViews.add(chip)
+            layoutQuestionNav.addView(chip)
+        }
+        highlightActiveQuestion(0)
+    }
+
+    private fun updateQuestionNavState(activeIndex: Int? = null) {
+        navViews.forEachIndexed { index, textView ->
+            val answered = answers[questions[index].questionId]?.isNotBlank() == true
+            when {
+                activeIndex != null && index == activeIndex -> {
+                    textView.background = getDrawable(R.drawable.bg_question_nav_active)
+                    textView.setTextColor(getColor(R.color.white))
+                }
+                answered -> {
+                    textView.background = getDrawable(R.drawable.bg_question_nav_done)
+                    textView.setTextColor(getColor(R.color.gradient_center))
+                }
+                else -> {
+                    textView.background = getDrawable(R.drawable.bg_question_nav_idle)
+                    textView.setTextColor(getColor(R.color.ctp_text))
+                }
+            }
+        }
+    }
+
+    private fun highlightActiveQuestion(index: Int) {
+        activeQuestionIndex = index
+        updateQuestionNavState(index)
+        val targetView = navViews.getOrNull(index) ?: return
+        scrollQuestionNav.post {
+            val scrollX = targetView.left - (scrollQuestionNav.width - targetView.width) / 2
+            scrollQuestionNav.smoothScrollTo(scrollX.coerceAtLeast(0), 0)
+        }
+    }
+
+    private fun jumpToNextUnanswered() {
+        if (questions.isEmpty()) return
+        val nextIndex = ((activeQuestionIndex + 1) until questions.size).firstOrNull { index ->
+            answers[questions[index].questionId].isNullOrBlank()
+        } ?: (0 until activeQuestionIndex).firstOrNull { index ->
+            answers[questions[index].questionId].isNullOrBlank()
+        }
+
+        if (nextIndex == null) {
+            Toast.makeText(this, "当前所有题目都已作答", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        rvQuestions.smoothScrollToPosition(nextIndex)
+        highlightActiveQuestion(nextIndex)
     }
 
     private fun attemptSubmit() {
@@ -178,7 +286,7 @@ class ExamDetailActivity : AppCompatActivity() {
         }
 
         val request = SubmitExamRequest(
-            studentId = TokenManager.getUserId(),
+            attemptId = attemptId,
             useTime = usedSeconds,
             answers = answerItems
         )
@@ -295,6 +403,8 @@ class QuestionAdapter(
                         updateCardSelection(null)
                     }
 
+                    setupCardClickListeners()
+
                     rgOptions.setOnCheckedChangeListener { _, checkedId ->
                         val ans = when (checkedId) {
                             R.id.rb_a -> "A"
@@ -337,6 +447,13 @@ class QuestionAdapter(
                     })
                 }
             }
+        }
+
+        private fun setupCardClickListeners() {
+            cardA.setOnClickListener { rgOptions.check(rbA.id) }
+            cardB.setOnClickListener { rgOptions.check(rbB.id) }
+            cardC.setOnClickListener { rgOptions.check(rbC.id) }
+            cardD.setOnClickListener { rgOptions.check(rbD.id) }
         }
 
         private fun clearRadioGroupListener() {

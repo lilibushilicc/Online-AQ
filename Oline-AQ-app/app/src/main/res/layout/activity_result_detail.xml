@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:orientation="vertical"
     android:background="?android:colorBackground">
 
@@ -10,20 +11,25 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@drawable/bg_gradient_top"
+        android:background="?attr/colorSurface"
         app:title="@string/score_detail"
-        app:titleTextColor="@color/white"
-        app:navigationIcon="@drawable/ic_back" />
+        app:titleCentered="true"
+        app:titleTextColor="?attr/colorOnSurface"
+        app:navigationIcon="@drawable/ic_back"
+        app:navigationIconTint="?attr/colorOnSurface" />
 
     <LinearLayout
         android:id="@+id/layout_summary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
         android:orientation="horizontal"
-        android:padding="24dp"
+        android:padding="18dp"
         android:gravity="center"
-        android:background="?attr/colorSurface"
-        android:elevation="2dp">
+        android:background="@color/panel_brand"
+        android:elevation="4dp">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -36,7 +42,7 @@
                 android:id="@+id/tv_score"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="36sp"
+                android:textSize="34sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorPrimary" />
 
@@ -61,7 +67,7 @@
                 android:id="@+id/tv_correct"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="36sp"
+                android:textSize="34sp"
                 android:textStyle="bold"
                 android:textColor="@color/ctp_green" />
 
@@ -86,7 +92,7 @@
                 android:id="@+id/tv_wrong"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="36sp"
+                android:textSize="34sp"
                 android:textStyle="bold"
                 android:textColor="@color/ctp_red" />
 

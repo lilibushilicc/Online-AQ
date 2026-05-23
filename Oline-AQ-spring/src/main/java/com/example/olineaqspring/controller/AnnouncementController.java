@@ -1,5 +1,6 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.annotation.AdminOnly;
 import com.example.olineaqspring.dto.AnnouncementRequest;
 import com.example.olineaqspring.entity.Announcement;
 import com.example.olineaqspring.service.AnnouncementService;
@@ -31,17 +32,20 @@ public class AnnouncementController {
     }
 
     @PostMapping
+    @AdminOnly("仅管理员可创建公告")
     public ApiResponse<Announcement> create(@RequestBody AnnouncementRequest request, HttpServletRequest httpRequest) {
         Integer userId = (Integer) httpRequest.getAttribute("userId");
         return ApiResponse.ok("创建成功", announcementService.create(request, userId));
     }
 
     @PutMapping("/{id}")
+    @AdminOnly("仅管理员可修改公告")
     public ApiResponse<Announcement> update(@PathVariable Integer id, @RequestBody AnnouncementRequest request) {
         return ApiResponse.ok("更新成功", announcementService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
+    @AdminOnly("仅管理员可删除公告")
     public ApiResponse<Void> delete(@PathVariable Integer id) {
         announcementService.delete(id);
         return ApiResponse.ok("删除成功", null);

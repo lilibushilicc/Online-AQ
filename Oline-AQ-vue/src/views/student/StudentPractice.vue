@@ -3,12 +3,14 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore } from '@/stores/exam'
+import * as api from '@/api'
+import type { PracticeResult } from '@/types'
 
 const store = useExamStore()
 
 const answers = ref<Record<number, string>>({})
 const submitted = ref(false)
-const score = ref(0)
+const result = ref<PracticeResult | null>(null)
 const practiceCategory = ref('')
 const submitting = ref(false)
 
@@ -31,22 +33,27 @@ async function handleSubmit() {
     return
   }
   submitting.value = true
-  let correctCount = 0
-  for (const q of questions.value) {
-    if (answers.value[q.questionId] === q.correctAnswer) {
-      correctCount++
+  try {
+    const payload = {
+      answers: questions.value.map((q) => ({
+        questionId: q.questionId,
+        answer: answers.value[q.questionId] || '',
+      })),
     }
+    result.value = await api.submitPracticeApi(payload)
+    submitted.value = true
+    ElMessage.success(`练习完成！正确 ${result.value.correctCount} / ${result.value.totalQuestions}`)
+  } catch {
+    ElMessage.error('提交失败，请稍后重试')
+  } finally {
+    submitting.value = false
   }
-  score.value = correctCount
-  submitted.value = true
-  submitting.value = false
-  ElMessage.success(`练习完成！正确 ${correctCount} / ${questions.value.length}`)
 }
 
 function handleRetry() {
   answers.value = {}
   submitted.value = false
-  score.value = 0
+  result.value = null
 }
 
 function isCorrect(questionId: number) {
@@ -61,7 +68,7 @@ function getOptionText(question: { optionA: string; optionB: string; optionC?: s
 function handleCategoryChange() {
   answers.value = {}
   submitted.value = false
-  score.value = 0
+  result.value = null
 }
 
 onMounted(async () => {
@@ -86,8 +93,8 @@ onMounted(async () => {
       { title: '题目总数', value: questions.length, suffix: '题' },
       { title: '已作答', value: answeredCount, suffix: '题' },
       { title: '完成进度', value: `${progress}%` },
-      ...(submitted
-        ? [{ title: '正确数量', value: score, suffix: '题' as string }]
+      ...(submitted && result
+        ? [{ title: '正确数量', value: result.correctCount, suffix: '题' as string }]
         : [{ title: '状态', value: '作答中' as string }]
       ),
     ]" />

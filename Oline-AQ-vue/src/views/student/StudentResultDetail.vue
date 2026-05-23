@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Download, Document } from '@element-plus/icons-vue'
+import { Download, Document, Plus } from '@element-plus/icons-vue'
 import StatCards from '@/views/components/StatCards.vue'
 import QuestionOptions from '@/views/components/QuestionOptions.vue'
 import { useExamStore, type ResultDetail } from '@/stores/exam'
@@ -52,10 +52,40 @@ async function submitFeedback() {
   }
 }
 
+// wrong notebook
+const notebooks = ref<{ notebookId: number; notebookName: string }[]>([])
+const addedToNotebook = ref<Set<number>>(new Set())
+const notebookDialogVisible = ref(false)
+const notebookTarget = ref<{ answerId: number } | null>(null)
+const selectedNotebookId = ref<number | null>(null)
+
+function openNotebookDialog(answer: { answerId: number }) {
+  notebookTarget.value = answer
+  selectedNotebookId.value = notebooks.value[0]?.notebookId ?? null
+  notebookDialogVisible.value = true
+}
+
+async function confirmAddToNotebook() {
+  if (!notebookTarget.value || !selectedNotebookId.value) return
+  try {
+    await api.addToNotebookApi(selectedNotebookId.value, notebookTarget.value.answerId)
+    addedToNotebook.value.add(notebookTarget.value.answerId)
+    notebookDialogVisible.value = false
+    ElMessage.success('已添加到错题本')
+  } catch {
+    ElMessage.error('添加失败，请稍后重试')
+  }
+}
+
 onMounted(async () => {
   try {
-    resultDetail.value = await api.getResultDetailApi(resultId)
-    const ids = resultDetail.value.answers.map((a) => a.questionId)
+    const [detail, nbData] = await Promise.all([
+      api.getResultDetailApi(resultId),
+      api.loadNotebooksApi()
+    ])
+    resultDetail.value = detail
+    notebooks.value = nbData
+    const ids = detail.answers.map((a) => a.questionId)
     const reported = await api.myFeedbackQuestionIdsApi(ids)
     submittedFeedbackIds.value = new Set(reported)
     const fmt = route.query.fromBlank as string | undefined
@@ -123,7 +153,16 @@ async function pdfExport() {
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px">
           <strong>{{ index + 1 }}. {{ answer.questionContent }}</strong>
           <div style="display: flex; gap: 8px; align-items: center">
-            <el-tag :type="answer.isCorrect ? 'success' : 'danger'">{{ answer.isCorrect ? '正确' : '错误' }}</el-tag>
+            <el-tag v-if="answer.reviewStatus === 'pending_review'" type="warning">待评分</el-tag>
+            <el-tag v-else :type="answer.isCorrect ? 'success' : 'danger'">{{ answer.isCorrect ? '正确' : '错误' }}</el-tag>
+            <el-button
+              v-if="!answer.isCorrect && !addedToNotebook.has(answer.answerId)"
+              size="small"
+              type="primary"
+              plain
+              @click="openNotebookDialog(answer)"
+            >加入错题本</el-button>
+            <el-tag v-if="!answer.isCorrect && addedToNotebook.has(answer.answerId)" size="small" type="success">已加入错题本</el-tag>
             <el-button
               v-if="!submittedFeedbackIds.has(answer.questionId)"
               size="small"
@@ -142,6 +181,20 @@ async function pdfExport() {
         </div>
       </el-card>
     </el-card>
+
+    <el-dialog v-model="notebookDialogVisible" title="加入错题本" width="400px">
+      <el-form label-position="top">
+        <el-form-item label="选择错题本">
+          <el-select v-model="selectedNotebookId" style="width: 100%">
+            <el-option v-for="nb in notebooks" :key="nb.notebookId" :label="nb.notebookName" :value="nb.notebookId" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="notebookDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmAddToNotebook">确认添加</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="feedbackVisible" title="题目纠错反馈" width="500px">
       <template v-if="feedbackTarget">

@@ -2,32 +2,44 @@ package com.example.olineaqspring.utils;
 
 import com.example.olineaqspring.entity.Question;
 import com.example.olineaqspring.entity.StudentAnswer;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.example.olineaqspring.vo.ResultAnswerVO;
+import com.example.olineaqspring.vo.WrongQuestionItemVO;
 
 public class AnswerMapHelper {
 
-    public static Map<String, Object> toAnswerMap(StudentAnswer answer, Question question, boolean forWrongBook) {
-        Map<String, Object> item = new HashMap<>();
-        if (forWrongBook) {
-            item.put("answerId", answer.getAnswerId());
-        }
-        item.put("questionId", answer.getQuestionId());
-        item.put("questionContent", question == null ? "" : question.getQuestionContent());
-        item.put("questionType", question == null ? "single" : question.getQuestionType());
-        item.put("optionA", question == null ? "" : question.getOptionA());
-        item.put("optionB", question == null ? "" : question.getOptionB());
-        item.put("optionC", question == null ? "" : question.getOptionC());
-        item.put("optionD", question == null ? "" : question.getOptionD());
-        item.put("studentAnswer", answer.getStudentAnswer());
-        item.put("correctAnswer", answer.getCorrectAnswer());
-        item.put("score", answer.getScore());
-        if (forWrongBook) {
-            item.put("submitTime", answer.getSubmitTime());
-        } else {
-            item.put("isCorrect", answer.getIsCorrect());
-        }
+    public static ResultAnswerVO toResultAnswerVO(StudentAnswer answer, Question question, boolean includeCorrectAnswer) {
+        ResultAnswerVO item = new ResultAnswerVO();
+        item.setAnswerId(answer.getAnswerId());
+        item.setQuestionId(answer.getQuestionId());
+        item.setQuestionContent(question == null ? "" : question.getQuestionContent());
+        item.setQuestionType(question == null ? "single" : question.getQuestionType());
+        item.setOptionA(question == null ? "" : question.getOptionA());
+        item.setOptionB(question == null ? "" : question.getOptionB());
+        item.setOptionC(question == null ? "" : question.getOptionC());
+        item.setOptionD(question == null ? "" : question.getOptionD());
+        item.setStudentAnswer(answer.getStudentAnswer());
+        item.setCorrectAnswer(includeCorrectAnswer ? answer.getCorrectAnswer() : null);
+        item.setScore(answer.getScore());
+        item.setIsCorrect(answer.getIsCorrect());
+        item.setReviewStatus(answer.getReviewStatus());
+        return item;
+    }
+
+    public static WrongQuestionItemVO toWrongQuestionItemVO(StudentAnswer answer, Question question, boolean includeCorrectAnswer) {
+        WrongQuestionItemVO item = new WrongQuestionItemVO();
+        item.setAnswerId(answer.getAnswerId());
+        item.setQuestionId(answer.getQuestionId());
+        item.setQuestionContent(question == null ? "" : question.getQuestionContent());
+        item.setQuestionType(question == null ? "single" : question.getQuestionType());
+        item.setOptionA(question == null ? "" : question.getOptionA());
+        item.setOptionB(question == null ? "" : question.getOptionB());
+        item.setOptionC(question == null ? "" : question.getOptionC());
+        item.setOptionD(question == null ? "" : question.getOptionD());
+        item.setStudentAnswer(answer.getStudentAnswer());
+        item.setCorrectAnswer(includeCorrectAnswer ? answer.getCorrectAnswer() : null);
+        item.setScore(answer.getScore());
+        item.setSubmitTime(answer.getSubmitTime());
+        item.setReviewStatus(answer.getReviewStatus());
         return item;
     }
 }

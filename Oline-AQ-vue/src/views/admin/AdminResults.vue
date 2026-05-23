@@ -139,7 +139,8 @@ async function openDetail(resultId: number) {
           <el-card v-for="(answer, index) in resultDetail.answers" :key="answer.questionId" shadow="hover" style="margin-bottom: 14px">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px">
               <strong>{{ index + 1 }}. {{ answer.questionContent }}</strong>
-              <el-tag :type="answer.isCorrect ? 'success' : 'danger'">{{ answer.isCorrect ? '正确' : '错误' }}</el-tag>
+              <el-tag v-if="answer.reviewStatus === 'pending_review'" type="warning">待评分</el-tag>
+              <el-tag v-else :type="answer.isCorrect ? 'success' : 'danger'">{{ answer.isCorrect ? '正确' : '错误' }}</el-tag>
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 8px">
               <el-tag>学生答案：{{ answer.studentAnswer || '未作答' }}</el-tag>

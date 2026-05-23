@@ -19,6 +19,7 @@ const AdminQuestions = () => import('@/views/admin/AdminQuestions.vue')
 const AdminExams = () => import('@/views/admin/AdminExams.vue')
 const AdminPapers = () => import('@/views/admin/AdminPapers.vue')
 const AdminResults = () => import('@/views/admin/AdminResults.vue')
+const AdminReview = () => import('@/views/admin/AdminReview.vue')
 const AdminStudents = () => import('@/views/admin/AdminStudents.vue')
 const AdminConfig = () => import('@/views/admin/AdminConfig.vue')
 const AdminFeedbacks = () => import('@/views/admin/AdminFeedbacks.vue')
@@ -27,7 +28,9 @@ const StudentExams = () => import('@/views/student/StudentExams.vue')
 const StudentExamDetail = () => import('@/views/student/StudentExamDetail.vue')
 const StudentResults = () => import('@/views/student/StudentResults.vue')
 const StudentResultDetail = () => import('@/views/student/StudentResultDetail.vue')
+const StudentExamHistory = () => import('@/views/student/StudentExamHistory.vue')
 const StudentPractice = () => import('@/views/student/StudentPractice.vue')
+const PracticeHistory = () => import('@/views/student/PracticeHistory.vue')
 const StudentWrongBook = () => import('@/views/student/StudentWrongBook.vue')
 const StudentWrongBookDetail = () => import('@/views/student/StudentWrongBookDetail.vue')
 const StudentProfile = () => import('@/views/student/StudentProfile.vue')
@@ -47,6 +50,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'papers', component: AdminPapers, meta: { title: '试卷管理', subtitle: '创建和管理试卷草稿，组卷后发布为正式考试。' } },
       { path: 'exams', component: AdminExams, meta: { title: '考试管理' } },
       { path: 'results', component: AdminResults, meta: { title: '成绩查看' } },
+      { path: 'review', component: AdminReview, meta: { title: '评分管理', subtitle: '对简答题进行人工评分。' } },
       { path: 'students', component: AdminStudents, meta: { title: '学生管理' } },
       { path: 'config', redirect: '/admin/config/storage' },
       { path: 'config/storage', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置存储方式与 R2 云存储。' } },
@@ -65,9 +69,11 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: 'exams', component: StudentExams, meta: { title: '考试列表', subtitle: '查看并参与可用的在线考试。' } },
       { path: 'exams/:examId', component: StudentExamDetail, meta: { title: '考试作答' } },
-      { path: 'results', component: StudentResults, meta: { title: '我的成绩', subtitle: '查看历史考试记录与得分情况。' } },
+      { path: 'results', component: StudentResults, meta: { title: '我的成绩', subtitle: '按试卷查看历次考试记录与得分情况。' } },
+      { path: 'results/exam/:examId', component: StudentExamHistory, meta: { title: '试卷历次作答', showBack: true } },
       { path: 'results/:resultId', component: StudentResultDetail, meta: { title: '成绩详情' } },
       { path: 'practice', component: StudentPractice, meta: { title: '在线做题', subtitle: '随机抽题练习，检验学习成果。' } },
+      { path: 'practice-history', component: PracticeHistory, meta: { title: '练习历史' } },
       { path: 'wrong-book', component: StudentWrongBook, meta: { title: '错题本', subtitle: '整理和管理你的错题。' } },
       { path: 'wrong-book/:notebookId', component: StudentWrongBookDetail, meta: { title: '错题本详情', subtitle: '查看错题本中的题目', showBack: true } },
       { path: 'profile', component: StudentProfile, meta: { title: '个人中心' } },
@@ -125,11 +131,13 @@ const TITLE_MAP: Record<string, string> = {
   papers: '试卷管理',
   exams: '考试管理',
   results: '成绩查看',
+  review: '评分管理',
   students: '学生管理',
   config: '系统配置',
   feedbacks: '反馈管理',
   announcements: '公告管理',
   practice: '在线做题',
+  'practice-history': '练习历史',
   'wrong-book': '错题本',
   profile: '个人中心',
 }

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import StatCards from '@/views/components/StatCards.vue'
 import { useExamStore, type Exam } from '@/stores/exam'
 import { formatTime } from '@/utils/format'
 
 const store = useExamStore()
 const loading = ref(true)
+const searchKeyword = ref('')
 
 function getAvailability(exam: Exam) {
   const now = Date.now()
@@ -26,7 +28,13 @@ function getAvailability(exam: Exam) {
 }
 
 function getExamHistory(examId: number) {
-  return store.results.filter((result) => result.examId === examId)
+  const items = store.results.filter((result) => result.examId === examId)
+  items.sort((a, b) => new Date(a.submitTime).getTime() - new Date(b.submitTime).getTime())
+  return items
+}
+
+function attemptLabel(index: number, total: number) {
+  return total > 1 ? `第 ${index + 1} 次` : ''
 }
 
 function canStartExam(exam: Exam) {
@@ -35,11 +43,15 @@ function canStartExam(exam: Exam) {
   return !store.hasSubmittedExam(exam.examId)
 }
 
-const availableExams = computed(() => store.publishedExams.filter((e) => canStartExam(e)))
+const availableExams = computed(() => store.publishedExams.filter((e) => canStartExam(e) && (!searchKeyword.value || e.examName.toLowerCase().includes(searchKeyword.value.toLowerCase()))))
 const historyExams = computed(() => {
   const submittedIds = [...new Set(store.results.map((r) => r.examId))]
-  return submittedIds.map((id) => store.exams.find((e) => e.examId === id)).filter(Boolean) as Exam[]
+  return submittedIds
+    .map((id) => store.exams.find((e) => e.examId === id))
+    .filter((exam): exam is Exam => Boolean(exam))
+    .filter((exam) => !searchKeyword.value || exam.examName.toLowerCase().includes(searchKeyword.value.toLowerCase()))
 })
+const filteredPublished = computed(() => store.publishedExams.filter((e) => !searchKeyword.value || e.examName.toLowerCase().includes(searchKeyword.value.toLowerCase())))
 
 onMounted(async () => {
   try {
@@ -61,15 +73,19 @@ onMounted(async () => {
       { title: '当前身份', value: store.currentUser?.realName || '学生' },
     ]" />
 
+    <div style="margin-bottom: 16px">
+      <el-input v-model="searchKeyword" placeholder="搜索考试名称..." clearable prefix-icon="Search" style="max-width: 320px" />
+    </div>
+
     <!-- 可参加的考试 -->
     <div class="exam-section">
       <div class="exam-section__header">
         <h3 class="exam-section__title">可参加考试</h3>
-        <span class="exam-section__count">{{ store.publishedExams.length }} 场</span>
+        <span class="exam-section__count">{{ filteredPublished.length }} 场</span>
       </div>
 
-      <el-row :gutter="16" v-if="store.publishedExams.length > 0">
-        <el-col v-for="exam in store.publishedExams" :key="exam.examId" :xs="24" :md="12" class="exam-col">
+      <el-row :gutter="16" v-if="filteredPublished.length > 0">
+        <el-col v-for="exam in filteredPublished" :key="exam.examId" :xs="24" :md="12" class="exam-col">
           <el-card shadow="never" class="exam-card">
             <template #header>
               <div class="exam-card__header">
@@ -114,13 +130,13 @@ onMounted(async () => {
 
             <div v-if="getExamHistory(exam.examId).length > 0" class="exam-history-tags">
               <el-tag
-                v-for="item in getExamHistory(exam.examId).slice(0, 3)"
+                v-for="(item, idx) in getExamHistory(exam.examId).slice(-3).reverse()"
                 :key="item.resultId"
                 type="info"
                 effect="plain"
                 size="small"
               >
-                {{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
+                {{ attemptLabel(idx, getExamHistory(exam.examId).length) }}{{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
               </el-tag>
             </div>
 
@@ -140,7 +156,8 @@ onMounted(async () => {
         </el-col>
       </el-row>
 
-      <el-empty v-if="store.publishedExams.length === 0" description="暂无已发布考试" />
+      <el-empty v-if="filteredPublished.length === 0 && !searchKeyword" description="暂无已发布考试" />
+      <el-empty v-if="filteredPublished.length === 0 && searchKeyword" description="没有匹配的考试" />
     </div>
 
     <!-- 历史试卷 -->
@@ -181,7 +198,7 @@ onMounted(async () => {
 
             <div class="exam-history-tags">
               <el-tag
-                v-for="item in getExamHistory(exam.examId)"
+                v-for="(item, idx) in getExamHistory(exam.examId)"
                 :key="item.resultId"
                 type="info"
                 effect="plain"
@@ -189,7 +206,7 @@ onMounted(async () => {
                 class="exam-history-tag--clickable"
                 @click="$router.push(`/student/results/${item.resultId}`)"
               >
-                {{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
+                第 {{ idx + 1 }} 次 · {{ new Date(item.submitTime).toLocaleString() }} / {{ item.totalScore }} 分
               </el-tag>
             </div>
           </el-card>

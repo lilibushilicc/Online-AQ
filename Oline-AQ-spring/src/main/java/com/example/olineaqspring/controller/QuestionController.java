@@ -1,5 +1,6 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.annotation.AdminOnly;
 import com.example.olineaqspring.dto.QuestionBatchRequest;
 import com.example.olineaqspring.dto.QuestionRequest;
 import com.example.olineaqspring.entity.Question;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@AdminOnly("仅管理员可操作题库")
 @RestController
 @RequestMapping("/api/questions")
 public class QuestionController {
@@ -65,20 +67,20 @@ public class QuestionController {
     }
 
     @PostMapping("/batch-delete")
-    public ApiResponse<Void> deleteBatch(@RequestBody QuestionBatchRequest request) {
-        questionService.deleteBatch(request.getQuestionIds());
+    public ApiResponse<Void> deleteBatch(@RequestBody QuestionBatchRequest body) {
+        questionService.deleteBatch(body.getQuestionIds());
         return ApiResponse.ok("批量删除成功", null);
     }
 
     @PostMapping("/batch-score")
-    public ApiResponse<Void> updateBatchScore(@RequestBody QuestionBatchRequest request) {
-        questionService.updateScoreBatch(request.getQuestionIds(), request.getScore());
+    public ApiResponse<Void> updateBatchScore(@RequestBody QuestionBatchRequest body) {
+        questionService.updateScoreBatch(body.getQuestionIds(), body.getScore());
         return ApiResponse.ok("批量设置分值成功", null);
     }
 
     @PostMapping("/batch-category")
-    public ApiResponse<Void> updateBatchCategory(@RequestBody QuestionBatchRequest request) {
-        questionService.updateCategoryBatch(request.getQuestionIds(), request.getCategory());
+    public ApiResponse<Void> updateBatchCategory(@RequestBody QuestionBatchRequest body) {
+        questionService.updateCategoryBatch(body.getQuestionIds(), body.getCategory());
         return ApiResponse.ok("批量设置分类成功", null);
     }
 

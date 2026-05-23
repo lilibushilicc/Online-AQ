@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { Bell, EditPen, List, Trophy, Notebook, Reading, Fold, Expand, Menu, User } from '@element-plus/icons-vue'
 import { useExamStore } from '@/stores/exam'
 import * as api from '@/api'
+import { useNotification } from '@/composables/useNotification'
 
 defineProps<{ title: string; subtitle?: string }>()
 
@@ -68,11 +69,14 @@ watch(() => route.path, () => {
   mobileMenuOpen.value = false
 })
 
+const { connect: connectSSE } = useNotification()
+
 onMounted(async () => {
   await loadUnread()
   if (unreadCount.value > 0) {
     loginDialogVisible.value = true
   }
+  connectSSE()
 })
 </script>
 
@@ -136,6 +140,10 @@ onMounted(async () => {
             <el-menu-item index="/student/practice">
               <el-icon><EditPen /></el-icon>
               <span>在线做题</span>
+            </el-menu-item>
+            <el-menu-item index="/student/practice-history">
+              <el-icon><List /></el-icon>
+              <span>练习历史</span>
             </el-menu-item>
             <el-menu-item index="/student/wrong-book">
               <el-icon><Notebook /></el-icon>

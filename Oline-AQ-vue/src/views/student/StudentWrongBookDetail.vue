@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, Delete, Plus } from '@element-plus/icons-vue'
 import { downloadFile } from '@/utils/download'
 import StatCards from '@/views/components/StatCards.vue'
@@ -20,6 +20,19 @@ const groups = ref<WrongQuestionGroup[]>([])
 const notebook = ref<WrongNotebook | null>(null)
 const notebookDetail = ref<NotebookDetail | null>(null)
 const loading = ref(true)
+const filterKeyword = ref('')
+const filterType = ref('')
+
+const filteredGroups = computed(() => {
+  return groups.value.map(g => ({
+    ...g,
+    questions: g.questions.filter(q => {
+      const matchKeyword = !filterKeyword.value || q.questionContent.toLowerCase().includes(filterKeyword.value.toLowerCase())
+      const matchType = !filterType.value || q.questionType === filterType.value
+      return matchKeyword && matchType
+    })
+  })).filter(g => g.questions.length > 0)
+})
 const addDialogVisible = ref(false)
 const addTargetAnswerId = ref<number | null>(null)
 const addTargetQuestion = ref('')
@@ -46,9 +59,12 @@ async function loadData() {
 
 onMounted(loadData)
 
-const totalQuestions = computed(() => groups.value.reduce((s, g) => s + g.questions.length, 0))
+const totalQuestions = computed(() => filteredGroups.value.reduce((s, g) => s + g.questions.length, 0))
 
 async function handleRemove(itemId: number) {
+  try {
+    await ElMessageBox.confirm('确认从错题本中移除此题？', '移除确认', { type: 'warning' })
+  } catch { return }
   try {
     await api.removeNotebookItemApi(Number(notebookId.value), itemId)
     await loadData()
@@ -87,6 +103,9 @@ function handleExport() {
 async function handleDeleteNotebook() {
   if (isAllView.value) return
   try {
+    await ElMessageBox.confirm('确认删除此错题本？删除后不可恢复。', '删除错题本', { type: 'warning' })
+  } catch { return }
+  try {
     await api.deleteNotebookApi(Number(notebookId.value))
     router.replace('/student/wrong-book')
   } catch {
@@ -102,11 +121,21 @@ async function handleDeleteNotebook() {
         { title: '涉及考试', value: groups.length, suffix: '场' },
       ]" />
 
-      <div v-if="groups.length === 0">
+      <div style="display: flex; gap: 8px; margin-bottom: 16px">
+        <el-input v-model="filterKeyword" placeholder="搜索题目内容..." clearable prefix-icon="Search" style="max-width: 280px" />
+        <el-select v-model="filterType" placeholder="题型" clearable style="width: 130px">
+          <el-option label="单选题" value="single" />
+          <el-option label="判断题" value="judge" />
+          <el-option label="简答题" value="short_answer" />
+          <el-option label="填空题" value="fill_blank" />
+        </el-select>
+      </div>
+
+      <div v-if="filteredGroups.length === 0">
         <el-empty :description="isAllView ? '暂无错题，继续保持！' : '此错题本暂无内容，去全部错题中添加吧'" />
       </div>
 
-      <el-card v-for="group in groups" :key="group.examId" style="margin-bottom: 14px">
+      <el-card v-for="group in filteredGroups" :key="group.examId" style="margin-bottom: 14px">
         <template #header>
           <div style="display: flex; align-items: center; justify-content: space-between">
             <strong>{{ group.examName }}</strong>

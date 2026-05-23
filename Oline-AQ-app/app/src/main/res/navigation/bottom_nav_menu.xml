@@ -9,7 +9,15 @@
         android:icon="@drawable/ic_nav_results"
         android:title="成绩" />
     <item
-        android:id="@+id/nav_more"
-        android:icon="@drawable/ic_nav_more"
-        android:title="更多" />
+        android:id="@+id/nav_practice"
+        android:icon="@drawable/ic_nav_practice"
+        android:title="练习" />
+    <item
+        android:id="@+id/nav_wrong_book"
+        android:icon="@drawable/ic_nav_wrong_book"
+        android:title="错题" />
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_nav_profile"
+        android:title="我的" />
 </menu>

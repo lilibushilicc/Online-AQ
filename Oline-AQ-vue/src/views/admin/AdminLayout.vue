@@ -87,6 +87,10 @@ watch(() => route.path, () => {
               <el-icon><DataAnalysis /></el-icon>
               <span>成绩查看</span>
             </el-menu-item>
+            <el-menu-item index="/admin/review">
+              <el-icon><Edit /></el-icon>
+              <span>评分管理</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <el-sub-menu index="question-group">

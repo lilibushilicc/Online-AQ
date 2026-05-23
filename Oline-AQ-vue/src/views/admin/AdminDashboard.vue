@@ -2,11 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useExamStore } from '@/stores/exam'
-import { loadQuestionsApi } from '@/api'
+import { loadQuestionsApi, getDashboardStatsApi } from '@/api'
 
 const store = useExamStore()
 const loading = ref(true)
 const questionCount = ref(0)
+const stats = ref<{ scoreDistribution: Record<string, number>; passRate: number; hardestQuestions: { questionId: number; questionContent: string; correctRate: number; totalAnswers: number }[] } | null>(null)
 const latestExams = computed(() => store.exams.slice(0, 4))
 const publishedRate = computed(() => {
   if (store.exams.length === 0) return 0
@@ -29,8 +30,13 @@ const cells = computed(() => [
 
 onMounted(async () => {
   try {
-    const [qResult] = await Promise.all([loadQuestionsApi(undefined, 1, 1), store.loadExams()])
+    const [qResult, , statsData] = await Promise.all([
+      loadQuestionsApi(undefined, 1, 1),
+      store.loadExams(),
+      getDashboardStatsApi(),
+    ])
     questionCount.value = qResult.total ?? 0
+    stats.value = statsData
   } catch {
     ElMessage.error('加载数据失败，请刷新重试')
   } finally {
@@ -81,8 +87,38 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- 分数分布 -->
+    <div class="bento-cell fade-in stagger-6" v-if="stats">
+      <div class="bento-label">分数分布</div>
+      <div class="score-dist">
+        <div v-for="(label, key) in { range0_20: '0-20', range21_40: '21-40', range41_60: '41-60', range61_80: '61-80', range81_100: '81-100' }" :key="key" class="score-dist__bar">
+          <span class="score-dist__label">{{ label }}</span>
+          <el-progress :percentage="Math.min(100, (stats.scoreDistribution[key] ?? 0) * 100 / Math.max(1, ...Object.values(stats.scoreDistribution)))" :stroke-width="6" :show-text="false" :color="key === 'range81_100' ? 'var(--accent-green)' : key === 'range61_80' ? 'var(--accent-blue)' : 'var(--text-tertiary)'" />
+          <span class="score-dist__value">{{ stats.scoreDistribution[key] ?? 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 通过率与最难题目 -->
+    <div class="bento-cell fade-in stagger-7" v-if="stats">
+      <div class="bento-label">通过率</div>
+      <div class="pass-rate">{{ stats.passRate }}%</div>
+      <div class="bento-trend">得分大于 0 视为通过</div>
+    </div>
+
+    <div class="bento-cell bento-cell-wide fade-in stagger-8" v-if="stats && stats.hardestQuestions.length > 0">
+      <div class="bento-label">最难题目 Top 5</div>
+      <div class="hardest-list">
+        <div v-for="(q, i) in stats.hardestQuestions" :key="q.questionId" class="hardest-item">
+          <span class="hardest-rank">#{{ i + 1 }}</span>
+          <span class="hardest-content">{{ q.questionContent }}</span>
+          <el-tag :type="q.correctRate < 30 ? 'danger' : 'warning'" size="small">{{ q.correctRate }}%</el-tag>
+        </div>
+      </div>
+    </div>
+
     <!-- 快捷操作 -->
-    <div class="bento-cell fade-in stagger-6 quick-actions-cell">
+    <div class="bento-cell fade-in stagger-9 quick-actions-cell">
       <div class="bento-label">快捷操作</div>
       <div class="quick-actions">
         <div class="quick-action-item" @click="$router.push('/admin/upload')">
@@ -116,7 +152,7 @@ onMounted(async () => {
     </div>
 
     <!-- 工作流程 -->
-    <div class="bento-cell bento-cell-full fade-in stagger-7">
+    <div class="bento-cell bento-cell-full fade-in stagger-10">
       <div class="bento-section-header">
         <span class="bento-section-title">工作流程</span>
       </div>
@@ -132,7 +168,7 @@ onMounted(async () => {
     </div>
 
     <!-- 最近考试 -->
-    <div class="bento-cell bento-cell-full fade-in stagger-8 recent-exams-cell">
+    <div class="bento-cell bento-cell-full fade-in stagger-11 recent-exams-cell">
       <div class="bento-section-header">
         <span class="bento-section-title">最近考试</span>
         <el-button link type="primary" size="small" @click="$router.push('/admin/exams')">管理考试</el-button>
@@ -214,5 +250,64 @@ onMounted(async () => {
 
 .recent-exams-cell {
   padding: 0;
+}
+
+.score-dist {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.score-dist__bar {
+  display: grid;
+  grid-template-columns: 60px 1fr 30px;
+  gap: 8px;
+  align-items: center;
+}
+
+.score-dist__label {
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
+}
+
+.score-dist__value {
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-align: right;
+}
+
+.pass-rate {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent-green);
+  margin: 8px 0;
+}
+
+.hardest-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hardest-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hardest-rank {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  min-width: 24px;
+}
+
+.hardest-content {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
 }
 </style>

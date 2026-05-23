@@ -1,7 +1,7 @@
 package com.onlineaq.student.data.model
 
 data class SubmitExamRequest(
-    val studentId: Int,
+    val attemptId: String? = null,
     val useTime: Int,
     val answers: List<AnswerItem>
 )

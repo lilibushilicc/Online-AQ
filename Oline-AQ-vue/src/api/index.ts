@@ -7,6 +7,9 @@ import type {
   ExamHistory,
   ExamResult,
   ResultDetail,
+  ReviewItem,
+  PracticeResult,
+  SubmitPracticePayload,
   WrongQuestionGroup,
   WrongNotebook,
   NotebookDetail,
@@ -37,7 +40,7 @@ export function registerApi(email: string, code: string, password: string, realN
 }
 
 // -------- Questions --------
-export function loadQuestionsApi(category?: string, page = 1, pageSize = 200) {
+export function loadQuestionsApi(category?: string, page = 1, pageSize = 1000) {
   const params: Record<string, string | number> = { page, pageSize }
   if (category) params.category = category
   return apiGet<PageResult<Question>>('/questions', params)
@@ -53,6 +56,13 @@ export function deleteQuestionApi(questionId: number) {
 
 export function deleteQuestionsApi(questionIds: number[]) {
   return apiPost('/questions/batch-delete', { questionIds })
+}
+
+export function updateQuestionApi(questionId: number, data: {
+  questionContent: string; questionType: string; correctAnswer: string; score: number;
+  optionA?: string; optionB?: string; optionC?: string; optionD?: string; category?: string;
+}) {
+  return apiPut<Question>(`/questions/${questionId}`, data)
 }
 
 export function updateQuestionScoresApi(questionIds: number[], score: number) {
@@ -91,8 +101,8 @@ export function loadStudentExamsApi() {
   return apiGet<Exam[]>('/exams/student')
 }
 
-export function getExamDetailApi(examId: number) {
-  return apiGet<ExamDetail>(`/exams/${examId}`)
+export function getExamDetailApi(examId: number, attemptId?: string) {
+  return apiGet<ExamDetail>(`/exams/${examId}`, attemptId ? { attemptId } : undefined)
 }
 
 export function loadExamHistoryApi(examId: number) {
@@ -123,11 +133,31 @@ export function deleteExamApi(examId: number) {
   return apiDelete(`/exams/${examId}`)
 }
 
-export function submitExamApi(examId: number, studentId: number | undefined, answers: Record<number, string>, useTime = 0) {
+export function getDashboardStatsApi() {
+  return apiGet<{
+    scoreDistribution: { range0_20: number; range21_40: number; range41_60: number; range61_80: number; range81_100: number }
+    passRate: number
+    hardestQuestions: { questionId: number; questionContent: string; correctRate: number; totalAnswers: number }[]
+  }>('/dashboard/stats')
+}
+
+export function saveDraftApi(examId: number, attemptId: string | undefined, answers: { questionId: number; studentAnswer: string }[], useTime: number) {
+  return apiPut<void>(`/exams/${examId}/draft`, { attemptId, answers, useTime })
+}
+
+export function loadDraftApi(examId: number) {
+  return apiGet<{ id: number; examId: number; studentId: number; attemptId?: string; answers: string; shuffleSnapshot?: string; useTime: number; updatedAt: string } | null>(`/exams/${examId}/draft`)
+}
+
+export function clearDraftApi(examId: number) {
+  return apiDelete<void>(`/exams/${examId}/draft`)
+}
+
+export function submitExamApi(examId: number, attemptId: string | undefined, answers: Record<number, string>, useTime = 0) {
   return apiPost<{ resultId: number; totalScore: number; correctCount: number; wrongCount: number }>(
     `/exams/${examId}/submit`,
     {
-      studentId,
+      attemptId,
       useTime,
       answers: Object.entries(answers).map(([questionId, studentAnswer]) => ({
         questionId: Number(questionId),
@@ -152,6 +182,22 @@ export function getResultDetailApi(resultId: number) {
 
 export function getWrongQuestionsApi() {
   return apiGet<WrongQuestionGroup[]>('/results/wrong-questions')
+}
+
+export function getPendingReviewsApi() {
+  return apiGet<ReviewItem[]>('/results/pending-review')
+}
+
+export function reviewAnswerApi(answerId: number, score: number) {
+  return apiPut<void>(`/results/review/${answerId}?score=${score}`)
+}
+
+export function submitPracticeApi(payload: SubmitPracticePayload) {
+  return apiPost<PracticeResult>('/practice/submit', payload)
+}
+
+export function getPracticeHistoryApi() {
+  return apiGet<PracticeResult[]>('/practice/history')
 }
 
 // -------- Users --------

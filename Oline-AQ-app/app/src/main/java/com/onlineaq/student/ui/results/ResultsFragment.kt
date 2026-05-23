@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -15,8 +14,9 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.onlineaq.student.R
 import com.onlineaq.student.data.api.RetrofitClient
+import com.onlineaq.student.data.model.Exam
 import com.onlineaq.student.data.model.ExamResult
-import com.onlineaq.student.ui.resultdetail.ResultDetailActivity
+import com.onlineaq.student.ui.examhistory.ExamHistoryActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,9 +42,10 @@ class ResultsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         rvResults.layoutManager = LinearLayoutManager(requireContext())
-        rvResults.adapter = ResultAdapter { result ->
-            val intent = Intent(requireContext(), ResultDetailActivity::class.java)
-            intent.putExtra("result_id", result.resultId)
+        rvResults.adapter = ExamResultGroupAdapter { group ->
+            val intent = Intent(requireContext(), ExamHistoryActivity::class.java)
+            intent.putExtra("exam_id", group.examId)
+            intent.putExtra("exam_name", group.examName)
             startActivity(intent)
         }
 
@@ -56,14 +57,35 @@ class ResultsFragment : Fragment() {
         swipeRefresh.isRefreshing = true
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.apiService.getMyResults()
+                val resultsResponse = RetrofitClient.apiService.getMyResults()
+                val examsResponse = RetrofitClient.apiService.getStudentExams()
                 withContext(Dispatchers.Main) {
                     swipeRefresh.isRefreshing = false
-                    if (response.isSuccessful && response.body()?.code == 200) {
-                        val data = response.body()?.data ?: emptyList()
-                        (rvResults.adapter as? ResultAdapter)?.submitList(data)
-                        tvEmpty.visibility = if (data.isEmpty()) View.VISIBLE else View.GONE
-                        rvResults.visibility = if (data.isEmpty()) View.GONE else View.VISIBLE
+                    if (resultsResponse.isSuccessful && resultsResponse.body()?.code == 200) {
+                        val results = resultsResponse.body()?.data ?: emptyList()
+                        val exams = if (examsResponse.isSuccessful && examsResponse.body()?.code == 200) {
+                            examsResponse.body()?.data ?: emptyList()
+                        } else emptyList()
+
+                        val examMap = exams.associateBy { it.examId }
+                        val grouped = results.groupBy { it.examId }.map { (examId, examResults) ->
+                            val exam = examMap[examId]
+                            val latest = examResults.maxByOrNull { it.submitTime ?: "" }
+                            val best = examResults.maxByOrNull { it.totalScore ?: 0.0 }
+                            ExamResultGroup(
+                                examId = examId,
+                                examName = exam?.examName ?: "试卷 #$examId",
+                                allowRetake = exam?.allowRetake ?: false,
+                                submissionCount = examResults.size,
+                                latestScore = latest?.totalScore?.toInt() ?: 0,
+                                bestScore = best?.totalScore?.toInt() ?: 0,
+                                latestTime = latest?.submitTime
+                            )
+                        }.sortedByDescending { it.latestTime }
+
+                        (rvResults.adapter as? ExamResultGroupAdapter)?.submitList(grouped)
+                        tvEmpty.visibility = if (grouped.isEmpty()) View.VISIBLE else View.GONE
+                        rvResults.visibility = if (grouped.isEmpty()) View.GONE else View.VISIBLE
                     } else {
                         Toast.makeText(requireContext(), "加载成绩失败", Toast.LENGTH_SHORT).show()
                     }
@@ -78,46 +100,52 @@ class ResultsFragment : Fragment() {
     }
 }
 
-class ResultAdapter(
-    private val onItemClick: (ExamResult) -> Unit
-) : RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
+data class ExamResultGroup(
+    val examId: Int,
+    val examName: String,
+    val allowRetake: Boolean,
+    val submissionCount: Int,
+    val latestScore: Int,
+    val bestScore: Int,
+    val latestTime: String?,
+)
 
-    private var items: List<ExamResult> = emptyList()
+class ExamResultGroupAdapter(
+    private val onItemClick: (ExamResultGroup) -> Unit
+) : RecyclerView.Adapter<ExamResultGroupAdapter.GroupViewHolder>() {
 
-    fun submitList(list: List<ExamResult>) {
+    private var items: List<ExamResultGroup> = emptyList()
+
+    fun submitList(list: List<ExamResultGroup>) {
         items = list
         notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_result, parent, false)
-        return ResultViewHolder(view)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GroupViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_exam_result_card, parent, false)
+        return GroupViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: GroupViewHolder, position: Int) {
         holder.bind(items[position])
     }
 
     override fun getItemCount() = items.size
 
-    inner class ResultViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class GroupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvExamName = itemView.findViewById<TextView>(R.id.tv_exam_name)
-        private val tvSubmitTime = itemView.findViewById<TextView>(R.id.tv_submit_time)
-        private val tvStat = itemView.findViewById<TextView>(R.id.tv_stat)
-        private val tvScore = itemView.findViewById<TextView>(R.id.tv_score)
-        private val progressScore = itemView.findViewById<ProgressBar>(R.id.progress_score)
+        private val tvSubmissionCount = itemView.findViewById<TextView>(R.id.tv_submission_count)
+        private val tvLatestScore = itemView.findViewById<TextView>(R.id.tv_latest_score)
+        private val tvBestScore = itemView.findViewById<TextView>(R.id.tv_best_score)
+        private val tvLastSubmitTime = itemView.findViewById<TextView>(R.id.tv_last_submit_time)
 
-        fun bind(result: ExamResult) {
-            tvExamName.text = "考试 #${result.examId}"
-            tvSubmitTime.text = result.submitTime?.take(16)?.replace("T", " ") ?: ""
-            tvScore.text = result.totalScore?.toInt()?.toString() ?: "0"
-
-            val correct = result.correctCount ?: 0
-            val wrong = result.wrongCount ?: 0
-            tvStat.text = "正确: $correct  错误: $wrong"
-            progressScore.progress = result.totalScore?.toInt() ?: 0
-
-            itemView.setOnClickListener { onItemClick(result) }
+        fun bind(group: ExamResultGroup) {
+            tvExamName.text = group.examName
+            tvSubmissionCount.text = "已考 ${group.submissionCount} 次"
+            tvLatestScore.text = group.latestScore.toString()
+            tvBestScore.text = group.bestScore.toString()
+            tvLastSubmitTime.text = "最近提交: ${group.latestTime?.take(16)?.replace("T", " ") ?: "—"}"
+            itemView.setOnClickListener { onItemClick(group) }
         }
     }
 }

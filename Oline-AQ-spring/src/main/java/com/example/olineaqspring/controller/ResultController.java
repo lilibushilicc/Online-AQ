@@ -1,9 +1,13 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.annotation.AdminOnly;
 import com.example.olineaqspring.entity.ExamResult;
 import com.example.olineaqspring.service.ExportService;
 import com.example.olineaqspring.service.ResultService;
 import com.example.olineaqspring.vo.ApiResponse;
+import com.example.olineaqspring.vo.ResultDetailVO;
+import com.example.olineaqspring.vo.ReviewItemVO;
+import com.example.olineaqspring.vo.WrongQuestionGroupVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -11,9 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -36,24 +43,39 @@ public class ResultController {
     }
 
     @GetMapping("/wrong-questions")
-    public ApiResponse<List<Map<String, Object>>> wrongQuestions(HttpServletRequest request) {
+    public ApiResponse<List<WrongQuestionGroupVO>> wrongQuestions(HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
         return ApiResponse.ok(resultService.wrongQuestions(userId));
     }
 
     @GetMapping("/exam/{examId}")
+    @AdminOnly("仅管理员可查看考试成绩")
     public ApiResponse<List<ExamResult>> examResults(@PathVariable Integer examId) {
         return ApiResponse.ok(resultService.examResults(examId));
     }
 
     @GetMapping("/{resultId}")
-    public ApiResponse<Map<String, Object>> resultDetail(@PathVariable Integer resultId, HttpServletRequest request) {
+    public ApiResponse<ResultDetailVO> resultDetail(@PathVariable Integer resultId, HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
         return ApiResponse.ok(resultService.resultDetail(resultId, userId, role));
     }
 
+    @GetMapping("/pending-review")
+    @AdminOnly("仅管理员可查看待评分列表")
+    public ApiResponse<List<ReviewItemVO>> pendingReviews() {
+        return ApiResponse.ok(resultService.pendingReviews());
+    }
+
+    @PutMapping("/review/{answerId}")
+    @AdminOnly("仅管理员可进行评分")
+    public ApiResponse<Void> reviewAnswer(@PathVariable Integer answerId, @RequestParam BigDecimal score) {
+        resultService.reviewAnswer(answerId, score);
+        return ApiResponse.ok("评分成功", null);
+    }
+
     @GetMapping("/export/{examId}")
+    @AdminOnly("仅管理员可导出考试成绩")
     public ResponseEntity<byte[]> exportExamResults(@PathVariable Integer examId) {
         return buildExportExcel(exportService.exportResults(resultService.examResults(examId)), "成绩导出.xlsx");
     }

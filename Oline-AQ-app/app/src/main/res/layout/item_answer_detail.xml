@@ -55,6 +55,55 @@
                 android:textColor="?attr/colorOnSurface"
                 android:layout_marginTop="8dp" />
 
+            <LinearLayout
+                android:id="@+id/layout_option_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_option_a"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:background="@drawable/bg_option_neutral"
+                    android:padding="10dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_option_b"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:background="@drawable/bg_option_neutral"
+                    android:padding="10dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_option_c"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:background="@drawable/bg_option_neutral"
+                    android:padding="10dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_option_d"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_option_neutral"
+                    android:padding="10dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/tv_your_answer"
                 android:layout_width="match_parent"
@@ -70,6 +119,14 @@
                 android:textSize="13sp"
                 android:textColor="@color/ctp_green"
                 android:layout_marginTop="4dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_feedback"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="反馈纠错" />
 
         </LinearLayout>
 

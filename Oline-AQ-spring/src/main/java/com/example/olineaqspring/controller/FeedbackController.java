@@ -1,5 +1,6 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.annotation.AdminOnly;
 import com.example.olineaqspring.dto.FeedbackCreateRequest;
 import com.example.olineaqspring.dto.QuestionRequest;
 import com.example.olineaqspring.entity.QuestionFeedback;
@@ -37,19 +38,23 @@ public class FeedbackController {
     }
 
     @GetMapping
+    @AdminOnly("仅管理员可查看反馈列表")
     public ApiResponse<List<FeedbackListVO>> list(@RequestParam(required = false) String status) {
         return ApiResponse.ok(feedbackService.list(status));
     }
 
     @GetMapping("/{id}")
+    @AdminOnly("仅管理员可查看反馈详情")
     public ApiResponse<FeedbackDetailVO> detail(@PathVariable Integer id) {
         return ApiResponse.ok(feedbackService.detail(id));
     }
 
     @PutMapping("/{id}/resolve")
+    @AdminOnly("仅管理员可处理反馈")
     public ApiResponse<Map<String, Object>> resolve(@PathVariable Integer id,
-                                                     @RequestBody QuestionRequest request) {
-        int affected = feedbackService.resolve(id, request);
+                                                     @RequestBody QuestionRequest questionRequest,
+                                                     HttpServletRequest request) {
+        int affected = feedbackService.resolve(id, questionRequest);
         String msg = affected > 0
                 ? String.format("题目已修改，已同步处理本题目其他 %d 条待处理反馈", affected)
                 : "题目已修改，反馈已采纳";
@@ -57,8 +62,10 @@ public class FeedbackController {
     }
 
     @PutMapping("/{id}/reject")
+    @AdminOnly("仅管理员可驳回反馈")
     public ApiResponse<Map<String, Object>> reject(@PathVariable Integer id,
-                                                    @RequestBody Map<String, String> body) {
+                                                    @RequestBody Map<String, String> body,
+                                                    HttpServletRequest request) {
         String reason = body.getOrDefault("rejectReason", "");
         int affected = feedbackService.reject(id, reason);
         String msg = affected > 0

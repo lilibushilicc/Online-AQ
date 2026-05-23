@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class SubmitExamRequest {
-    private Integer studentId;
+    private String attemptId;
     private Integer useTime;
     private List<AnswerItem> answers;
 

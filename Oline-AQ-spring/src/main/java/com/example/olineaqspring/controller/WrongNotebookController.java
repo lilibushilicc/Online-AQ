@@ -4,6 +4,8 @@ import com.example.olineaqspring.entity.WrongNotebook;
 import com.example.olineaqspring.service.ExportService;
 import com.example.olineaqspring.service.WrongNotebookService;
 import com.example.olineaqspring.vo.ApiResponse;
+import com.example.olineaqspring.vo.WrongNotebookDetailVO;
+import com.example.olineaqspring.vo.WrongNotebookSummaryVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -13,8 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
 
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/wrong-notebooks")
@@ -28,7 +30,7 @@ public class WrongNotebookController {
     }
 
     @GetMapping
-    public ApiResponse<List<Map<String, Object>>> listNotebooks(HttpServletRequest request) {
+    public ApiResponse<List<WrongNotebookSummaryVO>> listNotebooks(HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
         return ApiResponse.ok("查询成功", wrongNotebookService.getNotebookItemCounts(userId));
     }
@@ -59,8 +61,8 @@ public class WrongNotebookController {
     }
 
     @GetMapping("/{notebookId}")
-    public ApiResponse<Map<String, Object>> getNotebookDetail(@PathVariable Integer notebookId,
-                                                               HttpServletRequest request) {
+    public ApiResponse<WrongNotebookDetailVO> getNotebookDetail(@PathVariable Integer notebookId,
+                                                                HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
         return ApiResponse.ok("查询成功", wrongNotebookService.getNotebookDetail(notebookId, userId));
     }
@@ -68,10 +70,8 @@ public class WrongNotebookController {
     @GetMapping("/{notebookId}/export")
     public ResponseEntity<byte[]> exportNotebook(@PathVariable Integer notebookId, HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
-        Map<String, Object> detail = wrongNotebookService.getNotebookDetail(notebookId, userId);
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> groups = (List<Map<String, Object>>) detail.get("groups");
-        byte[] bytes = exportService.exportWrongQuestions(groups);
+        WrongNotebookDetailVO detail = wrongNotebookService.getNotebookDetail(notebookId, userId);
+        byte[] bytes = exportService.exportWrongQuestions(detail.getGroups());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()

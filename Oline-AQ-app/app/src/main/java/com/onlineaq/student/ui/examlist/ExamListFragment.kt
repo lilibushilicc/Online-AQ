@@ -9,7 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.card.MaterialCardView
@@ -42,7 +42,7 @@ class ExamListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        rvExams.layoutManager = GridLayoutManager(requireContext(), 2)
+        rvExams.layoutManager = LinearLayoutManager(requireContext())
         rvExams.adapter = ExamGridAdapter { exam ->
             val intent = Intent(requireContext(), ExamDetailActivity::class.java)
             intent.putExtra("exam_id", exam.examId)
@@ -104,6 +104,7 @@ class ExamGridAdapter(
     inner class ExamViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val card = itemView.findViewById<MaterialCardView>(R.id.card_exam)
         private val tvName = itemView.findViewById<TextView>(R.id.tv_exam_name)
+        private val tvDesc = itemView.findViewById<TextView>(R.id.tv_exam_desc)
         private val tvStatus = itemView.findViewById<TextView>(R.id.tv_status)
         private val tvDuration = itemView.findViewById<TextView>(R.id.tv_duration)
         private val tvTotalScore = itemView.findViewById<TextView>(R.id.tv_total_score)
@@ -111,6 +112,7 @@ class ExamGridAdapter(
 
         fun bind(exam: Exam) {
             tvName.text = exam.examName
+            tvDesc.text = exam.description?.takeIf { it.isNotBlank() } ?: "暂无考试说明"
             tvDuration.text = "${exam.duration}分钟"
             tvTotalScore.text = "共${exam.totalScore?.toInt() ?: 0}分"
 

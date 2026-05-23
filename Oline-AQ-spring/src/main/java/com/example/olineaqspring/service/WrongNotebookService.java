@@ -4,6 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.olineaqspring.entity.*;
 import com.example.olineaqspring.mapper.*;
 import com.example.olineaqspring.utils.AnswerMapHelper;
+import com.example.olineaqspring.vo.WrongNotebookDetailVO;
+import com.example.olineaqspring.vo.WrongNotebookSummaryVO;
+import com.example.olineaqspring.vo.WrongQuestionGroupVO;
+import com.example.olineaqspring.vo.WrongQuestionItemVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,7 +102,7 @@ public class WrongNotebookService {
         itemMapper.deleteById(itemId);
     }
 
-    public Map<String, Object> getNotebookDetail(Integer notebookId, Integer studentId) {
+    public WrongNotebookDetailVO getNotebookDetail(Integer notebookId, Integer studentId) {
         WrongNotebook notebook = checkOwner(notebookId, studentId);
 
         List<WrongNotebookItem> items = itemMapper.selectList(new LambdaQueryWrapper<WrongNotebookItem>()
@@ -106,10 +110,10 @@ public class WrongNotebookService {
                 .orderByDesc(WrongNotebookItem::getCreateTime));
 
         if (items.isEmpty()) {
-            Map<String, Object> result = new HashMap<>();
-            result.put("notebook", notebook);
-            result.put("groups", Collections.emptyList());
-            result.put("count", 0);
+            WrongNotebookDetailVO result = new WrongNotebookDetailVO();
+            result.setNotebook(notebook);
+            result.setGroups(Collections.emptyList());
+            result.setCount(0);
             return result;
         }
 
@@ -131,32 +135,32 @@ public class WrongNotebookService {
         Map<Integer, List<StudentAnswer>> byExam = answers.stream()
                 .collect(Collectors.groupingBy(StudentAnswer::getExamId));
 
-        List<Map<String, Object>> groups = new ArrayList<>();
+        List<WrongQuestionGroupVO> groups = new ArrayList<>();
         for (Map.Entry<Integer, List<StudentAnswer>> entry : byExam.entrySet()) {
             Integer eid = entry.getKey();
             Exam exam = examMap.get(eid);
-            List<Map<String, Object>> questions = entry.getValue().stream().map(answer -> {
+            List<WrongQuestionItemVO> questions = entry.getValue().stream().map(answer -> {
                 Question question = questionMap.get(answer.getQuestionId());
-                Map<String, Object> item = AnswerMapHelper.toAnswerMap(answer, question, true);
-                item.put("itemId", answerToItemId.get(answer.getAnswerId()));
+                WrongQuestionItemVO item = AnswerMapHelper.toWrongQuestionItemVO(answer, question, true);
+                item.setItemId(answerToItemId.get(answer.getAnswerId()));
                 return item;
             }).toList();
 
-            Map<String, Object> group = new HashMap<>();
-            group.put("examId", eid);
-            group.put("examName", exam == null ? "未知考试" : exam.getExamName());
-            group.put("questions", questions);
+            WrongQuestionGroupVO group = new WrongQuestionGroupVO();
+            group.setExamId(eid);
+            group.setExamName(exam == null ? "未知考试" : exam.getExamName());
+            group.setQuestions(questions);
             groups.add(group);
         }
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("notebook", notebook);
-        result.put("groups", groups);
-        result.put("count", items.size());
+        WrongNotebookDetailVO result = new WrongNotebookDetailVO();
+        result.setNotebook(notebook);
+        result.setGroups(groups);
+        result.setCount(items.size());
         return result;
     }
 
-    public List<Map<String, Object>> getNotebookItemCounts(Integer studentId) {
+    public List<WrongNotebookSummaryVO> getNotebookItemCounts(Integer studentId) {
         List<WrongNotebook> notebooks = listNotebooks(studentId);
         if (notebooks.isEmpty()) {
             return List.of();
@@ -165,14 +169,14 @@ public class WrongNotebookService {
         Map<Integer, Long> countMap = itemMapper.selectList(
                 new LambdaQueryWrapper<WrongNotebookItem>().in(WrongNotebookItem::getNotebookId, notebookIds))
                 .stream().collect(Collectors.groupingBy(WrongNotebookItem::getNotebookId, Collectors.counting()));
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<WrongNotebookSummaryVO> result = new ArrayList<>();
         for (WrongNotebook nb : notebooks) {
-            Map<String, Object> m = new HashMap<>();
-            m.put("notebookId", nb.getNotebookId());
-            m.put("notebookName", nb.getNotebookName());
-            m.put("description", nb.getDescription());
-            m.put("createTime", nb.getCreateTime());
-            m.put("itemCount", countMap.getOrDefault(nb.getNotebookId(), 0L).intValue());
+            WrongNotebookSummaryVO m = new WrongNotebookSummaryVO();
+            m.setNotebookId(nb.getNotebookId());
+            m.setNotebookName(nb.getNotebookName());
+            m.setDescription(nb.getDescription());
+            m.setCreateTime(nb.getCreateTime());
+            m.setItemCount(countMap.getOrDefault(nb.getNotebookId(), 0L).intValue());
             result.add(m);
         }
         return result;

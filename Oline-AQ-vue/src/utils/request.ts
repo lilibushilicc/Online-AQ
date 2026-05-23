@@ -13,6 +13,12 @@ function clearAuthState() {
   localStorage.removeItem('user')
 }
 
+const pendingMap = new Map<string, AbortController>()
+
+function getRequestKey(config: { method?: string; url?: string; params?: unknown; data?: unknown }): string {
+  return `${config.method || ''}:${config.url || ''}:${JSON.stringify(config.params || config.data || '')}`
+}
+
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 30000,
@@ -24,11 +30,29 @@ request.interceptors.request.use((config) => {
     config.headers = config.headers ?? {}
     config.headers.Authorization = `Bearer ${token}`
   }
+
+  if (config.method?.toLowerCase() === 'get') {
+    const key = getRequestKey(config)
+    const prev = pendingMap.get(key)
+    if (prev) {
+      prev.abort()
+    }
+    const controller = new AbortController()
+    config.signal = controller.signal
+    pendingMap.set(key, controller)
+    Object.assign(config, { _dedupKey: key })
+  }
+
   return config
 })
 
 request.interceptors.response.use(
   (response) => {
+    const dedupKey = (response.config as any)._dedupKey
+    if (dedupKey) {
+      pendingMap.delete(dedupKey)
+    }
+
     const payload = response.data as ApiResponse
 
     if (!payload || typeof payload.code !== 'number') {
@@ -42,18 +66,24 @@ request.interceptors.response.use(
     return payload
   },
   (error) => {
-    // Blob 响应（文件导出请求）的错误：不尝试解析 message
+    const dedupKey = error.config?._dedupKey
+    if (dedupKey) {
+      pendingMap.delete(dedupKey)
+    }
+
+    if (axios.isCancel(error)) {
+      return Promise.reject(new Error('请求已取消'))
+    }
+
     if (error.response?.data instanceof Blob) {
       return Promise.reject(error)
     }
 
-    // 优先提取后端返回的业务错误信息
     const serverMessage = error.response?.data?.message
     if (serverMessage) {
       return Promise.reject(new Error(serverMessage))
     }
 
-    // 401 未授权（token 过期/无效），清除登录状态
     if (error.response?.status === 401) {
       clearAuthState()
       window.location.href = '/login'

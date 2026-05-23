@@ -6,7 +6,9 @@
 |---|---|
 | `README.md`（根目录） | 项目总览、技术栈、启动方式、测试账号 |
 | `AGENTS.md`（根目录） | 项目协作规则与文档约定 |
+| `docs/项目整体说明.md` | 项目定位、三端结构、模块组成与当前状态总览 |
 | `docs/api-reference.md` | 全部 83 个接口参考文档 |
+| `docs/考试模块.md` | 考试、草稿、重考、稳定乱序映射说明 |
 | `docs/question-feedback-feature-design.md` | 题目纠错反馈功能完整设计文档 |
 
 ## 代码改动总结（docs/change-summary/）
@@ -15,6 +17,11 @@
 
 | 文件名 | 日期 | 内容 |
 |---|---|---|
+| `2026-05-23-1628-项目整体说明与README重写-改动总结.md` | 05-23 | 新增项目整体说明，重写 README 总览文档 |
+| `2026-05-23-1612-统一鉴权与结果链路类型收敛-改动总结.md` | 05-23 | `@AdminOnly` 统一鉴权、结果链路 VO 化、前端构建恢复全绿 |
+| `2026-05-23-1608-答案返回策略收口-改动总结.md` | 05-23 | 答题明细正确答案改为显式控制返回 |
+| `2026-05-23-1558-考试与后台管理安全校验修复-改动总结.md` | 05-23 | 考试详情答案脱敏、后台接口补齐管理员校验 |
+| `2026-05-23-1545-考试重考与稳定乱序映射修复-改动总结.md` | 05-23 | 重考正式支持、attemptId 会话与稳定乱序映射 |
 | `2026-05-21-1000-exam-create-fix-and-login-update-summary.md` | 05-21 | 修复试卷创建 NPE、登录页移除教师入口 |
 | `2026-05-20-2236-announcement-feature-summary.md` | 05-20 | 系统公告功能 |
 | `2026-05-20-2201-export-word-excel-fix-summary.md` | 05-20 | 修复 Word/Excel 导出 |
@@ -58,6 +65,8 @@
 
 - 查看项目概览与启动方式 → `README.md`
 - 查看协作规则 → `AGENTS.md`
+- 查看项目整体说明 → `docs/项目整体说明.md`
+- 查看考试模块说明 → `docs/考试模块.md`
 - 查看功能设计 → `docs/question-feedback-feature-design.md`
 - 查看代码改动历程 → `docs/change-summary/`
 - 查看未来计划 → `docs/superpowers/plans/`

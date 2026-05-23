@@ -43,6 +43,7 @@ public class SchemaInitializer implements CommandLineRunner {
             "answer_id SERIAL PRIMARY KEY",
             "exam_id INTEGER NOT NULL",
             "student_id INTEGER NOT NULL",
+            "attempt_id VARCHAR(64)",
             "question_id INTEGER NOT NULL",
             "student_answer TEXT",
             "correct_answer TEXT",
@@ -50,10 +51,33 @@ public class SchemaInitializer implements CommandLineRunner {
             "score NUMERIC(5,2)",
             "submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
         );
+        createTable("draft_answer",
+                "id SERIAL PRIMARY KEY",
+                "exam_id INTEGER NOT NULL",
+                "student_id INTEGER NOT NULL",
+                "attempt_id VARCHAR(64)",
+                "answers TEXT",
+                "shuffle_snapshot TEXT",
+                "use_time INTEGER DEFAULT 0",
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        );
+        addUniqueConstraintSafe("draft_answer", "uq_draft_exam_student", "exam_id", "student_id");
+
+        createTable("practice_result",
+                "practice_id SERIAL PRIMARY KEY",
+                "student_id INTEGER NOT NULL",
+                "total_questions INTEGER NOT NULL DEFAULT 0",
+                "correct_count INTEGER NOT NULL DEFAULT 0",
+                "wrong_count INTEGER NOT NULL DEFAULT 0",
+                "total_score NUMERIC(6,2) DEFAULT 0",
+                "submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        );
+
         createTable("exam_result",
             "result_id SERIAL PRIMARY KEY",
             "exam_id INTEGER NOT NULL",
             "student_id INTEGER NOT NULL",
+            "attempt_id VARCHAR(64)",
             "total_score NUMERIC(6,2)",
             "correct_count INTEGER",
             "wrong_count INTEGER",
@@ -154,6 +178,10 @@ public class SchemaInitializer implements CommandLineRunner {
         addColumn("smtp_account", "last_hourly_reset TIMESTAMP");
         addColumn("smtp_account", "last_daily_reset TIMESTAMP");
         addColumn("email_send_log", "account_id INTEGER");
+        addColumn("student_answer", "attempt_id VARCHAR(64)");
+        addColumn("exam_result", "attempt_id VARCHAR(64)");
+        addColumn("draft_answer", "attempt_id VARCHAR(64)");
+        addColumn("draft_answer", "shuffle_snapshot TEXT");
 
         createIndex("idx_email_send_log_time", "email_send_log(send_time)");
         createIndex("idx_email_send_log_account", "email_send_log(account_id)");
@@ -163,8 +191,11 @@ public class SchemaInitializer implements CommandLineRunner {
         createIndex("idx_student_answer_exam_id", "student_answer(exam_id)");
         createIndex("idx_student_answer_student_id", "student_answer(student_id)");
         createIndex("idx_student_answer_question_id", "student_answer(question_id)");
+        createIndex("idx_student_answer_attempt_id", "student_answer(attempt_id)");
+        addColumn("student_answer", "review_status VARCHAR(20) DEFAULT 'auto_scored'");
         createIndex("idx_exam_result_exam_id", "exam_result(exam_id)");
         createIndex("idx_exam_result_student_id", "exam_result(student_id)");
+        createIndex("idx_exam_result_attempt_id", "exam_result(attempt_id)");
         createIndex("idx_exam_history_exam_id", "exam_history(exam_id)");
         createIndex("idx_question_source_file_id", "question(source_file_id)");
         createIndex("idx_question_category", "question(category)");
@@ -188,8 +219,8 @@ public class SchemaInitializer implements CommandLineRunner {
         createIndex("idx_question_feedback_question_id", "question_feedback(question_id)");
         createIndex("idx_question_feedback_status", "question_feedback(status)");
 
-        // 防重复提交：同一学生同一考试只能有一条结果记录
-        addUniqueConstraintSafe("exam_result", "uk_exam_result_exam_student", "exam_id", "student_id");
+        dropConstraintIfExists("exam_result", "uk_exam_result_exam_student");
+        dropLegacyExamResultUniqueKeys();
 
         // 幂等记录表：通用幂等兜底
         createTable("idempotent_record",
@@ -214,6 +245,42 @@ public class SchemaInitializer implements CommandLineRunner {
     private void createTable(String name, String... columns) {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + " (" +
             String.join(",\n  ", columns) + ")");
+    }
+
+    private void dropConstraintIfExists(String table, String constraintName) {
+        jdbcTemplate.execute("ALTER TABLE " + table + " DROP CONSTRAINT IF EXISTS " + constraintName);
+    }
+
+    private void dropLegacyExamResultUniqueKeys() {
+        jdbcTemplate.query(
+            """
+            SELECT c.conname
+            FROM pg_constraint c
+            JOIN pg_class t ON c.conrelid = t.oid
+            WHERE t.relname = 'exam_result'
+              AND c.contype = 'u'
+              AND pg_get_constraintdef(c.oid) ILIKE '%(exam_id, student_id)%'
+            """,
+            rs -> {
+                String constraintName = rs.getString("conname");
+                jdbcTemplate.execute("ALTER TABLE exam_result DROP CONSTRAINT IF EXISTS " + constraintName);
+            }
+        );
+
+        jdbcTemplate.query(
+            """
+            SELECT indexname
+            FROM pg_indexes
+            WHERE schemaname = current_schema()
+              AND tablename = 'exam_result'
+              AND indexdef ILIKE 'CREATE UNIQUE INDEX%'
+              AND indexdef ILIKE '%(exam_id, student_id)%'
+            """,
+            rs -> {
+                String indexName = rs.getString("indexname");
+                jdbcTemplate.execute("DROP INDEX IF EXISTS " + indexName);
+            }
+        );
     }
 
     private void addColumn(String table, String definition) {

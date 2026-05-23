@@ -1,7 +1,7 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.annotation.AdminOnly;
 import com.example.olineaqspring.entity.SmtpAccount;
-import com.example.olineaqspring.exception.UnauthorizedException;
 import com.example.olineaqspring.service.AiQuestionParseService;
 import com.example.olineaqspring.service.ConfigService;
 import com.example.olineaqspring.service.EmailService;
@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@AdminOnly("仅管理员可操作系统配置")
 @RestController
 @RequestMapping("/api/config")
 public class ConfigController {
@@ -54,20 +55,17 @@ public class ConfigController {
 
     @GetMapping
     public ApiResponse<Map<String, String>> getAll(HttpServletRequest request) {
-        checkAdmin(request);
         return ApiResponse.ok(configService.getAll());
     }
 
     @PutMapping
     public ApiResponse<Void> update(@RequestBody Map<String, String> configMap, HttpServletRequest request) {
-        checkAdmin(request);
         configService.update(configMap);
         return ApiResponse.ok("保存成功", null);
     }
 
     @PostMapping("/test-r2")
     public ApiResponse<Map<String, String>> testR2(HttpServletRequest request) {
-        checkAdmin(request);
         String result = r2StorageService.testConnection();
         if ("ok".equals(result)) {
             return ApiResponse.ok(Collections.singletonMap("result", "ok"));
@@ -77,7 +75,6 @@ public class ConfigController {
 
     @PostMapping("/migrate-exam-shuffle")
     public ApiResponse<Map<String, Object>> migrateExamShuffle(HttpServletRequest request) {
-        checkAdmin(request);
         try {
             jdbcTemplate.execute("ALTER TABLE exam ADD COLUMN IF NOT EXISTS shuffle_questions BOOLEAN DEFAULT FALSE");
             jdbcTemplate.execute("ALTER TABLE exam ADD COLUMN IF NOT EXISTS shuffle_answers BOOLEAN DEFAULT FALSE");
@@ -89,7 +86,6 @@ public class ConfigController {
 
     @PostMapping("/test-email")
     public ApiResponse<Map<String, String>> testEmail(HttpServletRequest request, @RequestBody(required = false) Map<String, Integer> body) {
-        checkAdmin(request);
         try {
             Integer accountId = body != null ? body.get("accountId") : null;
             emailService.testConnection(accountId);
@@ -101,20 +97,17 @@ public class ConfigController {
 
     @GetMapping("/smtp-accounts")
     public ApiResponse<List<SmtpAccount>> listAccounts(HttpServletRequest request) {
-        checkAdmin(request);
         return ApiResponse.ok(emailService.listAccounts());
     }
 
     @PostMapping("/smtp-accounts")
     public ApiResponse<Void> createAccount(HttpServletRequest request, @RequestBody SmtpAccount account) {
-        checkAdmin(request);
         emailService.saveAccount(account);
         return ApiResponse.ok("创建成功", null);
     }
 
     @PutMapping("/smtp-accounts/{id}")
     public ApiResponse<Void> updateAccount(HttpServletRequest request, @PathVariable Integer id, @RequestBody SmtpAccount account) {
-        checkAdmin(request);
         account.setId(id);
         emailService.updateAccount(account);
         return ApiResponse.ok("更新成功", null);
@@ -122,28 +115,24 @@ public class ConfigController {
 
     @DeleteMapping("/smtp-accounts/{id}")
     public ApiResponse<Void> deleteAccount(HttpServletRequest request, @PathVariable Integer id) {
-        checkAdmin(request);
         emailService.deleteAccount(id);
         return ApiResponse.ok("删除成功", null);
     }
 
     @PutMapping("/smtp-accounts/{id}/activate")
     public ApiResponse<Void> activateAccount(HttpServletRequest request, @PathVariable Integer id) {
-        checkAdmin(request);
         emailService.activateAccount(id);
         return ApiResponse.ok("切换成功", null);
     }
 
     @PutMapping("/smtp-accounts/{id}/toggle-enabled")
     public ApiResponse<Void> toggleEnabled(HttpServletRequest request, @PathVariable Integer id) {
-        checkAdmin(request);
         emailService.toggleEnabled(id);
         return ApiResponse.ok("操作成功", null);
     }
 
     @GetMapping("/smtp-accounts/{id}/stats")
     public ApiResponse<Map<String, Object>> accountStats(HttpServletRequest request, @PathVariable Integer id) {
-        checkAdmin(request);
         Map<String, Object> stats = emailService.getAccountStats(id);
         SmtpAccount account = emailService.listAccounts().stream().filter(a -> a.getId().equals(id)).findFirst().orElse(null);
         if (account != null) {
@@ -157,7 +146,6 @@ public class ConfigController {
 
     @PostMapping("/smtp-accounts/test")
     public ApiResponse<Map<String, String>> testSmtpInline(HttpServletRequest request, @RequestBody SmtpAccount account) {
-        checkAdmin(request);
         try {
             emailService.testInlineConnection(account);
             return ApiResponse.ok(Collections.singletonMap("result", "ok"));
@@ -168,13 +156,11 @@ public class ConfigController {
 
     @GetMapping("/email-stats")
     public ApiResponse<Map<String, Object>> emailStats(HttpServletRequest request) {
-        checkAdmin(request);
         return ApiResponse.ok(emailService.getStats());
     }
 
     @PostMapping("/test-ai")
     public ApiResponse<Map<String, Object>> testAi(HttpServletRequest request) {
-        checkAdmin(request);
         try {
             String endpoint = configService.get("ai.endpoint");
             String apiKey = configService.get("ai.api_key");
@@ -190,10 +176,4 @@ public class ConfigController {
         }
     }
 
-    private void checkAdmin(HttpServletRequest request) {
-        String role = (String) request.getAttribute("role");
-        if (!"admin".equals(role)) {
-            throw new UnauthorizedException("仅管理员可操作系统配置");
-        }
-    }
 }

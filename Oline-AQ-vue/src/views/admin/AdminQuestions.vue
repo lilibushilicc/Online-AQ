@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useExamStore } from '@/stores/exam'
 import * as api from '@/api'
-import type { UploadFileItem } from '@/types'
+import type { Question, UploadFileItem } from '@/types'
 import { QUESTION_TYPE_LABEL } from '@/constants'
 import { downloadFile } from '@/utils/download'
 
@@ -17,13 +17,30 @@ const source = ref('')
 const questionType = ref('')
 const categoryFilter = ref('')
 const selectedIds = ref<number[]>([])
+const currentPage = ref(1)
+const pageSize = ref(20)
 const batchScore = ref(5)
 const batchCategoryValue = ref('')
 const uploadFiles = ref<UploadFileItem[]>([])
 const activeFileId = ref<number | null>(null)
+const editDialogVisible = ref(false)
+const editForm = ref<Question>({
+  questionId: 0,
+  questionContent: '',
+  questionType: 'single',
+  optionA: '',
+  optionB: '',
+  optionC: '',
+  optionD: '',
+  correctAnswer: '',
+  score: 5,
+  category: '',
+})
 
 const sourceOptions = computed(() => Array.from(new Set(store.questions.map((question) => String(question.sourceFileId ?? '手动新增')))))
 const categoryOptions = computed(() => Array.from(new Set(store.questions.map((question) => question.category ?? '未分类'))))
+const paginatedQuestions = computed(() => filteredQuestions.value.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value))
+const totalFiltered = computed(() => filteredQuestions.value.length)
 const filteredQuestions = computed(() => {
   const normalizedKeyword = keyword.value.trim().toLowerCase()
   return store.questions.filter((question) => {
@@ -64,6 +81,13 @@ onMounted(async () => {
 function selectFile(fileId: number | null) {
   activeFileId.value = fileId
   selectedIds.value = []
+  currentPage.value = 1
+}
+
+function onPageChange(page: number) { currentPage.value = page }
+function onPageSizeChange(size: number) {
+  pageSize.value = size
+  currentPage.value = 1
 }
 
 async function updateSelectedCategory() {
@@ -85,6 +109,9 @@ function updateSelection(rows: Array<{ questionId: number }>) {
 }
 
 async function handleDeleteFile(fileId: number) {
+  try {
+    await ElMessageBox.confirm('确认删除此文件及其关联的题目？', '删除文件', { type: 'warning' })
+  } catch { return }
   if (activeFileId.value === fileId) activeFileId.value = null
   await api.deleteFileApi(fileId)
   uploadFiles.value = await api.loadUploadFilesApi()
@@ -112,6 +139,41 @@ async function updateSelectedScore() {
 
   await store.updateQuestionScores(selectedIds.value, batchScore.value)
   ElMessage.success('批量分值设置完成')
+}
+
+function openEditDialog(question: Question) {
+  editForm.value = {
+    questionId: question.questionId,
+    questionContent: question.questionContent,
+    questionType: question.questionType,
+    optionA: question.optionA,
+    optionB: question.optionB,
+    optionC: question.optionC,
+    optionD: question.optionD,
+    correctAnswer: question.correctAnswer,
+    score: Number(question.score),
+    category: question.category ?? '',
+    sourceFileId: question.sourceFileId,
+  }
+  editDialogVisible.value = true
+}
+
+async function saveEdit() {
+  const payload = {
+    questionContent: editForm.value.questionContent,
+    questionType: editForm.value.questionType,
+    correctAnswer: editForm.value.correctAnswer,
+    score: Number(editForm.value.score),
+    optionA: editForm.value.optionA,
+    optionB: editForm.value.optionB,
+    optionC: editForm.value.optionC,
+    optionD: editForm.value.optionD,
+    category: editForm.value.category ?? '',
+  }
+  await api.updateQuestionApi(editForm.value.questionId, payload)
+  await Promise.all([store.loadQuestions(), store.loadCategories()])
+  editDialogVisible.value = false
+  ElMessage.success('题目已更新')
 }
 </script>
 
@@ -170,7 +232,7 @@ async function updateSelectedScore() {
             </div>
             <span class="toolbar-right">
               <span class="muted">共 {{ filteredQuestions.length }} / {{ store.questions.length }} 道题</span>
-              <el-button size="small" plain @click="downloadFile('/questions/export', `题库导出_${new Date().toLocaleDateString()}.xlsx`)">
+              <el-button size="small" plain @click="downloadFile('/questions/export', `题库导出_${new Date().toLocaleDateString()}.xlsx`, categoryFilter ? { category: categoryFilter } : undefined)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 导出
               </el-button>
@@ -193,7 +255,7 @@ async function updateSelectedScore() {
             <span class="muted" style="font-size: 12px">已选 {{ selectedIds.length }} 道题</span>
           </div>
 
-          <el-table :data="filteredQuestions" stripe @selection-change="updateSelection">
+          <el-table :data="paginatedQuestions" stripe @selection-change="updateSelection">
             <el-table-column type="selection" width="50" />
             <el-table-column prop="questionId" label="ID" width="70" />
             <el-table-column prop="questionContent" label="题干" min-width="240" />
@@ -211,15 +273,75 @@ async function updateSelectedScore() {
               </template>
             </el-table-column>
             <el-table-column prop="sourceFileId" label="来源" min-width="100" />
-            <el-table-column label="操作" width="100">
+            <el-table-column label="操作" width="140">
               <template #default="{ row }">
-                <el-button type="danger" link @click="store.deleteQuestion(row.questionId)">删除</el-button>
+                <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
+                <el-popconfirm title="确认删除此题？" @confirm="store.deleteQuestion(row.questionId)">
+                  <template #reference>
+                    <el-button type="danger" link>删除</el-button>
+                  </template>
+                </el-popconfirm>
               </template>
             </el-table-column>
           </el-table>
+
+          <div style="display: flex; justify-content: center; margin-top: 16px" v-if="totalFiltered > pageSize">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :total="totalFiltered"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next"
+              @current-change="onPageChange"
+              @size-change="onPageSizeChange"
+            />
+          </div>
         </el-card>
       </div>
     </div>
+
+    <el-dialog v-model="editDialogVisible" title="编辑题目" width="600px" :close-on-click-modal="false">
+      <el-form :model="editForm" label-position="top">
+        <el-form-item label="题目内容">
+          <el-input v-model="editForm.questionContent" type="textarea" :rows="3" />
+        </el-form-item>
+        <el-form-item label="题型">
+          <el-select v-model="editForm.questionType" style="width: 100%">
+            <el-option label="单选题" value="single" />
+            <el-option label="判断题" value="judge" />
+            <el-option label="简答题" value="short_answer" />
+            <el-option label="填空题" value="fill_blank" />
+          </el-select>
+        </el-form-item>
+        <template v-if="editForm.questionType === 'single'">
+          <el-form-item label="选项 A">
+            <el-input v-model="editForm.optionA" />
+          </el-form-item>
+          <el-form-item label="选项 B">
+            <el-input v-model="editForm.optionB" />
+          </el-form-item>
+          <el-form-item label="选项 C">
+            <el-input v-model="editForm.optionC" />
+          </el-form-item>
+          <el-form-item label="选项 D">
+            <el-input v-model="editForm.optionD" />
+          </el-form-item>
+        </template>
+        <el-form-item label="正确答案">
+          <el-input v-model="editForm.correctAnswer" />
+        </el-form-item>
+        <el-form-item label="分值">
+          <el-input-number v-model="editForm.score" :min="1" :max="100" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="分类">
+          <el-input v-model="editForm.category" placeholder="可选" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveEdit">保存</el-button>
+      </template>
+    </el-dialog>
 </template>
 
 <style scoped>

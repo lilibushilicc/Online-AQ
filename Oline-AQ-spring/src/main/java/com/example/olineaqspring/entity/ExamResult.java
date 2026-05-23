@@ -15,6 +15,7 @@ public class ExamResult {
     private Integer resultId;
     private Integer examId;
     private Integer studentId;
+    private String attemptId;
     private BigDecimal totalScore;
     private Integer correctCount;
     private Integer wrongCount;

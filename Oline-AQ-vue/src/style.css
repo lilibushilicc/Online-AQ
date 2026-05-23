@@ -110,6 +110,22 @@
   --el-fill-color-blank:            var(--bg-surface);
   --el-mask-color:                  rgba(0,0,0,0.4);
   --el-mask-color-extra-light:     rgba(0,0,0,0.15);
+
+  /* Vant 覆盖 */
+  --van-primary-color: var(--accent-blue);
+  --van-success-color: var(--accent-green);
+  --van-danger-color: var(--accent-red);
+  --van-warning-color: var(--accent-amber);
+  --van-background-2: var(--bg-surface);
+  --van-background: var(--bg-base);
+  --van-text-color: var(--text-primary);
+  --van-text-color-2: var(--text-secondary);
+  --van-text-color-3: var(--text-tertiary);
+  --van-border-color: var(--border-default);
+  --van-active-color: var(--bg-overlay);
+  --van-nav-bar-background: rgba(255,255,255,0.86);
+  --van-tabbar-background: rgba(255,255,255,0.94);
+  --van-card-background: var(--bg-surface);
 }
 
 /* ---- 深色主题 ---- */
@@ -187,6 +203,22 @@
   --el-fill-color-blank:            var(--bg-surface);
   --el-mask-color:                  rgba(0,0,0,0.7);
   --el-mask-color-extra-light:     rgba(0,0,0,0.3);
+
+  /* Vant 覆盖 */
+  --van-primary-color: var(--accent-blue);
+  --van-success-color: var(--accent-green);
+  --van-danger-color: var(--accent-red);
+  --van-warning-color: var(--accent-amber);
+  --van-background-2: var(--bg-surface);
+  --van-background: var(--bg-base);
+  --van-text-color: var(--text-primary);
+  --van-text-color-2: var(--text-secondary);
+  --van-text-color-3: var(--text-tertiary);
+  --van-border-color: var(--border-default);
+  --van-active-color: var(--bg-overlay);
+  --van-nav-bar-background: rgba(17,17,17,0.92);
+  --van-tabbar-background: rgba(17,17,17,0.96);
+  --van-card-background: var(--bg-surface);
 }
 
 *, *::before, *::after {
@@ -1912,6 +1944,144 @@ body {
 }
 
 /* ============================================================
+   学生端移动布局
+   ============================================================ */
+
+.student-mobile-shell {
+  min-height: 100dvh;
+}
+
+.student-mobile-shell .van-nav-bar {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.student-mobile-shell__notice-btn {
+  min-width: 52px;
+}
+
+.student-mobile-shell__body {
+  padding: calc(56px + env(safe-area-inset-top)) 0 calc(74px + env(safe-area-inset-bottom));
+}
+
+.student-mobile-shell__hero {
+  padding: 14px 14px 8px;
+}
+
+.student-mobile-shell__hero-main {
+  padding: 16px 16px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(139,92,246,0.12));
+  border: 1px solid rgba(59,130,246,0.16);
+  box-shadow: var(--shadow-sm);
+}
+
+.student-mobile-shell__eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  letter-spacing: 0.08em;
+}
+
+.student-mobile-shell__hero h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.student-mobile-shell__subtitle {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.student-mobile-shell__hero-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 0 4px;
+}
+
+.student-mobile-shell__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.student-mobile-shell__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.student-mobile-shell__role {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.student-mobile-shell__content {
+  padding: 6px 12px 24px;
+}
+
+.student-mobile-shell__popup {
+  max-height: 75vh;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+}
+
+.student-mobile-shell__popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.student-mobile-shell__empty {
+  padding: 28px 0;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.student-mobile-shell__announce-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.student-mobile-shell__announce-item:last-child {
+  border-bottom: none;
+}
+
+.student-mobile-shell__announce-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.student-mobile-shell__announce-time {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.student-mobile-shell__announce-content {
+  margin: 8px 0 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+/* ============================================================
    响应式
    ============================================================ */
 
@@ -2032,6 +2202,113 @@ body {
     bottom: 24px;
     right: 20px;
   }
+
+  .student-mobile-shell .el-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .student-mobile-shell .el-row > [class*="el-col"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .student-mobile-shell .results-toolbar,
+  .student-mobile-shell .practice-toolbar,
+  .student-mobile-shell .result-card__footer,
+  .student-mobile-shell .practice-card__header,
+  .student-mobile-shell .exam-section__header,
+  .student-mobile-shell .nb-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .student-mobile-shell .result-card__inner,
+  .student-mobile-shell .profile-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .student-mobile-shell .result-progress {
+    align-self: center;
+  }
+
+  .student-mobile-shell .result-card__name,
+  .student-mobile-shell .exam-card__name {
+    white-space: normal;
+  }
+
+  .student-mobile-shell .practice-category-select,
+  .student-mobile-shell .practice-fill-input,
+  .student-mobile-shell .info-row.editing .el-input {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .student-mobile-shell .profile-page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .student-mobile-shell .page-title {
+    display: none;
+  }
+
+  .student-mobile-shell .profile-card {
+    padding: 20px 16px;
+  }
+
+  .student-mobile-shell .profile-card::before {
+    left: 16px;
+    right: 16px;
+  }
+
+  .student-mobile-shell .info-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .student-mobile-shell .info-label {
+    width: auto;
+  }
+
+  .student-mobile-shell .profile-actions {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+
+  .student-mobile-shell .profile-actions .el-button {
+    width: 100%;
+  }
+
+  .student-mobile-shell .practice-actions {
+    position: sticky;
+    bottom: 0;
+    padding-top: 12px;
+    padding-bottom: 8px;
+    background: linear-gradient(180deg, rgba(245,247,250,0), var(--bg-base) 32%);
+  }
+
+  .student-mobile-shell .answer-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .student-mobile-shell .answer-index {
+    position: static;
+    width: 100%;
+  }
+
+  .student-mobile-shell .q-nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -2067,7 +2344,11 @@ body {
   .logout-button {
     left: 12px;
     right: 12px;
-    bottom: 12px;
+    bottom: calc(68px + env(safe-area-inset-bottom));
     justify-content: center;
+  }
+
+  .theme-toggle {
+    bottom: calc(114px + env(safe-area-inset-bottom));
   }
 }

@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS exam_result (
     result_id SERIAL PRIMARY KEY,
     exam_id INTEGER NOT NULL,
     student_id INTEGER NOT NULL,
+    attempt_id VARCHAR(64),
     total_score NUMERIC(6,2),
     correct_count INTEGER,
     wrong_count INTEGER,
@@ -73,6 +74,7 @@ CREATE TABLE IF NOT EXISTS student_answer (
     answer_id SERIAL PRIMARY KEY,
     exam_id INTEGER NOT NULL,
     student_id INTEGER NOT NULL,
+    attempt_id VARCHAR(64),
     question_id INTEGER NOT NULL,
     student_answer TEXT,
     correct_answer TEXT,
@@ -88,6 +90,17 @@ CREATE TABLE IF NOT EXISTS exam_history (
     action_type VARCHAR(100),
     action_detail TEXT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS draft_answer (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    attempt_id VARCHAR(64),
+    answers TEXT,
+    shuffle_snapshot TEXT,
+    use_time INTEGER DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS upload_file (
@@ -204,6 +217,8 @@ CREATE INDEX IF NOT EXISTS idx_student_answer_student_id ON student_answer(stude
 CREATE INDEX IF NOT EXISTS idx_student_answer_question_id ON student_answer(question_id);
 CREATE INDEX IF NOT EXISTS idx_exam_result_exam_id ON exam_result(exam_id);
 CREATE INDEX IF NOT EXISTS idx_exam_result_student_id ON exam_result(student_id);
+CREATE INDEX IF NOT EXISTS idx_exam_result_attempt_id ON exam_result(attempt_id);
+CREATE INDEX IF NOT EXISTS idx_student_answer_attempt_id ON student_answer(attempt_id);
 CREATE INDEX IF NOT EXISTS idx_exam_history_exam_id ON exam_history(exam_id);
 CREATE INDEX IF NOT EXISTS idx_question_source_file_id ON question(source_file_id);
 CREATE INDEX IF NOT EXISTS idx_question_category ON question(category);
@@ -215,3 +230,7 @@ CREATE INDEX IF NOT EXISTS idx_email_send_log_account ON email_send_log(account_
 CREATE INDEX IF NOT EXISTS idx_sys_user_email ON sys_user(email) WHERE email IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_announcement_read_user ON announcement_read(user_id);
 CREATE INDEX IF NOT EXISTS idx_announcement_read_announcement ON announcement_read(announcement_id);
+
+ALTER TABLE draft_answer DROP CONSTRAINT IF EXISTS uq_draft_exam_student;
+ALTER TABLE draft_answer ADD CONSTRAINT uq_draft_exam_student UNIQUE (exam_id, student_id);
+ALTER TABLE exam_result DROP CONSTRAINT IF EXISTS uk_exam_result_exam_student;

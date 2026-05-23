@@ -1,5 +1,6 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.annotation.AdminOnly;
 import com.example.olineaqspring.service.FileService;
 import com.example.olineaqspring.vo.ApiResponse;
 import com.example.olineaqspring.vo.UploadFileVO;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 
+@AdminOnly("仅管理员可操作文件管理")
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
@@ -48,7 +50,8 @@ public class FileController {
     public ApiResponse<Map<String, Object>> parse(
             @PathVariable Integer fileId,
             @RequestParam(required = false) String category,
-            @RequestParam(defaultValue = "false") boolean useAi) {
+            @RequestParam(defaultValue = "false") boolean useAi,
+            HttpServletRequest request) {
         return ApiResponse.ok("解析成功", fileService.parse(fileId, category, useAi));
     }
 }

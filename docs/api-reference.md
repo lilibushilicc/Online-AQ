@@ -43,7 +43,7 @@
 | `POST /api/exams` | 创建考试 |
 | `GET /api/exams` | 考试列表（管理员） |
 | `GET /api/exams/student` | 学生端考试列表 |
-| `GET /api/exams/{examId}` | 考试详情 |
+| `GET /api/exams/{examId}` | 考试详情（学生端脱敏正确答案，支持 `attemptId` 会话） |
 | `PUT /api/exams/{examId}` | 编辑考试 |
 | `PUT /api/exams/{examId}/settings` | 更新考试设置（乱序等） |
 | `PUT /api/exams/{examId}/publish` | 发布考试 |
@@ -52,6 +52,9 @@
 | `GET /api/exams/{examId}/history` | 考试操作历史 |
 | `GET /api/exams/{examId}/export/excel` | 导出成绩 Excel |
 | `GET /api/exams/{examId}/export/word` | 导出试卷 Word |
+| `PUT /api/exams/{examId}/draft` | 保存当前作答草稿 |
+| `GET /api/exams/{examId}/draft` | 读取当前作答草稿 |
+| `DELETE /api/exams/{examId}/draft` | 清除当前作答草稿 |
 | `POST /api/exams/{examId}/submit` | 提交答卷 |
 
 ## 成绩管理
@@ -59,7 +62,7 @@
 | 接口 | 说明 |
 |---|---|
 | `GET /api/results/my` | 我的成绩列表 |
-| `GET /api/results/exam/{examId}` | 某场考试所有成绩（教师） |
+| `GET /api/results/exam/{examId}` | 某场考试所有成绩（仅管理员） |
 | `GET /api/results/{resultId}` | 成绩详情（含答题明细） |
 | `GET /api/results/wrong-questions` | 学生错题本 |
 | `GET /api/results/export/{examId}` | 导出考试全部成绩 Excel |
@@ -118,7 +121,7 @@
 
 | 接口 | 说明 |
 |---|---|
-| `GET /api/config` | 获取全部配置 |
+| `GET /api/config` | 获取全部配置（仅管理员） |
 | `PUT /api/config` | 更新配置 |
 | `GET /api/config/public/login` | 获取登录页公开配置 |
 | `POST /api/config/test-r2` | 测试 R2 连接 |

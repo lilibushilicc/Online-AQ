@@ -7,8 +7,10 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.onlineaq.student.R
 import com.onlineaq.student.ui.examlist.ExamListFragment
-import com.onlineaq.student.ui.more.MoreFragment
+import com.onlineaq.student.ui.practice.PracticeFragment
+import com.onlineaq.student.ui.profile.ProfileFragment
 import com.onlineaq.student.ui.results.ResultsFragment
+import com.onlineaq.student.ui.wrongbook.WrongBookFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,7 +30,9 @@ class MainActivity : AppCompatActivity() {
         bottomNav.setOnItemSelectedListener { item ->
             val fragment: Fragment = when (item.itemId) {
                 R.id.nav_results -> ResultsFragment()
-                R.id.nav_more -> MoreFragment()
+                R.id.nav_practice -> PracticeFragment()
+                R.id.nav_wrong_book -> WrongBookFragment()
+                R.id.nav_profile -> ProfileFragment()
                 else -> ExamListFragment()
             }
             switchFragment(fragment)

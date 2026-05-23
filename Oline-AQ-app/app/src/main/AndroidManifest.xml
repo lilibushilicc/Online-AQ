@@ -32,6 +32,12 @@
         <activity
             android:name=".ui.resultdetail.ResultDetailActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.wrongbook.WrongBookDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.examhistory.ExamHistoryActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -16,5 +16,6 @@ data class Exam(
 
 data class ExamDetail(
     val exam: Exam,
-    val questions: List<Question>
+    val questions: List<Question>,
+    val attemptId: String? = null,
 )

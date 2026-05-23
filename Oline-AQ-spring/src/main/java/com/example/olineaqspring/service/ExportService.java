@@ -6,6 +6,10 @@ import com.example.olineaqspring.entity.Question;
 import com.example.olineaqspring.entity.SysUser;
 import com.example.olineaqspring.mapper.ExamMapper;
 import com.example.olineaqspring.mapper.UserMapper;
+import com.example.olineaqspring.vo.ResultAnswerVO;
+import com.example.olineaqspring.vo.ResultDetailVO;
+import com.example.olineaqspring.vo.WrongQuestionGroupVO;
+import com.example.olineaqspring.vo.WrongQuestionItemVO;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -144,7 +148,7 @@ public class ExportService {
         return style;
     }
 
-    public byte[] exportWrongQuestions(List<Map<String, Object>> groups) {
+    public byte[] exportWrongQuestions(List<WrongQuestionGroupVO> groups) {
         String[] headers = {"考试", "题目", "题型", "选项A", "选项B", "选项C", "选项D", "你的答案", "正确答案", "分值", "提交时间"};
         Workbook wb = new XSSFWorkbook();
         Sheet sheet = wb.createSheet("错题导出");
@@ -162,36 +166,32 @@ public class ExportService {
         }
 
         int rowIdx = 1;
-        for (Map<String, Object> group : groups) {
-            String examName = (String) group.get("examName");
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> questions = (List<Map<String, Object>>) group.get("questions");
-            for (Map<String, Object> q : questions) {
+        for (WrongQuestionGroupVO group : groups) {
+            String examName = group.getExamName();
+            List<WrongQuestionItemVO> questions = group.getQuestions();
+            for (WrongQuestionItemVO q : questions) {
                 Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(examName != null ? examName : "");
-                row.createCell(1).setCellValue(String.valueOf(q.getOrDefault("questionContent", "")));
-                row.createCell(2).setCellValue(typeLabel((String) q.get("questionType")));
-                row.createCell(3).setCellValue(String.valueOf(q.getOrDefault("optionA", "")));
-                row.createCell(4).setCellValue(String.valueOf(q.getOrDefault("optionB", "")));
-                row.createCell(5).setCellValue(String.valueOf(q.getOrDefault("optionC", "")));
-                row.createCell(6).setCellValue(String.valueOf(q.getOrDefault("optionD", "")));
-                row.createCell(7).setCellValue(String.valueOf(q.getOrDefault("studentAnswer", "")));
-                row.createCell(8).setCellValue(String.valueOf(q.getOrDefault("correctAnswer", "")));
-                Object score = q.get("score");
-                row.createCell(9).setCellValue(score instanceof Number ? ((Number) score).doubleValue() : 0);
-                Object st = q.get("submitTime");
-                row.createCell(10).setCellValue(st != null ? st.toString() : "");
+                row.createCell(1).setCellValue(nullToEmpty(q.getQuestionContent()));
+                row.createCell(2).setCellValue(typeLabel(q.getQuestionType()));
+                row.createCell(3).setCellValue(nullToEmpty(q.getOptionA()));
+                row.createCell(4).setCellValue(nullToEmpty(q.getOptionB()));
+                row.createCell(5).setCellValue(nullToEmpty(q.getOptionC()));
+                row.createCell(6).setCellValue(nullToEmpty(q.getOptionD()));
+                row.createCell(7).setCellValue(nullToEmpty(q.getStudentAnswer()));
+                row.createCell(8).setCellValue(nullToEmpty(q.getCorrectAnswer()));
+                row.createCell(9).setCellValue(q.getScore() != null ? q.getScore().doubleValue() : 0);
+                row.createCell(10).setCellValue(q.getSubmitTime() != null ? q.getSubmitTime().toString() : "");
             }
         }
 
         return toBytes(wb);
     }
 
-    public byte[] exportResultDetail(Map<String, Object> detail) {
-        ExamResult examResult = (ExamResult) detail.get("result");
-        Exam exam = (Exam) detail.get("exam");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> answers = (List<Map<String, Object>>) detail.get("answers");
+    public byte[] exportResultDetail(ResultDetailVO detail) {
+        ExamResult examResult = detail.getResult();
+        Exam exam = detail.getExam();
+        List<ResultAnswerVO> answers = detail.getAnswers();
         if (answers == null) answers = List.of();
 
         String examName = exam != null ? exam.getExamName() : "";
@@ -236,31 +236,28 @@ public class ExportService {
         }
 
         for (int i = 0; i < answers.size(); i++) {
-            Map<String, Object> a = answers.get(i);
+            ResultAnswerVO a = answers.get(i);
             if (a == null) continue;
             Row row = sheet.createRow(i + 2);
-            row.createCell(0).setCellValue(String.valueOf(a.getOrDefault("questionContent", "")));
-            row.createCell(1).setCellValue(typeLabel((String) a.get("questionType")));
-            row.createCell(2).setCellValue(String.valueOf(a.getOrDefault("optionA", "")));
-            row.createCell(3).setCellValue(String.valueOf(a.getOrDefault("optionB", "")));
-            row.createCell(4).setCellValue(String.valueOf(a.getOrDefault("optionC", "")));
-            row.createCell(5).setCellValue(String.valueOf(a.getOrDefault("optionD", "")));
-            row.createCell(6).setCellValue(String.valueOf(a.getOrDefault("studentAnswer", "")));
-            row.createCell(7).setCellValue(String.valueOf(a.getOrDefault("correctAnswer", "")));
-            Object isCorrect = a.get("isCorrect");
-            row.createCell(8).setCellValue(isCorrect instanceof Boolean && (Boolean) isCorrect ? "正确" : "错误");
-            Object score = a.get("score");
-            row.createCell(9).setCellValue(score instanceof Number ? ((Number) score).doubleValue() : 0);
+            row.createCell(0).setCellValue(nullToEmpty(a.getQuestionContent()));
+            row.createCell(1).setCellValue(typeLabel(a.getQuestionType()));
+            row.createCell(2).setCellValue(nullToEmpty(a.getOptionA()));
+            row.createCell(3).setCellValue(nullToEmpty(a.getOptionB()));
+            row.createCell(4).setCellValue(nullToEmpty(a.getOptionC()));
+            row.createCell(5).setCellValue(nullToEmpty(a.getOptionD()));
+            row.createCell(6).setCellValue(nullToEmpty(a.getStudentAnswer()));
+            row.createCell(7).setCellValue(nullToEmpty(a.getCorrectAnswer()));
+            row.createCell(8).setCellValue(Boolean.TRUE.equals(a.getIsCorrect()) ? "正确" : "错误");
+            row.createCell(9).setCellValue(a.getScore() != null ? a.getScore().doubleValue() : 0);
         }
 
         return toBytes(wb);
     }
 
-    public byte[] exportResultDetailWord(Map<String, Object> detail) {
-        ExamResult examResult = (ExamResult) detail.get("result");
-        Exam exam = (Exam) detail.get("exam");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> answers = (List<Map<String, Object>>) detail.get("answers");
+    public byte[] exportResultDetailWord(ResultDetailVO detail) {
+        ExamResult examResult = detail.getResult();
+        Exam exam = detail.getExam();
+        List<ResultAnswerVO> answers = detail.getAnswers();
         if (answers == null) answers = List.of();
 
         String examName = exam != null ? exam.getExamName() : "";
@@ -312,21 +309,21 @@ public class ExportService {
 
             // Data rows
             for (int i = 0; i < answers.size(); i++) {
-                Map<String, Object> a = answers.get(i);
+                ResultAnswerVO a = answers.get(i);
                 if (a == null) continue;
                 XWPFTableRow row = table.getRow(i + 1);
                 String[] vals = {
                         String.valueOf(i + 1),
-                        String.valueOf(a.getOrDefault("questionContent", "")),
-                        typeLabel((String) a.get("questionType")),
-                        String.valueOf(a.getOrDefault("optionA", "")),
-                        String.valueOf(a.getOrDefault("optionB", "")),
-                        String.valueOf(a.getOrDefault("optionC", "")),
-                        String.valueOf(a.getOrDefault("optionD", "")),
-                        String.valueOf(a.getOrDefault("studentAnswer", "")),
-                        String.valueOf(a.getOrDefault("correctAnswer", "")),
-                        a.get("isCorrect") instanceof Boolean && (Boolean) a.get("isCorrect") ? "正确" : "错误",
-                        a.get("score") instanceof Number ? String.valueOf(a.get("score")) : "0",
+                        nullToEmpty(a.getQuestionContent()),
+                        typeLabel(a.getQuestionType()),
+                        nullToEmpty(a.getOptionA()),
+                        nullToEmpty(a.getOptionB()),
+                        nullToEmpty(a.getOptionC()),
+                        nullToEmpty(a.getOptionD()),
+                        nullToEmpty(a.getStudentAnswer()),
+                        nullToEmpty(a.getCorrectAnswer()),
+                        Boolean.TRUE.equals(a.getIsCorrect()) ? "正确" : "错误",
+                        String.valueOf(a.getScore() != null ? a.getScore() : "0"),
                 };
                 for (int j = 0; j < cols; j++) {
                     XWPFParagraph p = row.getCell(j).getParagraphs().get(0);

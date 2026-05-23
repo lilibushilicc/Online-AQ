@@ -1,5 +1,6 @@
 package com.example.olineaqspring.controller;
 
+import com.example.olineaqspring.annotation.AdminOnly;
 import com.example.olineaqspring.config.CurrentUser;
 import com.example.olineaqspring.config.UserPrincipal;
 import com.example.olineaqspring.entity.SysUser;
@@ -27,6 +28,7 @@ public class UserController {
     }
 
     @GetMapping
+    @AdminOnly("仅管理员可查看用户列表")
     public ApiResponse<List<SysUser>> list() {
         return ApiResponse.ok("查询成功", userService.list());
     }
@@ -39,6 +41,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
+    @AdminOnly("仅管理员可查看用户详情")
     public ApiResponse<SysUser> getUser(@PathVariable Integer userId) {
         SysUser u = userService.getById(userId);
         u.setPassword(null);
@@ -55,6 +58,7 @@ public class UserController {
     }
 
     @PostMapping
+    @AdminOnly("仅管理员可新增用户")
     public ApiResponse<SysUser> create(@RequestBody Map<String, String> body) {
         String username = body.get("username");
         String password = body.get("password");
@@ -69,12 +73,14 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
+    @AdminOnly("仅管理员可修改用户")
     public ApiResponse<SysUser> update(@PathVariable Integer userId, @RequestBody Map<String, String> body) {
         return ApiResponse.ok("修改成功",
                 userService.update(userId, body.get("realName"), body.get("email"), body.get("password")));
     }
 
     @DeleteMapping("/{userId}")
+    @AdminOnly("仅管理员可删除用户")
     public ApiResponse<Void> delete(@PathVariable Integer userId) {
         userService.delete(userId);
         return ApiResponse.ok("删除成功", null);
