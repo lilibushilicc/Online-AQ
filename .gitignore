@@ -26,6 +26,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Android signing
+Oline-AQ-app/app/keystore.properties
+Oline-AQ-app/app/release-key.jks
+*.jks
+
 # Env
 .env.local
 .env.*.local
