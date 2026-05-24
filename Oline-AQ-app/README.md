@@ -38,7 +38,7 @@
 
 - **技术栈**: Spring Boot 3.3.5 + MyBatis-Plus + PostgreSQL
 - **必须部署**: App 的所有接口调用均依赖此服务
-- 部署方式详见 [Oline-AQ-spring/README.md](../Oline-AQ-spring/README.md)（如无，见根目录 README）
+- 部署方式详见 [Oline-AQ/README.md](../README.md)（如无，见根目录 README）
 
 ### 2. 数据库 (PostgreSQL)
 
@@ -50,7 +50,7 @@
 
 - **技术栈**: Vue 3 + Vite + Element Plus + Vant
 - 管理端功能（题库管理、考试创建、成绩导出、系统配置等）需通过 Web 前端操作
-- 部署方式详见 [Oline-AQ-vue/README.md](../Oline-AQ-vue/README.md)
+- 部署方式详见 [Oline-AQ/README.md](../README.md)
 
 ---
 
@@ -125,56 +125,6 @@
 **方式二** — 运行时修改：
 App 内「个人中心 → 服务器设置」中输入新的 API 地址，App 会自动重建 Retrofit 实例。
 
-### 3. 构建 APK
-
-```sh
-# Debug 版（用于开发测试）
-./gradlew assembleDebug
-# 产物：app/build/outputs/apk/debug/app-debug.apk
-
-# Release 版（用于发布，需先配置签名）
-./gradlew assembleRelease
-# 产物：app/build/outputs/apk/release/app-release.apk
-```
-
----
-
-## 配置发布签名
-
-Android 应用发布必须使用独立的签名密钥，不可使用默认的 Debug 签名。
-
-### 生成签名密钥
-
-```sh
-keytool -genkey -v -keystore app/release-key.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -alias release-key
-```
-
-按提示输入：
-- 密钥库密码（`storePassword`）
-- 密钥密码（`keyPassword`，可与密钥库密码相同）
-- 个人信息（姓名、组织、城市、省份、国家代码等）
-
-### 配置签名信息
-
-在 `app/` 目录下创建 `keystore.properties`：
-
-```properties
-storePassword=你的密钥库密码
-keyPassword=你的密钥密码
-keyAlias=release-key
-storeFile=release-key.jks
-```
-
-> **安全说明**：`keystore.properties` 和 `*.jks` 文件已加入 `.gitignore`，不会被提交到 Git 仓库。请妥善保管密钥文件和密码，**密钥丢失将无法更新已发布的应用**。
-
-### 验证签名
-
-```sh
-# 查看 APK 签名信息
-keytool -printcert -jarfile app/build/outputs/apk/release/app-release.apk
-```
 
 ---
 
