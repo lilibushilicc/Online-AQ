@@ -137,3 +137,9 @@
 | `GET /api/config/smtp-accounts/{id}/stats` | SMTP 发送统计 |
 | `POST /api/config/smtp-accounts/test` | 测试指定 SMTP 账号 |
 | `GET /api/config/email-stats` | 全局邮件发送统计 |
+
+## App 版本管理
+
+| 接口 | 说明 |
+|---|---|
+| `GET /api/app/version/latest` | 获取最新 App 版本信息（versionCode/versionName/downloadUrl/releaseNotes/forceUpdate） |

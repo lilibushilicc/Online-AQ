@@ -149,6 +149,11 @@ const config = ref<Record<string, string>>({
   'smtp.email_template': '',
   'login.logo.click.count': '3',
   'login.admin.method': 'both',
+  'app.version.code': '1',
+  'app.version.name': '1.0',
+  'app.version.download_url': '',
+  'app.version.release_notes': '',
+  'app.version.force_update': 'false',
 })
 
 const emailEnabled = computed(() => config.value['register.email.enabled'] === 'true')
@@ -162,6 +167,7 @@ const tabs = [
   { label: 'AI 智能解析', name: '/admin/config/ai' },
   { label: '登录设置', name: '/admin/config/login' },
   { label: '邮箱注册设置', name: '/admin/config/email' },
+  { label: '版本更新', name: '/admin/config/version' },
 ]
 
 async function load() {
@@ -197,6 +203,24 @@ async function save() {
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '保存失败'
     ElMessage.error(msg)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveVersion() {
+  loading.value = true
+  try {
+    const payload: Record<string, string> = {}
+    for (const key of Object.keys(config.value)) {
+      if (key.startsWith('app.version.')) {
+        payload[key] = config.value[key]
+      }
+    }
+    await api.saveConfigApi(payload)
+    ElMessage.success('版本配置已保存')
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '保存失败')
   } finally {
     loading.value = false
   }
@@ -478,6 +502,38 @@ onMounted(() => {
           <span class="muted" style="font-size: 12px;">可用占位符：${code} ${systemName}</span>
           <el-button link size="small" @click="config['smtp.email_template'] = ''">恢复默认模板</el-button>
         </div>
+      </el-form-item>
+    </el-form>
+  </el-card>
+
+  <el-card v-if="activeTab === '/admin/config/version'" v-loading="loading" style="max-width: 640px">
+    <p class="muted" style="margin-bottom: 16px; font-size: 13px">
+      配置 App 版本更新信息。客户端启动时会检查版本号，发现新版本时弹窗提示更新。
+    </p>
+    <el-form label-width="140px" label-position="left">
+      <el-form-item label="版本号 (code)">
+        <el-input-number v-model="config['app.version.code']" :min="1" style="width: 180px;" />
+        <div class="muted" style="font-size: 12px; margin-left: 12px;">
+          客户端 <code>BuildConfig.VERSION_CODE</code>
+        </div>
+      </el-form-item>
+      <el-form-item label="版本名 (name)">
+        <el-input v-model="config['app.version.name']" placeholder="1.0" style="width: 240px;" clearable />
+      </el-form-item>
+      <el-form-item label="APK 下载链接">
+        <el-input v-model="config['app.version.download_url']" placeholder="https://github.com/.../releases/download/v1.1/app-release.apk" clearable />
+      </el-form-item>
+      <el-form-item label="更新说明">
+        <el-input v-model="config['app.version.release_notes']" type="textarea" :rows="4" placeholder="修复了若干 bug，优化了体验。" />
+      </el-form-item>
+      <el-form-item label="强制更新">
+        <el-switch v-model="config['app.version.force_update']" active-value="true" inactive-value="false" />
+        <span class="muted" style="font-size: 12px; margin-left: 12px;">
+          开启后用户必须更新才能使用 App
+        </span>
+      </el-form-item>
+      <el-form-item label=" ">
+        <el-button type="primary" :loading="loading" @click="saveVersion">保存版本配置</el-button>
       </el-form-item>
     </el-form>
   </el-card>

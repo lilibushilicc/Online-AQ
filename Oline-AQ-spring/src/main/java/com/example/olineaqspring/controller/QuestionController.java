@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@AdminOnly("仅管理员可操作题库")
 @RestController
 @RequestMapping("/api/questions")
 public class QuestionController {
@@ -50,40 +49,47 @@ public class QuestionController {
         return ApiResponse.ok("查询成功", questionService.categories());
     }
 
+    @AdminOnly("仅管理员可操作题库")
     @PostMapping
     public ApiResponse<Question> create(@RequestBody @Valid QuestionRequest request) {
         return ApiResponse.ok("新增成功", questionService.create(request));
     }
 
+    @AdminOnly("仅管理员可操作题库")
     @PutMapping("/{questionId}")
     public ApiResponse<Question> update(@PathVariable Integer questionId, @RequestBody @Valid QuestionRequest request) {
         return ApiResponse.ok("修改成功", questionService.update(questionId, request));
     }
 
+    @AdminOnly("仅管理员可操作题库")
     @DeleteMapping("/{questionId}")
     public ApiResponse<Void> delete(@PathVariable Integer questionId) {
         questionService.delete(questionId);
         return ApiResponse.ok("删除成功", null);
     }
 
+    @AdminOnly("仅管理员可操作题库")
     @PostMapping("/batch-delete")
     public ApiResponse<Void> deleteBatch(@RequestBody QuestionBatchRequest body) {
         questionService.deleteBatch(body.getQuestionIds());
         return ApiResponse.ok("批量删除成功", null);
     }
 
+    @AdminOnly("仅管理员可操作题库")
     @PostMapping("/batch-score")
     public ApiResponse<Void> updateBatchScore(@RequestBody QuestionBatchRequest body) {
         questionService.updateScoreBatch(body.getQuestionIds(), body.getScore());
         return ApiResponse.ok("批量设置分值成功", null);
     }
 
+    @AdminOnly("仅管理员可操作题库")
     @PostMapping("/batch-category")
     public ApiResponse<Void> updateBatchCategory(@RequestBody QuestionBatchRequest body) {
         questionService.updateCategoryBatch(body.getQuestionIds(), body.getCategory());
         return ApiResponse.ok("批量设置分类成功", null);
     }
 
+    @AdminOnly("仅管理员可操作题库")
     @GetMapping("/export")
     public ResponseEntity<byte[]> export(@RequestParam(required = false) String category) {
         List<Question> questions = questionService.listAll(category);

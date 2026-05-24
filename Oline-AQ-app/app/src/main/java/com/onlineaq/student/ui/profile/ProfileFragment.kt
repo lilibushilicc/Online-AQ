@@ -1,6 +1,7 @@
 package com.onlineaq.student.ui.profile
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
+import com.onlineaq.student.BuildConfig
 import com.onlineaq.student.R
 import com.onlineaq.student.data.api.RetrofitClient
 import com.onlineaq.student.data.model.AnnouncementItem
@@ -105,6 +107,7 @@ class ProfileFragment : Fragment() {
         root.findViewById<MaterialButton>(R.id.btn_edit_profile).setOnClickListener { showEditProfileDialog() }
         root.findViewById<MaterialButton>(R.id.btn_change_password).setOnClickListener { showPasswordDialog() }
         root.findViewById<MaterialButton>(R.id.btn_mark_all_read).setOnClickListener { markAllAnnouncementsRead() }
+        root.findViewById<MaterialButton>(R.id.btn_check_version).setOnClickListener { checkVersionUpdate() }
         root.findViewById<MaterialButton>(R.id.btn_server_settings).setOnClickListener { showServerSettings() }
         root.findViewById<MaterialButton>(R.id.btn_logout).setOnClickListener {
             TokenManager.clear()
@@ -287,6 +290,41 @@ class ProfileFragment : Fragment() {
                         }
                     } else {
                         Toast.makeText(requireContext(), response.body()?.message ?: "更新失败", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "网络错误: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun checkVersionUpdate() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.apiService.getLatestAppVersion()
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body()?.code == 200) {
+                        val versionInfo = response.body()?.data ?: return@withContext
+                        if (versionInfo.versionCode <= BuildConfig.VERSION_CODE) {
+                            Toast.makeText(requireContext(), "当前已是最新版本 v${BuildConfig.VERSION_NAME}", Toast.LENGTH_SHORT).show()
+                            return@withContext
+                        }
+                        val dialog = AlertDialog.Builder(requireContext())
+                            .setTitle("发现新版本 v${versionInfo.versionName}")
+                            .setMessage(versionInfo.releaseNotes.ifBlank { "有新版本可用，请更新后使用。" })
+                            .setCancelable(false)
+                        if (versionInfo.downloadUrl.isNotBlank()) {
+                            dialog.setPositiveButton("立即更新") { _, _ ->
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(versionInfo.downloadUrl))
+                                startActivity(intent)
+                            }
+                        }
+                        dialog.setNegativeButton("稍后再说", null)
+                        dialog.show()
+                    } else {
+                        Toast.makeText(requireContext(), "获取版本信息失败", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {

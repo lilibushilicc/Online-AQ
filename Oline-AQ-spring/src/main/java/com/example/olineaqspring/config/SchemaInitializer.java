@@ -155,6 +155,12 @@ public class SchemaInitializer implements CommandLineRunner {
         insertConfig("smtp.from", "");
         insertConfig("smtp.subject", "${systemName} - 邮箱验证");
         insertConfig("smtp.system_name", "Online-AQ 智能在线答题系统");
+
+        insertConfig("app.version.code", "1");
+        insertConfig("app.version.name", "1.0");
+        insertConfig("app.version.download_url", "");
+        insertConfig("app.version.release_notes", "");
+        insertConfig("app.version.force_update", "false");
         insertConfig("smtp.email_template", EmailConstants.DEFAULT_HTML_TEMPLATE);
 
         // Migrate old SMTP config to smtp_account if not yet migrated

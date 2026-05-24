@@ -144,6 +144,10 @@ watch(() => route.path, () => {
               <el-icon><Message /></el-icon>
               <span>邮箱注册</span>
             </el-menu-item>
+            <el-menu-item index="/admin/config/version">
+              <el-icon><Setting /></el-icon>
+              <span>版本更新</span>
+            </el-menu-item>
             <el-menu-item index="/admin/announcements">
               <el-icon><ChatDotRound /></el-icon>
               <span>公告管理</span>

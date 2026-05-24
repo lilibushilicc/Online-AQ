@@ -90,4 +90,7 @@ interface ApiService {
 
     @POST("feedbacks")
     suspend fun submitFeedback(@Body request: FeedbackCreateRequest): Response<ApiResponse<QuestionFeedback>>
+
+    @GET("app/version/latest")
+    suspend fun getLatestAppVersion(): Response<ApiResponse<AppVersionInfo>>
 }

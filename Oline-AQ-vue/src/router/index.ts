@@ -57,6 +57,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'config/ai', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置 AI 接口用于智能解析试题。' } },
       { path: 'config/login', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置管理员登录方式与点击 Logo 进入次数。' } },
       { path: 'config/email', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置 SMTP 服务并开启邮箱注册功能。' } },
+      { path: 'config/version', component: AdminConfig, meta: { title: '系统配置', subtitle: '配置 App 版本更新信息。' } },
       { path: 'feedbacks', component: AdminFeedbacks, meta: { title: '反馈管理', subtitle: '查看并处理学生对试题的反馈与申诉。' } },
       { path: 'announcements', component: AdminAnnouncements, meta: { title: '公告管理', subtitle: '发布和管理系统公告，学生登录后将收到弹窗通知。' } },
       { path: 'profile', component: StudentProfile, meta: { title: '个人中心' } },
