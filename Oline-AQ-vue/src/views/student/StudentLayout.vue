@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Bell, EditPen, List, Trophy, Notebook, Reading, Fold, Expand, Menu, User } from '@element-plus/icons-vue'
+import { ArrowLeft, Bell, EditPen, List, Trophy, Notebook, Reading, Fold, Expand, Menu, User } from '@element-plus/icons-vue'
 import { useExamStore } from '@/stores/exam'
 import * as api from '@/api'
 import { useNotification } from '@/composables/useNotification'
+import CanvasAmbient from '@/views/components/CanvasAmbient.vue'
 
-defineProps<{ title: string; subtitle?: string }>()
+defineProps<{ title: string; subtitle?: string; showBack?: boolean }>()
 
 const route = useRoute()
+const router = useRouter()
 const store = useExamStore()
 const userName = computed(() => store.currentUser?.realName ?? '学生')
 const todayLabel = computed(() => new Intl.DateTimeFormat('zh-CN', {
@@ -65,6 +67,14 @@ function toggleCollapse() {
   localStorage.setItem(COLLAPSE_KEY, String(isCollapsed.value))
 }
 
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/student/dashboard')
+  }
+}
+
 watch(() => route.path, () => {
   mobileMenuOpen.value = false
 })
@@ -82,6 +92,7 @@ onMounted(async () => {
 
 <template>
   <main class="page page--student" :class="{ 'sidebar-collapsed': isCollapsed }">
+    <CanvasAmbient />
     <section class="shell">
       <transition name="fade">
         <div v-if="mobileMenuOpen" class="sidebar-backdrop" @click="mobileMenuOpen = false"></div>
@@ -165,6 +176,9 @@ onMounted(async () => {
       </aside>
 
       <section class="content">
+        <div v-if="showBack" class="back-nav">
+          <el-button text :icon="ArrowLeft" @click="goBack">返回</el-button>
+        </div>
         <div class="page-title">
           <div class="page-title__copy">
             <div class="page-title__meta">
@@ -221,5 +235,28 @@ onMounted(async () => {
 .announce-badge :deep(.el-badge__content) {
   top: 6px;
   right: 6px;
+}
+
+.back-nav {
+  margin-bottom: 8px;
+}
+
+.back-nav .el-button {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 4px 10px 4px 4px;
+  height: auto;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+
+.back-nav .el-button:hover {
+  color: var(--accent-blue);
+  background: var(--sidebar-hover);
+}
+
+.back-nav :deep(.el-button .el-icon) {
+  margin-right: 2px;
+  font-size: 16px;
 }
 </style>

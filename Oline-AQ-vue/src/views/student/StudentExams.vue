@@ -331,7 +331,7 @@ onMounted(async () => {
 }
 
 .exam-history-tag--clickable:hover {
-  background: rgba(59,130,246,0.1) !important;
+  background: var(--glow-blue) !important;
   border-color: rgba(45, 90, 71, 0.2) !important;
   color: var(--accent-blue) !important;
 }

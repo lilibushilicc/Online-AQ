@@ -593,7 +593,7 @@ onMounted(() => {
   align-items: center;
   gap: 0;
   padding: 16px 20px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), var(--bg-surface));
+  background: linear-gradient(180deg, var(--glass-bg), var(--bg-surface));
   border-radius: var(--radius-lg);
   margin-bottom: 18px;
   border: 1px solid var(--border-subtle);
@@ -646,7 +646,7 @@ onMounted(() => {
 }
 
 .smtp-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), var(--bg-surface));
+  background: linear-gradient(180deg, var(--glass-bg), var(--bg-surface));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
@@ -695,7 +695,7 @@ onMounted(() => {
   gap: 8px;
   margin-bottom: 14px;
   padding: 12px;
-  background: rgba(0,0,0,0.02);
+  background: var(--bg-overlay);
   border-radius: var(--radius);
 }
 

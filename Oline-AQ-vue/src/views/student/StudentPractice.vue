@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import StatCards from '@/views/components/StatCards.vue'
+import CanvasRadialGauge from '@/views/components/CanvasRadialGauge.vue'
 import { useExamStore } from '@/stores/exam'
 import * as api from '@/api'
 import type { PracticeResult } from '@/types'
@@ -92,12 +93,15 @@ onMounted(async () => {
     <StatCards :items="[
       { title: '题目总数', value: questions.length, suffix: '题' },
       { title: '已作答', value: answeredCount, suffix: '题' },
-      { title: '完成进度', value: `${progress}%` },
       ...(submitted && result
         ? [{ title: '正确数量', value: result.correctCount, suffix: '题' as string }]
-        : [{ title: '状态', value: '作答中' as string }]
+        : [] as any
       ),
     ]" />
+
+    <div v-if="!submitted" class="practice-progress-wrap">
+      <CanvasRadialGauge :value="progress" :size="90" :strokeWidth="7" color="#8b5cf6" label="完成进度" />
+    </div>
 
     <div class="practice-questions">
       <el-card v-for="(question, index) in questions" :key="question.questionId" shadow="never" class="practice-card">
@@ -206,10 +210,16 @@ onMounted(async () => {
   margin-top: 12px;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  background: rgba(16,185,129,0.1);
+  background: rgba(5,150,105,0.08);
   color: var(--accent-green);
   font-size: var(--text-caption);
   font-weight: 500;
+}
+
+.practice-progress-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0 8px;
 }
 
 .practice-actions {

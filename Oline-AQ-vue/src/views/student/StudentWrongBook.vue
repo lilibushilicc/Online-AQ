@@ -186,7 +186,7 @@ async function handleDelete(notebook: WrongNotebook) {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-sm);
-  background: rgba(59,130,246,0.1);
+  background: var(--glow-blue);
   color: var(--accent-blue);
   display: flex;
   align-items: center;
@@ -194,7 +194,7 @@ async function handleDelete(notebook: WrongNotebook) {
   margin-bottom: 12px;
 }
 .all-icon {
-  background: rgba(59,130,246,0.1);
+  background: var(--glow-blue);
   color: var(--accent-blue);
 }
 .notebook-card h3 {

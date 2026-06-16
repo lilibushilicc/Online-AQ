@@ -376,7 +376,7 @@ onMounted(loadFiles)
   border: 1.5px dashed var(--border-default);
   border-radius: var(--radius);
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.72), rgba(245,243,238,0.96)),
+    linear-gradient(180deg, var(--glass-bg), var(--bg-input)),
     repeating-linear-gradient(135deg, rgba(45,90,71,0.03), rgba(45,90,71,0.03) 12px, transparent 12px, transparent 24px);
   cursor: pointer;
   transition: border-color var(--duration), transform var(--duration), box-shadow var(--duration), background var(--duration);
@@ -391,7 +391,7 @@ onMounted(loadFiles)
 
 .drop-zone--ready {
   background:
-    linear-gradient(180deg, rgba(232,240,236,0.95), rgba(250,249,246,0.98)),
+    linear-gradient(180deg, rgba(99,102,241,0.06), var(--bg-input)),
     repeating-linear-gradient(135deg, rgba(45,90,71,0.04), rgba(45,90,71,0.04) 12px, transparent 12px, transparent 24px);
 }
 
@@ -445,7 +445,7 @@ onMounted(loadFiles)
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  background: rgba(59,130,246,0.1);
+  background: var(--glow-blue);
   color: var(--accent-blue);
   flex-shrink: 0;
 }
@@ -511,7 +511,7 @@ onMounted(loadFiles)
 }
 
 .status-badge--ai {
-  background: rgba(59,130,246,0.1);
+  background: var(--glow-blue);
   color: var(--accent-blue);
 }
 

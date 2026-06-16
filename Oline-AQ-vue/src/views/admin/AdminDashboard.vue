@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useExamStore } from '@/stores/exam'
 import { loadQuestionsApi, getDashboardStatsApi } from '@/api'
+import CanvasDoughnut from '@/views/components/CanvasDoughnut.vue'
+import CanvasRadialGauge from '@/views/components/CanvasRadialGauge.vue'
 
 const store = useExamStore()
 const loading = ref(true)
@@ -20,6 +22,17 @@ const draftRate = computed(() => store.exams.length ? Math.round((draftCount.val
 const closedRate = computed(() => store.exams.length ? Math.round((closedCount.value / store.exams.length) * 100) : 0)
 const averageScore = computed(() => store.averageScore)
 const totalDuration = computed(() => store.exams.reduce((sum, exam) => sum + (exam.duration || 0), 0))
+
+const scoreLabels: Record<string, string> = { range0_20: '0-20', range21_40: '21-40', range41_60: '41-60', range61_80: '61-80', range81_100: '81-100' }
+const scoreColors: Record<string, string> = { range0_20: '#ef4444', range21_40: '#f59e0b', range41_60: '#f97316', range61_80: '#3b82f6', range81_100: '#10b981' }
+const doughnutSegments = computed(() => {
+  if (!stats.value) return []
+  return Object.entries(scoreLabels).map(([key, label]) => ({
+    label,
+    value: stats.value!.scoreDistribution[key] ?? 0,
+    color: scoreColors[key] ?? '#94a3b8',
+  }))
+})
 
 const cells = computed(() => [
   { label: '题库题目', value: questionCount.value, unit: '道', desc: '可用于组卷的有效题量' },
@@ -88,21 +101,32 @@ onMounted(async () => {
     </div>
 
     <!-- 分数分布 -->
-    <div class="bento-cell fade-in stagger-6" v-if="stats">
+    <div class="bento-cell bento-cell-wide fade-in stagger-6" v-if="stats">
       <div class="bento-label">分数分布</div>
-      <div class="score-dist">
-        <div v-for="(label, key) in { range0_20: '0-20', range21_40: '21-40', range41_60: '41-60', range61_80: '61-80', range81_100: '81-100' }" :key="key" class="score-dist__bar">
-          <span class="score-dist__label">{{ label }}</span>
-          <el-progress :percentage="Math.min(100, (stats.scoreDistribution[key] ?? 0) * 100 / Math.max(1, ...Object.values(stats.scoreDistribution)))" :stroke-width="6" :show-text="false" :color="key === 'range81_100' ? 'var(--accent-green)' : key === 'range61_80' ? 'var(--accent-blue)' : 'var(--text-tertiary)'" />
-          <span class="score-dist__value">{{ stats.scoreDistribution[key] ?? 0 }}</span>
+      <div class="score-dist-canvas">
+        <CanvasDoughnut :segments="doughnutSegments" :size="160" :innerRadius="48" />
+        <div class="score-legend">
+          <div v-for="seg in doughnutSegments" :key="seg.label" class="score-legend__item">
+            <span class="score-legend__dot" :style="{ background: seg.color }" />
+            <span class="score-legend__label">{{ seg.label }}</span>
+            <span class="score-legend__value">{{ seg.value }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 通过率与最难题目 -->
-    <div class="bento-cell fade-in stagger-7" v-if="stats">
+    <!-- 通过率 -->
+    <div class="bento-cell pass-rate-cell fade-in stagger-7" v-if="stats">
       <div class="bento-label">通过率</div>
-      <div class="pass-rate">{{ stats.passRate }}%</div>
+      <div class="pass-rate-gauge-wrap">
+        <CanvasRadialGauge
+          :value="stats.passRate"
+          :size="130"
+          :strokeWidth="10"
+          color="#10b981"
+          label="通过率"
+        />
+      </div>
       <div class="bento-trend">得分大于 0 视为通过</div>
     </div>
 
@@ -122,7 +146,7 @@ onMounted(async () => {
       <div class="bento-label">快捷操作</div>
       <div class="quick-actions">
         <div class="quick-action-item" @click="$router.push('/admin/upload')">
-          <div class="qa-icon" style="background: rgba(59,130,246,0.1); color: var(--accent-blue)">
+          <div class="qa-icon qa-icon--blue">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
           <div>
@@ -131,7 +155,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="quick-action-item" @click="$router.push('/admin/exams')">
-          <div class="qa-icon" style="background: rgba(16,185,129,0.1); color: var(--accent-green)">
+          <div class="qa-icon qa-icon--green">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           </div>
           <div>
@@ -140,7 +164,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="quick-action-item" @click="$router.push('/admin/results')">
-          <div class="qa-icon" style="background: rgba(245,158,11,0.1); color: var(--accent-amber)">
+          <div class="qa-icon qa-icon--amber">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           </div>
           <div>
@@ -252,35 +276,61 @@ onMounted(async () => {
   padding: 0;
 }
 
-.score-dist {
-  display: grid;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.score-dist__bar {
-  display: grid;
-  grid-template-columns: 60px 1fr 30px;
-  gap: 8px;
+.score-dist-canvas {
+  display: flex;
   align-items: center;
+  gap: 28px;
+  margin-top: 4px;
 }
 
-.score-dist__label {
-  font-size: var(--text-small);
-  color: var(--text-tertiary);
+.score-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
 }
 
-.score-dist__value {
-  font-size: var(--text-small);
-  font-weight: 600;
-  text-align: right;
+.score-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+.score-legend__item:hover {
+  background: var(--sidebar-hover);
 }
 
-.pass-rate {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--accent-green);
-  margin: 8px 0;
+.score-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.score-legend__label {
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.score-legend__value {
+  font-size: var(--text-caption);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pass-rate-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.pass-rate-gauge-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
 }
 
 .hardest-list {
@@ -310,4 +360,12 @@ onMounted(async () => {
   font-size: var(--text-caption);
   color: var(--text-secondary);
 }
+
+.qa-icon--blue { background: var(--glow-blue); color: var(--accent-blue); }
+.qa-icon--green { background: rgba(5,150,105,0.08); color: var(--accent-green); }
+.qa-icon--amber { background: rgba(217,119,6,0.08); color: var(--accent-amber); }
+
+[data-theme="dark"] .qa-icon--blue { background: rgba(45,212,191,0.15); }
+[data-theme="dark"] .qa-icon--green { background: rgba(52,211,153,0.12); }
+[data-theme="dark"] .qa-icon--amber { background: rgba(251,191,36,0.12); }
 </style>

@@ -5,6 +5,8 @@ import { ElMessage, ElDialog } from 'element-plus'
 import { UploadFilled, Document, EditPen, Trophy, User } from '@element-plus/icons-vue'
 import { useExamStore, type Role } from '@/stores/exam'
 import { loadPublicLoginConfigApi } from '@/api'
+import CanvasParticles from '@/views/components/CanvasParticles.vue'
+import CanvasWaves from '@/views/components/CanvasWaves.vue'
 
 const router = useRouter()
 const store = useExamStore()
@@ -115,6 +117,7 @@ async function adminLogin() {
 
 <template>
   <main class="login-page">
+    <CanvasParticles />
     <div class="login-logo" @click="handleLogoClick">
       <img src="/loginlogo.png" alt="Online-AQ" class="login-logo-icon" />
     </div>
@@ -131,6 +134,7 @@ async function adminLogin() {
           <span>{{ item.label }}</span>
         </div>
       </div>
+      <CanvasWaves />
     </section>
 
     <section class="login-card">

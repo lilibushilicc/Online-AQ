@@ -6,6 +6,7 @@ import { View } from '@element-plus/icons-vue'
 import * as api from '@/api'
 import { useExamStore, type Exam, type Question } from '@/stores/exam'
 import { downloadFile } from '@/utils/download'
+import CanvasRadialGauge from '@/views/components/CanvasRadialGauge.vue'
 
 const DRAFT_KEY_PREFIX = 'exam_draft_'
 
@@ -404,8 +405,10 @@ onUnmounted(() => {
         </el-card>
       </div>
       <aside class="answer-index">
-        <strong>答题进度</strong>
-        <el-progress :percentage="progress" style="margin: 12px 0" />
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px">
+          <strong style="align-self: flex-start">答题进度</strong>
+          <CanvasRadialGauge :value="progress" :size="100" :strokeWidth="7" color="#3b82f6" />
+        </div>
         <el-descriptions :column="2" border size="small" style="margin-bottom: 12px">
           <el-descriptions-item label="已答">{{ answeredCount }}</el-descriptions-item>
           <el-descriptions-item label="剩余">{{ questions.length - answeredCount }}</el-descriptions-item>
@@ -526,11 +529,11 @@ onUnmounted(() => {
 }
 .q-nav-btn:hover {
   border-color: var(--accent-blue);
-  background: rgba(59,130,246,0.1);
+  background: var(--glow-blue);
   color: var(--accent-blue);
 }
 .q-nav-btn--done {
-  background: rgba(59,130,246,0.1);
+  background: var(--glow-blue);
   border-color: color-mix(in srgb, var(--accent-blue) 25%, transparent);
   color: var(--accent-blue);
 }

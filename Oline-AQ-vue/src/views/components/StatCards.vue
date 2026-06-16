@@ -45,8 +45,9 @@ withDefaults(defineProps<{
 }
 
 .stat-card:hover {
-  border-color: rgba(59,130,246,0.2);
-  box-shadow: 0 0 20px rgba(59,130,246,0.06);
+  border-color: var(--accent-blue);
+  border-color: color-mix(in srgb, var(--accent-blue) 20%, transparent);
+  box-shadow: 0 0 20px var(--glow-blue);
 }
 
 .stat-card__label {

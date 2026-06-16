@@ -20,10 +20,7 @@ watch(() => route.path, () => { routeKey.value++ }, { immediate: true })
     </router-view>
   </StudentMobileLayout>
 
-  <StudentLayout v-else :title="meta.title || ''" :subtitle="meta.subtitle">
-    <template #actions v-if="meta.showBack">
-      <el-button @click="$router.back()">返回</el-button>
-    </template>
+  <StudentLayout v-else :title="meta.title || ''" :subtitle="meta.subtitle" :show-back="meta.showBack">
     <router-view v-slot="{ Component }">
       <component :is="Component" :key="routeKey" />
     </router-view>

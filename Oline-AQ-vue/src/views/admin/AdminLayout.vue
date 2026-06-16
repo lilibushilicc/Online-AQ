@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { HomeFilled, Upload, Collection, Document, DataAnalysis, User, Setting, ChatDotRound, Tickets, Fold, Expand, Menu, MagicStick, Message } from '@element-plus/icons-vue'
 import { useExamStore } from '@/stores/exam'
+import CanvasAmbient from '@/views/components/CanvasAmbient.vue'
 
 defineProps<{ title: string; subtitle?: string }>()
 
@@ -30,6 +31,7 @@ watch(() => route.path, () => {
 
 <template>
   <main class="page page--admin" :class="{ 'sidebar-collapsed': isCollapsed }">
+    <CanvasAmbient />
     <section class="shell">
       <transition name="fade">
         <div v-if="mobileMenuOpen" class="sidebar-backdrop" @click="mobileMenuOpen = false"></div>
