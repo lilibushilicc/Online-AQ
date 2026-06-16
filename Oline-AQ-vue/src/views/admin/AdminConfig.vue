@@ -40,7 +40,9 @@ async function loadEmailStats() {
 async function loadAccounts() {
   try {
     accounts.value = await api.loadSmtpAccountsApi()
-  } catch { }
+  } catch (e: unknown) {
+    console.error('加载 SMTP 账号列表失败', e)
+  }
 }
 
 function openAddDialog() {
@@ -214,7 +216,7 @@ async function saveVersion() {
     const payload: Record<string, string> = {}
     for (const key of Object.keys(config.value)) {
       if (key.startsWith('app.version.')) {
-        payload[key] = config.value[key]
+        payload[key] = config.value[key] ?? ''
       }
     }
     await api.saveConfigApi(payload)
@@ -415,6 +417,9 @@ onMounted(() => {
       <el-form-item label="开启邮箱注册">
         <el-switch v-model="config['register.email.enabled']" active-value="true" inactive-value="false" />
       </el-form-item>
+      <el-form-item label=" ">
+        <el-button type="primary" :loading="loading" @click="save">保存邮箱设置</el-button>
+      </el-form-item>
 
       <el-divider content-position="left">SMTP 账号</el-divider>
 
@@ -468,7 +473,7 @@ onMounted(() => {
           <!-- 操作栏 -->
           <div class="smtp-card-actions">
             <div class="smtp-card-toggle">
-              <el-switch :model-value="row.enabled !== false" size="small" @click="toggleEnabled(row.id!)" />
+              <el-switch :model-value="row.enabled !== false" size="small" @change="toggleEnabled(row.id!)" />
               <span class="smtp-toggle-label">{{ row.enabled !== false ? '已启用' : '已禁用' }}</span>
             </div>
             <div class="smtp-card-btns">
@@ -502,6 +507,9 @@ onMounted(() => {
           <span class="muted" style="font-size: 12px;">可用占位符：${code} ${systemName}</span>
           <el-button link size="small" @click="config['smtp.email_template'] = ''">恢复默认模板</el-button>
         </div>
+      </el-form-item>
+      <el-form-item label=" ">
+        <el-button type="primary" :loading="loading" @click="save">保存邮箱设置</el-button>
       </el-form-item>
     </el-form>
   </el-card>

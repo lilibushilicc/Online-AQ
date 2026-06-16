@@ -1,5 +1,11 @@
 # 更新日志
 
+## 2026-06-16
+
+- 重新打包前后端（前端 dist + 后端 jar）
+- 修复 TypeScript 类型错误（AdminConfig.vue `string | undefined`）
+- 前端包管理器切换为 pnpm，更新 README 中所有命令示例
+
 ## 2026-05-23
 
 - Android 端新增版本检查功能，支持强制更新与下载跳转

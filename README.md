@@ -1,5 +1,6 @@
 # 智能在线答题系统
 
+> 2026-06-16 更新：重新打包前后端；修复 TypeScript 类型错误；前端包管理器切换为 pnpm
 > 2026-05-23 更新：打包前后端（Vue + Spring Boot）；Android 个人中心新增「检查版本更新」按钮
 > 2026-05-23 更新：管理后台新增「版本更新」配置页面，支持在线配置 App 版本更新信息
 > 2026-05-23 更新：修复在线练习学生无法打开的问题（QuestionController @AdminOnly 类级别权限误拦）
@@ -68,7 +69,7 @@
 | JDK | 17+ | 运行后端服务 |
 | Maven | 3.8+（可用 `mvnw` wrapper） | 构建后端 |
 | Node.js | ^20.19.0 或 >=22.12.0 | 构建 Web 前端 |
-| npm | 10+ | 前端依赖管理 |
+| pnpm | 10+ | 前端依赖管理 |
 | PostgreSQL | 12+ | 业务数据库 |
 | Android Studio | Hedgehog+ (2023.1.1) | 构建 Android 端（可选） |
 | Gradle | 8.14.3（自动下载） | 构建 Android 端（可选） |
@@ -99,7 +100,7 @@ Online-AQ/
 │   └── change-summary/        每次代码改动后的总结文档
 │
 ├── release/                   打包产物与部署文件
-│   ├── package/                JAR + 前端 dist + 配置 + SQL
+│   ├── package/                最新构建产物：后端 JAR + 前端 dist + 配置 + SQL
 │   └── docker/                 Docker 相关文件（待完善）
 │
 ├── log/                       运行日志 / 构建日志 / 排查记录
@@ -176,8 +177,8 @@ java -jar target\oline-aq-spring-0.0.1-SNAPSHOT.jar
 
 ```sh
 cd Oline-AQ-vue
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 **默认地址**：`http://127.0.0.1:5173`
@@ -240,7 +241,7 @@ java -jar target\oline-aq-spring-0.0.1-SNAPSHOT.jar ^
 
 ```sh
 cd Oline-AQ-vue
-npm run build
+pnpm run build
 # 产物在 dist/ 目录，部署到 Nginx
 ```
 
@@ -282,10 +283,10 @@ cd Oline-AQ-spring && .\mvnw.cmd -DskipTests compile
 cd Oline-AQ-spring && .\mvnw.cmd test
 
 # 前端类型检查
-cd Oline-AQ-vue && npm run type-check
+cd Oline-AQ-vue && pnpm run type-check
 
 # 前端构建
-cd Oline-AQ-vue && npm run build
+cd Oline-AQ-vue && pnpm run build
 
 # Android Debug APK
 cd Oline-AQ-app && .\gradlew.bat assembleDebug
