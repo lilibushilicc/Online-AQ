@@ -50,6 +50,30 @@ const pickerQuestions = computed(() => {
   return list
 })
 
+const pickerAllSelected = computed(() => {
+  return pickerQuestions.value.length > 0 && pickerQuestions.value.every((q) => form.questionIds.includes(q.questionId))
+})
+
+const pickerIndeterminate = computed(() => {
+  if (pickerQuestions.value.length === 0) return false
+  const count = pickerQuestions.value.filter((q) => form.questionIds.includes(q.questionId)).length
+  return count > 0 && count < pickerQuestions.value.length
+})
+
+function togglePickerSelectAll(val: boolean) {
+  if (val) {
+    const existing = new Set(form.questionIds)
+    pickerQuestions.value.forEach((q) => {
+      if (!existing.has(q.questionId)) {
+        form.questionIds.push(q.questionId)
+      }
+    })
+  } else {
+    const ids = new Set(pickerQuestions.value.map((q) => q.questionId))
+    form.questionIds = form.questionIds.filter((id) => !ids.has(id))
+  }
+}
+
 onMounted(async () => {
   try {
     await Promise.all([store.loadQuestions(), store.loadExams(), store.loadCategories()])
@@ -246,6 +270,11 @@ async function deletePaper(exam: Exam) {
       </el-select>
       <el-input v-model="pickerSearch" placeholder="搜索题目内容" clearable style="width: 200px" />
       <span class="muted" style="font-size: 13px; line-height: 32px">显示 {{ pickerQuestions.length }} / {{ store.questions.length }} 道题</span>
+      <el-checkbox
+        :model-value="pickerAllSelected"
+        :indeterminate="pickerIndeterminate"
+        @change="(val: boolean) => togglePickerSelectAll(val)"
+      >全选</el-checkbox>
     </div>
     <div style="max-height: 60vh; overflow-y: auto">
       <div

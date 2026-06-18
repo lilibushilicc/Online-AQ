@@ -2,10 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UploadFilled, MagicStick, InfoFilled, Delete, FolderOpened, DocumentChecked } from '@element-plus/icons-vue'
+import { UploadFilled, MagicStick, InfoFilled, Delete, FolderOpened, DocumentChecked, Download } from '@element-plus/icons-vue'
 import { useExamStore } from '@/stores/exam'
 import * as api from '@/api'
-import type { UploadFileItem } from '@/types'
+import type { UploadFileItem, Question } from '@/types'
+import { QUESTION_TYPE_LABEL } from '@/constants'
 
 const router = useRouter()
 
@@ -29,6 +30,13 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const uploadFiles = ref<UploadFileItem[]>([])
 const loadingFiles = ref(false)
 const isDragOver = ref(false)
+
+// 解析预览
+const parsedQuestions = ref<Question[]>([])
+const selectedQuestions = ref<Question[]>([])
+const parsedFileId = ref<number | null>(null)
+const previewing = ref(false)
+const importing = ref(false)
 
 const parseModeOptions = [
   { label: '正则解析', value: 'regex' },
@@ -109,25 +117,87 @@ function onInputChange(event: Event) {
   setSelectedFile(input.files?.[0] ?? null)
 }
 
-async function parse() {
+async function previewParse() {
   if (!selectedFile.value) {
     ElMessage.warning('请先选择试题文件')
     return
   }
+  // 清理上一次预览残留文件
+  if (parsedFileId.value !== null) {
+    try { await api.deleteFileApi(parsedFileId.value) } catch {}
+  }
   uploading.value = true
   try {
     const name = bankName.value.trim() || undefined
-    const count = await store.uploadAndParse(selectedFile.value, category.value.trim() || undefined, useAi.value, name)
+    const uploadResult = await api.uploadFileApi(selectedFile.value, name)
+    const fileId = uploadResult.fileId
+    parsedFileId.value = fileId
+    const questions = await api.previewQuestionsApi(fileId, category.value.trim() || undefined, useAi.value)
+    if (questions.length === 0) {
+      ElMessage.warning('未识别到任何题目，请检查文件格式')
+      uploading.value = false
+      return
+    }
+    parsedQuestions.value = questions
+    selectedQuestions.value = [...questions]
+    previewing.value = true
     const mode = parseModeTitle.value
     clearSelectedFile()
     bankName.value = ''
-    ElMessage.success(`[${mode}] 上传并解析成功，共新增 ${count} 道题`)
-    await loadFiles()
+    ElMessage.success(`[${mode}] 解析完成，共识别 ${questions.length} 道题，请确认后一键上传`)
   } catch (e: any) {
-    ElMessage.error(e?.message || '上传失败，请检查文件格式后重试')
+    ElMessage.error(e?.message || '预览失败，请检查文件格式后重试')
   } finally {
     uploading.value = false
   }
+}
+
+function onSelectionChange(rows: Question[]) {
+  selectedQuestions.value = rows
+}
+
+const isAllSelected = computed(() => {
+  return parsedQuestions.value.length > 0 && selectedQuestions.value.length === parsedQuestions.value.length
+})
+
+const isIndeterminate = computed(() => {
+  return selectedQuestions.value.length > 0 && selectedQuestions.value.length < parsedQuestions.value.length
+})
+
+function toggleSelectAll(val: boolean) {
+  selectedQuestions.value = val ? [...parsedQuestions.value] : []
+}
+
+async function confirmImport() {
+  if (parsedFileId.value === null || selectedQuestions.value.length === 0) {
+    ElMessage.warning('请至少选择一道题目')
+    return
+  }
+  importing.value = true
+  try {
+    const result = await api.importQuestionsApi(parsedFileId.value, selectedQuestions.value)
+    ElMessage.success(`成功导入 ${result.questionCount} 道题`)
+    previewing.value = false
+    parsedQuestions.value = []
+    selectedQuestions.value = []
+    parsedFileId.value = null
+    await loadFiles()
+    await store.loadQuestions()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '导入失败')
+  } finally {
+    importing.value = false
+  }
+}
+
+async function cancelPreview() {
+  if (parsedFileId.value !== null) {
+    try { await api.deleteFileApi(parsedFileId.value) } catch {}
+  }
+  previewing.value = false
+  parsedQuestions.value = []
+  selectedQuestions.value = []
+  parsedFileId.value = null
 }
 
 function goToFileQuestions(fileId: number) {
@@ -214,10 +284,10 @@ onMounted(loadFiles)
         </div>
 
         <div class="action-row">
-          <el-button type="primary" :loading="uploading" @click="parse">
+          <el-button type="primary" :loading="uploading" @click="previewParse">
             <el-icon v-if="useAi"><MagicStick /></el-icon>
             <el-icon v-else><UploadFilled /></el-icon>
-            <span>上传并解析</span>
+            <span>解析预览</span>
           </el-button>
           <div class="action-meta">
             <span>最近解析：{{ latestParsedText }}</span>
@@ -270,6 +340,61 @@ onMounted(loadFiles)
         </div>
       </el-card>
     </section>
+
+    <el-card v-if="previewing" class="preview-card">
+      <template #header>
+        <div class="section-head">
+          <div>
+            <div class="section-title">解析预览</div>
+            <div class="section-subtitle">共 {{ parsedQuestions.length }} 道题，已选 {{ selectedQuestions.length }} 道</div>
+          </div>
+          <div class="preview-toolbar">
+            <el-checkbox
+              :model-value="isAllSelected"
+              :indeterminate="isIndeterminate"
+              @change="(val: boolean) => toggleSelectAll(val)"
+            >
+              全选
+            </el-checkbox>
+            <el-button type="primary" :loading="importing" @click="confirmImport">
+              <el-icon><UploadFilled /></el-icon>
+              <span>一键上传 ({{ selectedQuestions.length }})</span>
+            </el-button>
+            <el-button @click="cancelPreview">取消</el-button>
+          </div>
+        </div>
+      </template>
+
+      <el-table
+        :data="parsedQuestions"
+        max-height="480"
+        stripe
+        @selection-change="onSelectionChange"
+      >
+        <el-table-column type="selection" width="50" />
+        <el-table-column label="#" type="index" width="60" />
+        <el-table-column label="题干" min-width="300" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="question-content">{{ row.questionContent }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="题型" width="80">
+          <template #default="{ row }">
+            <el-tag size="small" effect="plain">{{ QUESTION_TYPE_LABEL[row.questionType as keyof typeof QUESTION_TYPE_LABEL] || row.questionType }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="答案" width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.correctAnswer }}
+          </template>
+        </el-table-column>
+        <el-table-column label="分值" width="70">
+          <template #default="{ row }">
+            {{ row.score }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
     <el-card>
       <template #header>
@@ -632,6 +757,25 @@ onMounted(loadFiles)
   font-size: var(--text-small);
   line-height: 1.7;
   color: var(--text-tertiary);
+}
+
+.preview-card {
+  margin-top: 20px;
+}
+
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.question-content {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
 }
 
 @media (max-width: 1080px) {

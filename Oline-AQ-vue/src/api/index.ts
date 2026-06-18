@@ -92,6 +92,21 @@ export function uploadAndParseApi(file: File, category?: string, useAi = false, 
   )
 }
 
+export function uploadFileApi(file: File, fileName?: string) {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (fileName) formData.append('name', fileName)
+  return apiPost<{ fileId: number; fileName: string; status: string }>('/files/upload', formData)
+}
+
+export function previewQuestionsApi(fileId: number, category?: string, useAi = false) {
+  return apiPost<Question[]>(`/files/${fileId}/preview`, { category, useAi })
+}
+
+export function importQuestionsApi(fileId: number, questions: Question[]) {
+  return apiPost<{ fileId: number; questionCount: number }>(`/files/${fileId}/import`, { questions })
+}
+
 // -------- Exams --------
 export function loadExamsApi() {
   return apiGet<Exam[]>('/exams')

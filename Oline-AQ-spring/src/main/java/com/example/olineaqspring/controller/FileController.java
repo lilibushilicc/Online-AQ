@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.olineaqspring.entity.Question;
 import java.util.List;
 import java.util.Map;
 
@@ -53,5 +55,25 @@ public class FileController {
             @RequestParam(defaultValue = "false") boolean useAi,
             HttpServletRequest request) {
         return ApiResponse.ok("解析成功", fileService.parse(fileId, category, useAi));
+    }
+
+    @PostMapping("/{fileId}/preview")
+    public ApiResponse<List<Question>> preview(
+            @PathVariable Integer fileId,
+            @RequestBody Map<String, Object> body) {
+        String category = (String) body.get("category");
+        boolean useAi = body.get("useAi") instanceof Boolean && (Boolean) body.get("useAi");
+        return ApiResponse.ok("预览成功", fileService.preview(fileId, category, useAi));
+    }
+
+    @PostMapping("/{fileId}/import")
+    public ApiResponse<Map<String, Object>> importQuestions(
+            @PathVariable Integer fileId,
+            @RequestBody Map<String, List<Question>> body) {
+        List<Question> questions = body.get("questions");
+        if (questions == null || questions.isEmpty()) {
+            throw new RuntimeException("请选择要导入的题目");
+        }
+        return ApiResponse.ok("导入成功", fileService.importQuestions(fileId, questions));
     }
 }

@@ -113,6 +113,38 @@ public class FileService {
         return data;
     }
 
+    public List<Question> preview(Integer fileId, String category, boolean useAi) {
+        UploadFile uploadFile = uploadFileMapper.selectById(fileId);
+        if (uploadFile == null) throw new RuntimeException("文件不存在");
+
+        List<Question> questions;
+        if (useAi) {
+            questions = aiQuestionParseService.parse(uploadFile.getRawText(), fileId, category);
+        } else {
+            questions = questionParseService.parse(uploadFile.getRawText(), fileId, category);
+        }
+        return questions;
+    }
+
+    public Map<String, Object> importQuestions(Integer fileId, List<Question> questions) {
+        UploadFile uploadFile = uploadFileMapper.selectById(fileId);
+        if (uploadFile == null) throw new RuntimeException("文件不存在");
+
+        for (Question q : questions) {
+            q.setSourceFileId(fileId);
+            q.setQuestionId(null);
+            questionMapper.insert(q);
+        }
+
+        uploadFile.setStatus(STATUS_PARSED);
+        uploadFileMapper.updateById(uploadFile);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("fileId", fileId);
+        data.put("questionCount", questions.size());
+        return data;
+    }
+
     public void deleteFile(Integer fileId) {
         UploadFile uploadFile = uploadFileMapper.selectById(fileId);
         if (uploadFile == null) throw new RuntimeException("文件不存在");

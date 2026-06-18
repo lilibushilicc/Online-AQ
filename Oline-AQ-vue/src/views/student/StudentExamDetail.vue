@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { View } from '@element-plus/icons-vue'
 import * as api from '@/api'
 import { useExamStore, type Exam, type Question } from '@/stores/exam'
+import { QUESTION_TYPE_LABEL } from '@/constants'
 import { downloadFile } from '@/utils/download'
 import CanvasRadialGauge from '@/views/components/CanvasRadialGauge.vue'
 
@@ -29,6 +30,7 @@ const exportDialogVisible = ref(false)
 const exportFormat = ref('word')
 const activeQuestionIndex = ref(0)
 const hasDraft = ref(false)
+const restoredFromDraft = ref(false)
 const started = ref(false)
 const leavingConfirmed = ref(false)
 let timer: number | null = null
@@ -95,6 +97,32 @@ const countdownText = computed(() => {
   const minutes = Math.floor((remainingSeconds.value % 3600) / 60)
   const seconds = remainingSeconds.value % 60
   return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':')
+})
+
+interface QuestionSection {
+  type: string
+  label: string
+  questions: Question[]
+  startIndex: number
+}
+
+const questionSections = computed(() => {
+  const order = ['single', 'judge', 'fill_blank', 'short_answer']
+  const sectionLabels: Record<string, string> = {
+    single: '一、选择题',
+    judge: '二、判断题',
+    fill_blank: '三、填空题',
+    short_answer: '四、简答题',
+  }
+  let idx = 0
+  const result: QuestionSection[] = []
+  for (const type of order) {
+    const qs = questions.value.filter((q) => q.questionType === type)
+    if (qs.length === 0) continue
+    result.push({ type, label: sectionLabels[type] || type, questions: qs, startIndex: idx })
+    idx += qs.length
+  }
+  return result
 })
 
 function examBlockedReason(currentExam: Exam) {
@@ -328,10 +356,10 @@ onMounted(async () => {
     const saved = await loadDraft()
     if (saved && Object.keys(saved).length > 0) {
       answers.value = saved
+      restoredFromDraft.value = true
       started.value = true
       startCountdown(exam.value)
       window.addEventListener('scroll', updateActiveQuestion, { passive: true })
-      ElMessage.info('已恢复上次作答草稿')
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
@@ -362,6 +390,20 @@ onUnmounted(() => {
             <el-descriptions-item label="开放开始">{{ exam.startTime ? new Date(exam.startTime).toLocaleString() : '未设置' }}</el-descriptions-item>
             <el-descriptions-item label="开放结束">{{ exam.endTime ? new Date(exam.endTime).toLocaleString() : '未设置' }}</el-descriptions-item>
           </el-descriptions>
+          <div v-if="questionSections.length > 0" style="margin-bottom: 16px">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; text-align: left">试卷结构</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <el-tag
+                v-for="section in questionSections"
+                :key="section.type"
+                :type="section.type === 'single' ? 'primary' : section.type === 'judge' ? 'warning' : section.type === 'fill_blank' ? 'info' : 'success'"
+                effect="plain"
+                size="large"
+              >
+                <strong>{{ section.label }} {{ section.questions.length }} 题</strong>
+              </el-tag>
+            </div>
+          </div>
           <el-button type="primary" size="large" @click="startExam">开始作答</el-button>
         </el-card>
       </div>
@@ -376,33 +418,66 @@ onUnmounted(() => {
           </el-descriptions>
         </el-card>
 
-        <el-card
-          v-for="(question, index) in questions"
-          :key="question.questionId"
-          :id="`question-${index}`"
-          shadow="hover"
+        <el-alert
+          v-if="restoredFromDraft"
+          type="warning"
+          :closable="true"
+          show-icon
           style="margin-bottom: 14px"
-          :body-style="index === activeQuestionIndex ? { borderLeft: '3px solid var(--accent-blue)' } : {}"
-        >
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
-            <strong>{{ index + 1 }}. {{ question.questionContent }}</strong>
-            <el-tag>{{ question.score }} 分</el-tag>
-          </div>
-          <template v-if="question.questionType === 'single' || question.questionType === 'judge'">
-            <el-radio-group v-model="answers[question.questionId]" style="display: flex; flex-direction: column; gap: 8px">
-              <el-radio value="A" style="min-height: 40px; align-items: center">A. {{ question.optionA }}</el-radio>
-              <el-radio value="B" style="min-height: 40px; align-items: center">B. {{ question.optionB }}</el-radio>
-              <el-radio v-if="question.optionC" value="C" style="min-height: 40px; align-items: center">C. {{ question.optionC }}</el-radio>
-              <el-radio v-if="question.optionD" value="D" style="min-height: 40px; align-items: center">D. {{ question.optionD }}</el-radio>
-            </el-radio-group>
-          </template>
-          <template v-else-if="question.questionType === 'fill_blank'">
-            <el-input v-model="answers[question.questionId]" placeholder="请输入答案" clearable style="max-width: 400px" />
-          </template>
-          <template v-else-if="question.questionType === 'short_answer'">
-            <el-input v-model="answers[question.questionId]" type="textarea" :rows="4" placeholder="请输入你的回答" />
-          </template>
-        </el-card>
+          title="已从草稿恢复"
+          :description="`已恢复 ${answeredCount} 道题的作答记录，作答进度将自动保存。`"
+        />
+
+        <template v-for="section in questionSections" :key="section.type">
+          <el-card shadow="never" class="section-header-card">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span class="section-header-label">{{ section.label }}</span>
+              <span style="font-size: 13px; color: var(--text-secondary)">共 {{ section.questions.length }} 题</span>
+            </div>
+          </el-card>
+          <el-card
+            v-for="(question, localIdx) in section.questions"
+            :key="question.questionId"
+            :id="`question-${section.startIndex + localIdx}`"
+            shadow="hover"
+            style="margin-bottom: 14px"
+            :body-style="section.startIndex + localIdx === activeQuestionIndex ? { borderLeft: '3px solid var(--el-color-primary)', background: 'var(--el-color-primary-light-9)' } : {}"
+          >
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
+              <strong>{{ section.startIndex + localIdx + 1 }}. {{ question.questionContent }}</strong>
+              <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0">
+                <el-tag
+                  :type="question.questionType === 'single' ? 'primary' : question.questionType === 'judge' ? 'warning' : question.questionType === 'fill_blank' ? 'info' : 'success'"
+                  effect="plain"
+                  size="large"
+                >
+                  <strong>{{ QUESTION_TYPE_LABEL[question.questionType] || question.questionType }}</strong>
+                </el-tag>
+                <el-tag>{{ question.score }} 分</el-tag>
+              </div>
+            </div>
+            <template v-if="question.questionType === 'single' || question.questionType === 'judge'">
+              <el-radio-group v-model="answers[question.questionId]" style="display: flex; flex-direction: column; gap: 8px">
+                <template v-if="question.questionType === 'judge'">
+                  <el-radio value="A" style="min-height: 40px; align-items: center"><span class="judge-option judge-true">对</span></el-radio>
+                  <el-radio value="B" style="min-height: 40px; align-items: center"><span class="judge-option judge-false">错</span></el-radio>
+                </template>
+                <template v-else>
+                  <el-radio value="A" style="min-height: 40px; align-items: center">A. {{ question.optionA }}</el-radio>
+                  <el-radio value="B" style="min-height: 40px; align-items: center">B. {{ question.optionB }}</el-radio>
+                  <el-radio v-if="question.optionC" value="C" style="min-height: 40px; align-items: center">C. {{ question.optionC }}</el-radio>
+                  <el-radio v-if="question.optionD" value="D" style="min-height: 40px; align-items: center">D. {{ question.optionD }}</el-radio>
+                </template>
+              </el-radio-group>
+            </template>
+            <template v-else-if="question.questionType === 'fill_blank'">
+              <el-input v-model="answers[question.questionId]" placeholder="请输入答案" clearable style="max-width: 400px" />
+            </template>
+            <template v-else-if="question.questionType === 'short_answer'">
+              <el-input v-model="answers[question.questionId]" type="textarea" :rows="4" placeholder="请输入你的回答" />
+            </template>
+          </el-card>
+        </template>
       </div>
       <aside class="answer-index">
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px">
@@ -421,18 +496,21 @@ onUnmounted(() => {
         </el-card>
         <div style="margin: 16px 0 18px">
           <div style="font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px">题目导航</div>
-          <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-            <button
-              v-for="(q, idx) in questions"
-              :key="q.questionId"
-              class="q-nav-btn"
-              :class="{
-                'q-nav-btn--done': answers[q.questionId],
-                'q-nav-btn--active': idx === activeQuestionIndex,
-              }"
-              @click="scrollToQuestion(idx)"
-            >{{ idx + 1 }}</button>
-          </div>
+          <template v-for="section in questionSections" :key="section.type">
+            <div class="nav-section-label">{{ section.label }}</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px">
+              <button
+                v-for="(q, localIdx) in section.questions"
+                :key="q.questionId"
+                class="q-nav-btn"
+                :class="{
+                  'q-nav-btn--done': answers[q.questionId],
+                  'q-nav-btn--active': section.startIndex + localIdx === activeQuestionIndex,
+                }"
+                @click="scrollToQuestion(section.startIndex + localIdx)"
+              >{{ section.startIndex + localIdx + 1 }}</button>
+            </div>
+          </template>
         </div>
         <div v-if="hasDraft" style="font-size: 12px; color: var(--text-tertiary); text-align: center; margin-bottom: 8px">
           草稿已自动保存
@@ -495,14 +573,17 @@ onUnmounted(() => {
       <div id="export-content" style="position: fixed; left: -9999px; top: 0; width: 210mm; padding: 20mm; background: #fff; color: #000; font-size: 14px; line-height: 1.8" v-if="exam">
         <h1 style="text-align: center; margin-bottom: 20px">{{ exam.examName }}</h1>
         <p v-if="exam.description" style="margin-bottom: 16px; font-style: italic">{{ exam.description }}</p>
-        <div v-for="(q, index) in questions" :key="q.questionId" style="margin-bottom: 20px">
-          <strong>{{ index + 1 }}. {{ q.questionContent }}</strong>
-          <p style="margin: 6px 0 0 12px">A. {{ q.optionA }}</p>
-          <p style="margin: 2px 0 0 12px">B. {{ q.optionB }}</p>
-          <p v-if="q.optionC" style="margin: 2px 0 0 12px">C. {{ q.optionC }}</p>
-          <p v-if="q.optionD" style="margin: 2px 0 0 12px">D. {{ q.optionD }}</p>
-          <p style="margin: 4px 0 0 12px; color: #666; font-size: 12px">（{{ q.score }} 分）</p>
-        </div>
+        <template v-for="section in questionSections" :key="section.type">
+          <h2 style="margin: 20px 0 12px; color: #333; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 6px">{{ section.label }}（共 {{ section.questions.length }} 题）</h2>
+          <div v-for="(q, localIdx) in section.questions" :key="q.questionId" style="margin-bottom: 20px">
+            <strong>{{ section.startIndex + localIdx + 1 }}. {{ q.questionContent }}</strong>
+            <p v-if="q.optionA" style="margin: 6px 0 0 12px">A. {{ q.optionA }}</p>
+            <p v-if="q.optionB" style="margin: 2px 0 0 12px">B. {{ q.optionB }}</p>
+            <p v-if="q.optionC" style="margin: 2px 0 0 12px">C. {{ q.optionC }}</p>
+            <p v-if="q.optionD" style="margin: 2px 0 0 12px">D. {{ q.optionD }}</p>
+            <p style="margin: 4px 0 0 12px; color: #666; font-size: 12px">（{{ q.score }} 分）</p>
+          </div>
+        </template>
       </div>
       </template>
     </section>
@@ -542,5 +623,46 @@ onUnmounted(() => {
   background: var(--accent-blue);
   color: #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.section-header-card {
+  margin-bottom: 14px;
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+  border-left: 4px solid var(--el-color-primary);
+}
+
+.section-header-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--el-color-primary);
+}
+
+.judge-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+}
+.judge-true {
+  color: var(--el-color-success);
+  background: color-mix(in srgb, var(--el-color-success) 12%, transparent);
+}
+.judge-false {
+  color: var(--el-color-danger);
+  background: color-mix(in srgb, var(--el-color-danger) 12%, transparent);
+}
+
+.nav-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--el-color-primary);
+  margin-bottom: 4px;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 </style>
