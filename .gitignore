@@ -10,8 +10,12 @@ Oline-AQ-vue/dist/
 # Android build
 **/build/
 **/.gradle/
+**/.kotlin/
 *.apk
 *.aab
+
+# Debug / testing artifacts
+.playwright-mcp/
 
 # IDE
 .idea/

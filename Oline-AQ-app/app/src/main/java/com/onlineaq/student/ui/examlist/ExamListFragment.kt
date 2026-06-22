@@ -135,12 +135,12 @@ class ExamGridAdapter(
                 }
                 else -> {
                     tvStatus.text = exam.status
-                    itemView.context.getColor(R.color.ctp_overlay0)
+                    itemView.context.getColor(R.color.gray_400)
                 }
             }
             val badge = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadii = floatArrayOf(10f, 10f, 10f, 10f, 10f, 10f, 10f, 10f)
+                cornerRadii = floatArrayOf(8f, 8f, 8f, 8f, 8f, 8f, 8f, 8f)
                 setColor(statusColor)
             }
             tvStatus.background = badge

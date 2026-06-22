@@ -254,13 +254,13 @@ private class PracticeAdapter(
                 val correct = answers[question.questionId] == question.correctAnswer
                 tvHint.visibility = View.VISIBLE
                 tvHint.text = if (correct) "回答正确" else "参考答案：${question.correctAnswer.orEmpty()}"
-                tvHint.setTextColor(itemView.context.getColor(if (correct) R.color.ctp_green else R.color.ctp_red))
+                tvHint.setTextColor(itemView.context.getColor(if (correct) R.color.green_500 else R.color.red_500))
                 tvHint.setBackgroundResource(if (correct) R.drawable.bg_hint_success else R.drawable.bg_hint_error)
             } else {
                 tvHint.visibility = View.VISIBLE
                 val current = answers[question.questionId].orEmpty()
                 tvHint.text = if (current.isBlank()) "未作答" else "已填写，提交后查看答案"
-                tvHint.setTextColor(itemView.context.getColor(if (current.isBlank()) R.color.gray_500 else R.color.ctp_blue))
+                tvHint.setTextColor(itemView.context.getColor(if (current.isBlank()) R.color.gray_500 else R.color.blue_500))
                 tvHint.setBackgroundResource(R.drawable.bg_hint_info)
             }
         }

@@ -441,7 +441,7 @@ onUnmounted(() => {
             :id="`question-${section.startIndex + localIdx}`"
             shadow="hover"
             style="margin-bottom: 14px"
-            :body-style="section.startIndex + localIdx === activeQuestionIndex ? { borderLeft: '3px solid var(--el-color-primary)', background: 'var(--el-color-primary-light-9)' } : {}"
+            :class="{ 'question-card--active': section.startIndex + localIdx === activeQuestionIndex }"
           >
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
               <strong>{{ section.startIndex + localIdx + 1 }}. {{ question.questionContent }}</strong>
@@ -480,21 +480,21 @@ onUnmounted(() => {
         </template>
       </div>
       <aside class="answer-index">
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px">
-          <strong style="align-self: flex-start">答题进度</strong>
-          <CanvasRadialGauge :value="progress" :size="100" :strokeWidth="7" color="#3b82f6" />
+        <div class="progress-summary">
+          <div class="progress-gauge">
+            <strong>答题进度</strong>
+            <CanvasRadialGauge :value="progress" :size="100" :strokeWidth="7" color="#3b82f6" />
+          </div>
+          <el-descriptions :column="2" border size="small" class="progress-stats">
+            <el-descriptions-item label="已答">{{ answeredCount }}</el-descriptions-item>
+            <el-descriptions-item label="剩余">{{ questions.length - answeredCount }}</el-descriptions-item>
+          </el-descriptions>
         </div>
-        <el-descriptions :column="2" border size="small" style="margin-bottom: 12px">
-          <el-descriptions-item label="已答">{{ answeredCount }}</el-descriptions-item>
-          <el-descriptions-item label="剩余">{{ questions.length - answeredCount }}</el-descriptions-item>
-        </el-descriptions>
-        <el-card shadow="never" style="margin-bottom: 10px">
+        <el-card shadow="never" class="time-card">
           <el-statistic title="剩余时间" :value="countdownText" />
         </el-card>
-        <el-card shadow="never" style="margin-bottom: 10px">
-          <el-statistic title="已用时间" :value="`${elapsedSeconds} 秒`" />
-        </el-card>
-        <div style="margin: 16px 0 18px">
+
+        <div class="nav-scroll-area">
           <div style="font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px">题目导航</div>
           <template v-for="section in questionSections" :key="section.type">
             <div class="nav-section-label">{{ section.label }}</div>
@@ -512,22 +512,18 @@ onUnmounted(() => {
             </div>
           </template>
         </div>
-        <div v-if="hasDraft" style="font-size: 12px; color: var(--text-tertiary); text-align: center; margin-bottom: 8px">
-          草稿已自动保存
+        <div class="answer-index-actions">
+          <div v-if="hasDraft" style="font-size: 12px; color: var(--text-tertiary); text-align: center; margin-bottom: 8px">草稿已自动保存</div>
+          <el-button type="primary" size="large" :loading="submitting" @click="handleSubmit()">提交试卷</el-button>
+          <el-button size="large" plain :disabled="submitting" @click="handleExitExam">退出考试</el-button>
+          <el-button size="small" plain @click="openExportDialog()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出试卷
+          </el-button>
+          <el-button size="small" plain :loading="submitting" @click="openBlankDialog()">
+            <el-icon style="margin-right: 4px"><View /></el-icon>查看答案
+          </el-button>
         </div>
-        <el-button type="primary" size="large" style="width: 100%" :loading="submitting" @click="handleSubmit()">
-          提交试卷
-        </el-button>
-        <el-button size="large" plain style="width: 100%; margin-top: 8px" :disabled="submitting" @click="handleExitExam">
-          退出考试
-        </el-button>
-        <el-button size="small" plain style="width: 100%; margin-top: 8px; margin-bottom: 4px" @click="openExportDialog()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          导出试卷
-        </el-button>
-        <el-button size="small" plain style="width: 100%; margin-top: 4px" :loading="submitting" @click="openBlankDialog()">
-          <el-icon style="margin-right: 4px"><View /></el-icon>查看答案
-        </el-button>
       </aside>
 
       <!-- 空白提交确认弹窗 -->
@@ -664,5 +660,75 @@ onUnmounted(() => {
   margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+}
+
+.time-card {
+  :deep(.el-statistic__head) {
+    font-size: 13px;
+  }
+  :deep(.el-statistic__content) {
+    font-size: 28px;
+    font-weight: 700;
+  }
+}
+
+.progress-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.progress-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.progress-gauge strong {
+  align-self: flex-start;
+  margin-bottom: 4px;
+}
+.progress-stats {
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .progress-summary {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .progress-gauge {
+    flex-direction: row;
+    gap: 12px;
+    flex: 1;
+  }
+  .progress-gauge strong {
+    align-self: center;
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+  .progress-stats {
+    width: auto;
+    flex-shrink: 0;
+  }
+}
+
+/* 当前答题卡片 — 适配暗色/亮色双主题 */
+.question-card--active {
+  border-left: 3px solid var(--accent-primary) !important;
+  background: rgba(87,241,219,0.04) !important;
+  box-shadow:
+    0 4px 16px rgba(87,241,219,0.06),
+    0 12px 40px rgba(87,241,219,0.04),
+    0 0 0 1px rgba(87,241,219,0.12) !important;
+}
+[data-theme="light"] .question-card--active {
+  background: rgba(13,148,136,0.04) !important;
+  border-left-color: var(--accent-primary) !important;
+  box-shadow:
+    0 4px 16px rgba(13,148,136,0.06),
+    0 12px 40px rgba(13,148,136,0.04),
+    0 0 0 1px rgba(13,148,136,0.12) !important;
 }
 </style>

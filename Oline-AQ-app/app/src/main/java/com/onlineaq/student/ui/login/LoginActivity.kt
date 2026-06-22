@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import android.widget.EditText
 import com.google.android.material.textfield.TextInputEditText
 import com.onlineaq.student.R
 import com.onlineaq.student.data.api.RetrofitClient
@@ -22,8 +23,8 @@ import kotlinx.coroutines.withContext
 
 class LoginActivity : AppCompatActivity() {
 
-    private lateinit var etUsername: TextInputEditText
-    private lateinit var etPassword: TextInputEditText
+    private lateinit var etUsername: EditText
+    private lateinit var etPassword: EditText
     private lateinit var btnLogin: MaterialButton
     private lateinit var tvServerHint: TextView
 
@@ -48,6 +49,8 @@ class LoginActivity : AppCompatActivity() {
 
         btnLogin.setOnClickListener { attemptLogin() }
         findViewById<android.widget.ImageButton>(R.id.btn_server_settings).setOnClickListener { showServerSettings() }
+        findViewById<android.widget.ImageView>(R.id.iv_logo).setOnClickListener { showAboutInfo() }
+
     }
 
     private fun updateServerHint() {
@@ -87,6 +90,14 @@ class LoginActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    private fun showAboutInfo() {
+        AlertDialog.Builder(this)
+            .setTitle("智能在线答题系统")
+            .setMessage("教师导入试题、自动解析组卷并发布考试。学生在线作答，系统即时评分并沉淀数据，形成完整的教学测验闭环。")
+            .setPositiveButton("确定", null)
+            .show()
     }
 
     private fun attemptLogin() {

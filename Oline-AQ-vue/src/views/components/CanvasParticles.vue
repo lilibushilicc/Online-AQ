@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -43,13 +43,13 @@ function init(cvs: HTMLCanvasElement) {
     r: Math.random() * 6 + 2,
     baseR: 0,
     alpha: Math.random() * 0.5 + 0.3,
-    hue: Math.random() < 0.6 ? 217 : Math.random() < 0.5 ? 270 : 190,
+    hue: Math.random() < 0.6 ? 172 : Math.random() < 0.5 ? 180 : 160,
     pulseSpeed: Math.random() * 0.02 + 0.01,
     pulsePhase: Math.random() * Math.PI * 2,
   }))
   particles.forEach(p => { p.baseR = p.r })
 
-  const hues = [217, 270, 190]
+  const hues = [172, 180, 160]
   ribbons = Array.from({ length: 3 }, (_, i) => ({
     points: Array.from({ length: 30 }, (_, j) => ({
       x: (j / 29) * w,
@@ -201,3 +201,5 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 </style>
+
+

@@ -42,7 +42,7 @@ function draw() {
   ctx.shadowBlur = 0
   ctx.beginPath()
   ctx.arc(cx, cy, outerR + 1, 0, Math.PI * 2)
-  ctx.strokeStyle = 'rgba(59,130,246,0.06)'
+  ctx.strokeStyle = 'rgba(87,241,219,0.06)'
   ctx.lineWidth = 1
   ctx.stroke()
 

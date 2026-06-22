@@ -24,7 +24,7 @@ const averageScore = computed(() => store.averageScore)
 const totalDuration = computed(() => store.exams.reduce((sum, exam) => sum + (exam.duration || 0), 0))
 
 const scoreLabels: Record<string, string> = { range0_20: '0-20', range21_40: '21-40', range41_60: '41-60', range61_80: '61-80', range81_100: '81-100' }
-const scoreColors: Record<string, string> = { range0_20: '#ef4444', range21_40: '#f59e0b', range41_60: '#f97316', range61_80: '#3b82f6', range81_100: '#10b981' }
+const scoreColors: Record<string, string> = { range0_20: '#ffb4ab', range21_40: '#fbbf24', range41_60: '#f97316', range61_80: '#3cddc7', range81_100: '#57f1db' }
 const doughnutSegments = computed(() => {
   if (!stats.value) return []
   return Object.entries(scoreLabels).map(([key, label]) => ({
@@ -123,7 +123,7 @@ onMounted(async () => {
           :value="stats.passRate"
           :size="130"
           :strokeWidth="10"
-          color="#10b981"
+          color="#57f1db"
           label="通过率"
         />
       </div>

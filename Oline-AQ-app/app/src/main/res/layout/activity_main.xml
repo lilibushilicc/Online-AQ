@@ -9,7 +9,8 @@
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:background="?android:colorBackground" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_nav"
@@ -30,6 +31,7 @@
         app:itemTextAppearanceInactive="@style/TextAppearance.OnlineAQ.BottomNav.Inactive"
         app:itemTextColor="@color/bottom_nav_color"
         app:labelVisibilityMode="labeled"
-        app:elevation="12dp" />
+        app:elevation="0dp"
+        android:outlineProvider="none" />
 
 </LinearLayout>

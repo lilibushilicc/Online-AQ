@@ -1,73 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ===== Catppuccin Latte (亮色) ===== -->
-    <color name="ctp_base">#F6F7FC</color>
-    <color name="ctp_mantle">#EEF1FB</color>
-    <color name="ctp_crust">#E4E8F6</color>
-    <color name="ctp_surface0">#D8DEF0</color>
-    <color name="ctp_surface1">#C7CFE7</color>
-    <color name="ctp_surface2">#B3BCD8</color>
-    <color name="ctp_overlay0">#8E97B3</color>
-    <color name="ctp_overlay1">#7983A0</color>
-    <color name="ctp_overlay2">#66708C</color>
-    <color name="ctp_subtext0">#4F5874</color>
-    <color name="ctp_subtext1">#3D4762</color>
-    <color name="ctp_text">#20273E</color>
-    <color name="ctp_lavender">#7287FD</color>
-    <color name="ctp_blue">#1E66F5</color>
-    <color name="ctp_sapphire">#209FB5</color>
-    <color name="ctp_sky">#04A5E5</color>
-    <color name="ctp_teal">#179299</color>
-    <color name="ctp_green">#40A02B</color>
-    <color name="ctp_yellow">#DF8E1D</color>
-    <color name="ctp_peach">#FE640B</color>
-    <color name="ctp_maroon">#E64553</color>
-    <color name="ctp_red">#D20F39</color>
-    <color name="ctp_mauve">#8839EF</color>
-    <color name="ctp_pink">#EA76CB</color>
-    <color name="ctp_flamingo">#DD7878</color>
-    <color name="ctp_rosewater">#DC8A78</color>
+    <!-- ===== Slate & Teal Executive (亮色) ===== -->
+    <color name="slate_50">#F4F6FA</color>
+    <color name="slate_100">#E8ECF4</color>
+    <color name="slate_200">#D0D8E8</color>
+    <color name="slate_300">#B0BCD0</color>
+    <color name="slate_400">#7A88A0</color>
+    <color name="slate_500">#5C6B85</color>
+    <color name="slate_600">#3F4A60</color>
+    <color name="slate_700">#2C3446</color>
+    <color name="slate_800">#1C2230</color>
+    <color name="slate_900">#10141E</color>
+
+    <color name="teal_50">#E0FCF6</color>
+    <color name="teal_100">#B0F5EA</color>
+    <color name="teal_200">#7AEFDE</color>
+    <color name="teal_300">#3DDCC7</color>
+    <color name="teal_400">#2DD4BF</color>
+    <color name="teal_500">#14B8A6</color>
+    <color name="teal_600">#0D9488</color>
+    <color name="teal_700">#0F766E</color>
+    <color name="teal_800">#115E59</color>
+    <color name="teal_900">#134E4A</color>
 
     <!-- Material 3 Light 映射 -->
-    <color name="m3_primary">@color/ctp_mauve</color>
-    <color name="m3_on_primary">@color/white</color>
-    <color name="m3_primary_container">#F0E6FF</color>
-    <color name="m3_on_primary_container">@color/ctp_base</color>
-    <color name="m3_secondary">@color/ctp_blue</color>
-    <color name="m3_on_secondary">@color/white</color>
-    <color name="m3_secondary_container">#E3ECFF</color>
-    <color name="m3_on_secondary_container">@color/ctp_base</color>
-    <color name="m3_tertiary">@color/ctp_teal</color>
-    <color name="m3_on_tertiary">@color/white</color>
-    <color name="m3_background">@color/ctp_base</color>
-    <color name="m3_on_background">@color/ctp_text</color>
-    <color name="m3_surface">@color/ctp_base</color>
-    <color name="m3_on_surface">@color/ctp_text</color>
-    <color name="m3_surface_variant">@color/ctp_surface0</color>
-    <color name="m3_on_surface_variant">@color/ctp_subtext0</color>
-    <color name="m3_outline">@color/ctp_surface1</color>
-    <color name="m3_error">@color/ctp_red</color>
-    <color name="m3_on_error">@color/white</color>
+    <color name="m3_primary">#006B5F</color>
+    <color name="m3_on_primary">#FFFFFF</color>
+    <color name="m3_primary_container">#62FAE3</color>
+    <color name="m3_on_primary_container">#00201C</color>
+    <color name="m3_secondary">#3F465C</color>
+    <color name="m3_on_secondary">#FFFFFF</color>
+    <color name="m3_secondary_container">#DAE2FD</color>
+    <color name="m3_on_secondary_container">#131B2E</color>
+    <color name="m3_tertiary">#1E66F5</color>
+    <color name="m3_on_tertiary">#FFFFFF</color>
+    <color name="m3_background">#F4F6FA</color>
+    <color name="m3_on_background">#1C2230</color>
+    <color name="m3_surface">#FFFFFF</color>
+    <color name="m3_on_surface">#1C2230</color>
+    <color name="m3_surface_variant">#E8ECF4</color>
+    <color name="m3_on_surface_variant">#3F4A60</color>
+    <color name="m3_outline">#D0D8E8</color>
+    <color name="m3_error">#D20F39</color>
+    <color name="m3_on_error">#FFFFFF</color>
 
     <!-- 通用 -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
 
-    <!-- 渐变（亮色用 Catppuccin Mauve → Blue） -->
-    <color name="gradient_start">#7C3AED</color>
-    <color name="gradient_center">#2563EB</color>
-    <color name="gradient_end">#06B6D4</color>
+    <!-- 渐变（亮色用 Teal） -->
+    <color name="gradient_start">#0D9488</color>
+    <color name="gradient_center">#14B8A6</color>
+    <color name="gradient_end">#2DD4BF</color>
 
-    <color name="panel_brand">#F1E9FF</color>
-    <color name="panel_info">#EAF4FF</color>
-    <color name="hint_info_bg">#EEF5FF</color>
-    <color name="hint_success_bg">#E9F9EF</color>
+    <color name="panel_brand">#E0FCF6</color>
+    <color name="panel_info">#E8ECF4</color>
+    <color name="hint_info_bg">#E8ECF4</color>
+    <color name="hint_success_bg">#E0FCF6</color>
     <color name="hint_error_bg">#FFECEE</color>
 
     <!-- 状态色 -->
-    <color name="status_ongoing">@color/ctp_green</color>
-    <color name="status_closed">@color/ctp_overlay0</color>
-    <color name="status_draft">@color/ctp_yellow</color>
+    <color name="status_ongoing">#0D9488</color>
+    <color name="status_closed">#7A88A0</color>
+    <color name="status_draft">#DF8E1D</color>
 
     <!-- AMOLED -->
     <color name="amoled_background">#000000</color>
@@ -75,30 +70,42 @@
     <color name="amoled_surface_container">#0C0C0C</color>
 
     <!-- 旧兼容 -->
-    <color name="primary_500">@color/ctp_mauve</color>
-    <color name="primary_600">@color/ctp_blue</color>
-    <color name="primary_700">#6B21A5</color>
-    <color name="primary_100">#EDDFFB</color>
-    <color name="primary_50">#F5F0FF</color>
-    <color name="teal_500">@color/ctp_teal</color>
-    <color name="teal_600">@color/ctp_teal</color>
-    <color name="teal_700">#0F766E</color>
-    <color name="gray_50">@color/ctp_base</color>
-    <color name="gray_100">@color/ctp_mantle</color>
-    <color name="gray_200">@color/ctp_crust</color>
-    <color name="gray_300">@color/ctp_surface0</color>
-    <color name="gray_400">@color/ctp_overlay0</color>
-    <color name="gray_500">@color/ctp_overlay1</color>
-    <color name="gray_600">@color/ctp_subtext0</color>
-    <color name="gray_700">@color/ctp_subtext1</color>
-    <color name="gray_800">@color/ctp_text</color>
-    <color name="gray_900">#1F2937</color>
-    <color name="red_500">@color/ctp_red</color>
-    <color name="red_50">#FEF2F2</color>
-    <color name="green_500">@color/ctp_green</color>
-    <color name="green_50">#F0FDF4</color>
-    <color name="orange_500">@color/ctp_peach</color>
-    <color name="blue_500">@color/ctp_blue</color>
-    <color name="blue_50">#EFF6FF</color>
-    <color name="card_shadow">#240C1A37</color>
+    <color name="primary_500">#006B5F</color>
+    <color name="primary_600">#0D9488</color>
+    <color name="primary_700">#0F766E</color>
+    <color name="primary_100">#E0FCF6</color>
+    <color name="primary_50">#F0FDFA</color>
+    <color name="gray_50">#F4F6FA</color>
+    <color name="gray_100">#E8ECF4</color>
+    <color name="gray_200">#D0D8E8</color>
+    <color name="gray_300">#B0BCD0</color>
+    <color name="gray_400">#7A88A0</color>
+    <color name="gray_500">#5C6B85</color>
+    <color name="gray_600">#3F4A60</color>
+    <color name="gray_700">#2C3446</color>
+    <color name="gray_800">#1C2230</color>
+    <color name="gray_900">#10141E</color>
+    <color name="red_500">#D20F39</color>
+    <color name="red_50">#FFECEE</color>
+    <color name="green_500">#0D9488</color>
+    <color name="green_50">#E0FCF6</color>
+    <color name="orange_500">#DF8E1D</color>
+    <color name="blue_500">#1E66F5</color>
+    <color name="blue_50">#E8F0FF</color>
+    <color name="card_shadow">#2410141E</color>
+
+    <!-- 登录页专用（纯暗色，不随系统主题变化） -->
+    <color name="login_bg">#051424</color>
+    <color name="login_topbar_bg">#CC051424</color>
+    <color name="login_primary">#57F1DB</color>
+    <color name="login_on_surface_variant">#BACAC5</color>
+    <color name="login_on_background">#D4E4FA</color>
+    <color name="login_on_primary">#003731</color>
+    <color name="login_hint_subtle">#5C6B85</color>
+    <color name="login_error">#FFB4AB</color>
+    <color name="login_card_bg">#B3122131</color>
+    <color name="login_card_stroke">#33BACAC5</color>
+    <color name="login_input_hint">#42BACAC5</color>
+    <color name="login_bottom_nav_bg">#CC0D1C2D</color>
+    <color name="login_divider">#333C4A46</color>
 </resources>

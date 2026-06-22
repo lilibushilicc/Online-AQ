@@ -210,8 +210,8 @@ class AnswerDetailAdapter(
             tvResult.text = if (isCorrect) "正确" else "错误"
             tvResult.setBackgroundColor(
                 itemView.context.getColor(
-                    if (isCorrect) R.color.ctp_green
-                    else R.color.ctp_red
+                    if (isCorrect) R.color.green_500
+                    else R.color.red_500
                 )
             )
 

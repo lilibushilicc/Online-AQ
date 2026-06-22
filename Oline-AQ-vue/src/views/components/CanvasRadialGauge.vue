@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   size: 120,
   strokeWidth: 8,
-  color: '#10b981',
+  color: '#57f1db',
   trackColor: '',
   label: '',
   animated: true,

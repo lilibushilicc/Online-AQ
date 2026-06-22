@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
+        app:title=""
         app:titleCentered="true"
         app:titleTextColor="?attr/colorOnSurface"
         app:navigationIcon="@drawable/ic_back"
@@ -23,9 +24,9 @@
         android:layout_marginStart="12dp"
         android:layout_marginTop="12dp"
         android:layout_marginEnd="12dp"
-        app:cardBackgroundColor="@color/panel_info"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp"
+        app:cardBackgroundColor="?attr/colorSurface"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="3dp"
         app:strokeColor="?attr/colorOutline"
         app:strokeWidth="1dp">
 
@@ -43,7 +44,7 @@
                 android:layout_weight="1"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/ctp_red" />
+                android:textColor="@color/red_500" />
 
             <TextView
                 android:id="@+id/tv_progress"

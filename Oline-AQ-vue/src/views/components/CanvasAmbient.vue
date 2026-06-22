@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
 interface Orb {
@@ -25,11 +25,11 @@ const LIGHT_COLORS = [
 ]
 
 const DARK_COLORS = [
-  { c: '45,212,191', a: 0.07 },
-  { c: '34,211,238', a: 0.05 },
-  { c: '56,189,248', a: 0.04 },
-  { c: '52,211,153', a: 0.05 },
-  { c: '251,191,36', a: 0.03 },
+  { c: '87,241,219', a: 0.06 },
+  { c: '60,221,199', a: 0.05 },
+  { c: '45,212,191', a: 0.04 },
+  { c: '52,211,153', a: 0.03 },
+  { c: '251,191,36', a: 0.02 },
 ]
 
 function getColors() {
@@ -126,3 +126,5 @@ onUnmounted(() => {
   z-index: 0;
 }
 </style>
+
+

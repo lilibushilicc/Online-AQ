@@ -1,13 +1,18 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useExamStore } from '@/stores/exam'
+import BrandSplash from '@/views/components/BrandSplash.vue'
 
 const router = useRouter()
+const route = useRoute()
 const store = useExamStore()
 const logoutLabel = computed(() => store.currentUser?.role === 'admin' ? '教师端' : '学生端')
+const isLayoutPage = computed(() => route.path.startsWith('/student') || route.path.startsWith('/admin'))
 
 const isDark = ref(false)
+const showSplash = ref(false)
+const splashComplete = ref(false)
 
 function applyTheme(dark: boolean) {
   isDark.value = dark
@@ -19,9 +24,32 @@ function toggleTheme() {
   applyTheme(!isDark.value)
 }
 
+function onSplashComplete() {
+  splashComplete.value = true
+  const hasSeen = localStorage.getItem('splash-seen')
+  if (!hasSeen) {
+    localStorage.setItem('splash-seen', 'true')
+  }
+  setTimeout(() => {
+    router.push('/login')
+  }, 100)
+}
+
+function shouldShowSplash() {
+  if (store.currentUser) return false
+  if (route.path !== '/') return false
+  return !localStorage.getItem('splash-seen')
+}
+
+watch(() => route.fullPath, () => {
+  showSplash.value = shouldShowSplash()
+  splashComplete.value = false
+}, { immediate: true })
+
 onMounted(() => {
   const attr = document.documentElement.getAttribute('data-theme')
-  isDark.value = attr === 'dark'
+  isDark.value = true; document.documentElement.setAttribute('data-theme', 'dark')
+  showSplash.value = shouldShowSplash()
 })
 
 function logout() {
@@ -31,13 +59,14 @@ function logout() {
 </script>
 
 <template>
-  <router-view v-slot="{ Component, route: r }">
-    <component :key="r.matched[0]?.path || 'login'" :is="Component" />
-  </router-view>
+  <div v-if="showSplash && !splashComplete" class="splash-wrapper">
+    <BrandSplash :visible="showSplash" @complete="onSplashComplete" />
+  </div>
+  <router-view v-else />
 
-  <el-button class="theme-toggle" circle @click="toggleTheme" :title="isDark ? '切换浅色' : '切换深色'">
+
+  <el-button v-if="!isLayoutPage" class="theme-toggle" circle @click="toggleTheme" :title="isDark ? '切换为亮色' : '切换为暗色'">
     <el-icon :size="16">
-      <!-- Sun icon for light mode, Moon icon for dark mode -->
       <svg v-if="isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
@@ -48,7 +77,7 @@ function logout() {
   </el-button>
 
   <transition name="fade">
-    <el-button v-if="store.currentUser" class="logout-button" @click="logout">
+    <el-button v-if="store.currentUser && !isLayoutPage" class="logout-button" @click="logout">
       <span class="logout-role">{{ logoutLabel }}</span>
       <span class="logout-label">退出登录</span>
       <span class="logout-icon">
@@ -57,3 +86,4 @@ function logout() {
     </el-button>
   </transition>
 </template>
+

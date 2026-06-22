@@ -99,7 +99,7 @@ public class QuestionService {
     }
 
     private LambdaQueryWrapper<Question> buildOrderedWrapper(String category) {
-        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByDesc(Question::getQuestionId);
+        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>().orderByAsc(Question::getQuestionId);
         if (category != null && !category.isEmpty()) {
             wrapper.eq(Question::getCategory, category);
         }

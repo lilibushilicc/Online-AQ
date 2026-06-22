@@ -164,8 +164,8 @@ class ExamDetailActivity : AppCompatActivity() {
         val seconds = remainingSeconds % 60
         tvTimer.text = String.format("剩余 %02d:%02d", minutes, seconds)
         tvTimer.setTextColor(
-            if (remainingSeconds < 300) getColor(R.color.ctp_red)
-            else getColor(R.color.ctp_teal)
+            if (remainingSeconds < 300) getColor(R.color.red_500)
+            else getColor(R.color.teal_500)
         )
     }
 
@@ -185,7 +185,7 @@ class ExamDetailActivity : AppCompatActivity() {
                 gravity = Gravity.CENTER
                 textSize = 13f
                 setPadding(24, 16, 24, 16)
-                setTextColor(getColor(R.color.ctp_text))
+                setTextColor(getColor(R.color.m3_on_surface))
                 background = getDrawable(R.drawable.bg_question_nav_idle)
                     setOnClickListener {
                         rvQuestions.smoothScrollToPosition(index)
@@ -219,7 +219,7 @@ class ExamDetailActivity : AppCompatActivity() {
                 }
                 else -> {
                     textView.background = getDrawable(R.drawable.bg_question_nav_idle)
-                    textView.setTextColor(getColor(R.color.ctp_text))
+                    textView.setTextColor(getColor(R.color.m3_on_surface))
                 }
             }
         }
